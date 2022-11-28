@@ -1,8 +1,12 @@
 [package]
-name = "SwarmAggregationGA"
+name = "swarm_aggregation_ga"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+genevo = "0.7.1"
+rand = "0.8"
+rand_distr = "0.4.3"
+rayon = "1.6.0"
