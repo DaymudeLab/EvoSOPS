@@ -1,7 +1,7 @@
 use rand::{distributions::Uniform, rngs, Rng};
 use rand_distr::Normal;
-use std::convert::TryInto;
 use rayon::prelude::*;
+use std::convert::TryInto;
 
 struct Particle {
     x: u8,
@@ -33,6 +33,7 @@ struct GeneticAlgo {
 
 impl SOPSEnvironment {
     const SIZE: usize = 18;
+    const par_density: f64 = 0.5;
 
     #[inline]
     fn rng() -> rngs::ThreadRng {
@@ -66,76 +67,76 @@ impl SOPSEnvironment {
     fn static_init(genome: &[f64; 6]) -> Self {
         let grid: [[bool; 18]; 18] = [
             [
-                true, true, true, false, true, false, false, false, false, true, false, false,
-                true, false, false, false, false, true,
-            ],
-            [
-                false, true, false, false, true, true, false, true, false, false, false, false,
-                false, true, true, true, true, false,
-            ],
-            [
-                false, false, false, true, true, false, false, false, true, false, false, false,
-                false, false, true, false, false, true,
-            ],
-            [
-                false, false, false, false, false, false, false, false, false, false, false, true,
-                false, true, false, false, false, false,
-            ],
-            [
-                false, false, false, false, false, false, true, false, true, true, true, false,
+                true, true, false, true, false, false, false, true, false, false, false, true,
                 true, false, false, false, false, false,
             ],
             [
-                false, false, false, false, false, false, false, false, true, true, true, false,
-                true, false, false, true, false, false,
+                false, false, false, false, false, false, false, false, false, false, false, false,
+                true, true, false, false, false, true,
             ],
             [
-                true, false, true, false, false, true, false, false, false, false, false, false,
-                true, false, false, false, true, false,
+                false, false, true, false, false, true, false, true, false, true, true, true,
+                false, false, true, false, false, false,
             ],
             [
-                false, false, false, false, true, false, false, false, false, false, false, true,
-                false, false, false, false, false, true,
+                false, true, true, true, false, false, true, true, true, false, false, false,
+                false, false, false, true, true, true,
             ],
             [
-                false, true, false, false, false, true, false, false, false, false, false, true,
+                true, false, true, true, false, true, false, true, true, true, false, false, false,
+                true, false, false, true, false,
+            ],
+            [
+                true, false, true, false, false, false, false, true, false, false, false, false,
+                true, true, true, true, true, false,
+            ],
+            [
+                false, false, false, true, true, false, true, false, false, true, true, true,
                 false, false, false, false, true, false,
             ],
             [
-                false, false, false, false, false, false, false, false, false, false, true, true,
-                false, false, false, false, true, false,
+                false, false, false, false, true, true, true, false, true, false, false, false,
+                true, false, true, false, false, false,
             ],
             [
-                false, false, true, true, false, false, false, true, false, true, true, false,
+                false, false, false, true, false, false, false, false, false, true, false, false,
+                false, false, false, false, true, true,
+            ],
+            [
+                true, true, false, true, false, false, true, true, false, true, false, true, false,
+                false, false, false, false, true,
+            ],
+            [
+                false, true, true, false, false, false, true, false, false, true, false, true,
+                true, true, false, false, false, false,
+            ],
+            [
+                true, false, false, true, true, false, false, false, false, false, true, true,
+                false, false, false, false, true, true,
+            ],
+            [
+                false, true, false, false, false, true, false, false, true, false, true, true,
+                true, true, false, true, true, false,
+            ],
+            [
+                true, true, false, false, false, true, false, false, true, true, false, false,
+                true, false, false, true, true, true,
+            ],
+            [
+                true, true, true, true, true, false, true, true, true, false, true, false, true,
+                false, true, false, false, false,
+            ],
+            [
+                false, false, true, false, true, true, false, true, false, false, false, false,
+                true, false, true, false, false, false,
+            ],
+            [
+                true, false, false, false, false, true, true, true, true, true, true, false, true,
+                true, false, false, true, false,
+            ],
+            [
+                false, true, true, false, false, false, false, true, true, false, false, true,
                 false, true, false, false, false, false,
-            ],
-            [
-                false, false, true, false, false, false, false, true, false, false, false, false,
-                true, false, true, false, true, false,
-            ],
-            [
-                false, false, true, true, true, false, false, false, false, false, false, true,
-                false, false, false, false, false, false,
-            ],
-            [
-                true, false, false, false, false, true, true, true, false, false, false, false,
-                false, true, false, false, true, false,
-            ],
-            [
-                false, false, false, true, false, false, false, false, false, false, false, false,
-                false, false, false, false, false, true,
-            ],
-            [
-                false, false, false, false, false, true, false, true, false, false, true, false,
-                true, true, true, false, false, false,
-            ],
-            [
-                false, false, false, false, false, true, true, false, true, false, true, false,
-                false, false, false, false, false, true,
-            ],
-            [
-                false, false, false, true, false, false, false, false, false, false, false, false,
-                false, false, false, false, false, false,
             ],
         ];
         let mut participants: Vec<Particle> = vec![];
@@ -166,7 +167,7 @@ impl SOPSEnvironment {
         let mut grid: [[bool; 18]; 18] = [[false; 18]; 18];
         let mut participants: Vec<Particle> = vec![];
         let grid_size = SOPSEnvironment::SIZE * SOPSEnvironment::SIZE;
-        let num_particles = ((grid_size as f32) * 0.3) as u64;
+        let num_particles = ((grid_size as f64) * SOPSEnvironment::par_density) as u64;
         //init grid and particles
         for _ in 0..num_particles {
             let i = SOPSEnvironment::rng().sample(&SOPSEnvironment::grid_rng());
@@ -191,7 +192,7 @@ impl SOPSEnvironment {
         println!("SOPS grid");
         for i in 0..self.grid.len() {
             for j in 0..self.grid[0].len() {
-                print!(" {} ", self.grid[i][j] as u8);
+                print!(" {} ", self.grid[i][j]);
             }
             println!("");
         }
@@ -240,7 +241,9 @@ impl SOPSEnvironment {
                 continue;
             }
             let move_prb = self.phenotype[n_cnt];
-            if (move_prb*1000.0) as u64 <= SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_move()) {
+            if SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_move())
+                <= (move_prb * 1000.0) as u64
+            {
                 let move_dir = SOPSEnvironment::directions()
                     [SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_dir())];
                 par_moves.push((par_idx, move_dir));
@@ -388,17 +391,40 @@ impl GeneticAlgo {
                 let g_fitness = genome_env.simulate();
                 fitness_t += g_fitness as f64;
             }
-            
-            genome.fitness = fitness_t/(trials as f64) as f64;
+
+            genome.fitness = fitness_t / (trials as f64) as f64;
         });
         //avg.fitness of old population
-        let fit_sum = self.population.iter().fold(0.0, |sum, genome| sum + genome.fitness);
-        println!("Avg. Fitness -> {}", fit_sum/(self.population.len() as f64));
+        let fit_sum = self
+            .population
+            .iter()
+            .fold(0.0, |sum, genome| sum + genome.fitness);
+        println!(
+            "Avg. Fitness -> {}",
+            fit_sum / (self.population.len() as f64)
+        );
+        let mut pop_dist: Vec<f64> = vec![];
+        for i in 0..self.population.len() {
+            for j in (i + 1)..self.population.len() {
+                let genome1 = self.population[i];
+                let genome2 = self.population[j];
+                let mut dis_sum = 0.0;
+                for idx in 0..genome1.string.len() {
+                    let dis = genome1.string[idx] - genome2.string[idx];
+                    dis_sum += dis.powf(2.0);
+                }
+                pop_dist.push(dis_sum.sqrt());
+            }
+        }
+        let pop_diversity: f64 = pop_dist.iter().sum();
+        println!(
+            "Population diversity -> {}",
+            pop_diversity / (pop_dist.len() as f64)
+        );
         //generate new population
         self.generate_new_pop();
         let best_genome = self.population[0];
         println!("Best Genome -> {best_genome:?}");
-        
     }
 
     fn run_through(&mut self) {
@@ -417,19 +443,20 @@ impl GeneticAlgo {
 }
 
 fn main() {
-    let mut ga_sops = GeneticAlgo::init_ga(20, 50, 3, 3, 0.09, 0.0, 0.05);
+    let mut ga_sops = GeneticAlgo::init_ga(20, 50, 3, 3, 0.07, 0.0, 0.05);
     ga_sops.run_through();
     // let genome = [
-    //     0.43891663953035165,
-    //     0.0511852895447056,
-    //     0.066717207875995,
-    //     0.0076990394455986,
-    //     0.0050028865846571,
-    //     0.0035062444127311,
+    //     0.879410923312898,
+    //     0.7072823455008604,
+    //     0.3758316160483933,
+    //     0.4947528743281018,
+    //     0.32321085020900764,
+    //     0.6018268442926183,
     // ];
-    // let mut sops_trial = SOPSEnvironment::static_init(&genome);
+    // let mut sops_trial = SOPSEnvironment::init_sops_env(&genome);
     // sops_trial.print_grid();
     // println!("{}", sops_trial.evaluate_fitness());
+    // println!("No. of Participants {}", sops_trial.participants.len());
     // let mut sops_trial_2 = SOPSEnvironment::static_init(&genome);
     // sops_trial_2.print_grid();
     // println!("{}", sops_trial_2.evaluate_fitness());
