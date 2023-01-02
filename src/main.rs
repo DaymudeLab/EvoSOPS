@@ -287,6 +287,10 @@ impl GeneticAlgo {
         Normal::new(self.mut_mu, self.mut_sd).unwrap()
     }
 
+    fn cross_pnt() -> Uniform<u16> {
+        Uniform::new_inclusive(0, 5)
+    }
+
     #[inline]
     pub fn init_ga(
         population_size: u16,
@@ -337,6 +341,20 @@ impl GeneticAlgo {
         new_genome
     }
 
+    fn generate_offspring(&self, parent1: &[f64; 6], parent2: &[f64; 6]) -> [f64; 6] {
+        let mut new_genome:[f64; 6] = [0.0; 6];
+        let cross_pnt = SOPSEnvironment::rng().sample(&GeneticAlgo::cross_pnt());
+        for i in 0..new_genome.len() {
+            if i as u16 <= cross_pnt {
+                new_genome[i] = parent1[i];
+            }
+            else {
+                new_genome[i] = parent2[i];
+            }
+        }
+        new_genome
+    }
+
     fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<Genome> = vec![];
         let mut selected_g: Vec<[f64; 6]> = vec![];
@@ -345,7 +363,7 @@ impl GeneticAlgo {
             genome_b.fitness.partial_cmp(&genome_a.fitness).unwrap()
         });
 
-        //selection
+        //bifercate genomes 
         for (index, genome) in self.population.iter().enumerate() {
             if index < self.elitist_cnt as usize {
                 //separate out the elitist and directly pass them to next gen
@@ -357,12 +375,15 @@ impl GeneticAlgo {
                 rank_wheel.push(index);
             }
         }
-        //perform selection
+        //perform selection and then single-point crossover
         let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
         for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
-            let wheel_idx = SOPSEnvironment::rng().sample(&rank_wheel_rng);
-            let genome_idx = rank_wheel[wheel_idx];
-            selected_g.push(self.population[genome_idx].string);
+            let mut wheel_idx = SOPSEnvironment::rng().sample(&rank_wheel_rng);
+            let p_genome_idx1 = rank_wheel[wheel_idx];
+            wheel_idx = SOPSEnvironment::rng().sample(&rank_wheel_rng);
+            let p_genome_idx2 = rank_wheel[wheel_idx];
+            selected_g.push(self.generate_offspring(&self.population[p_genome_idx1].string, &self.population[p_genome_idx2].string));
+            // selected_g.push(self.population[p_genome_idx1].string);
         }
         //perform mutation
         for idx in 0..selected_g.len() {
