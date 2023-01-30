@@ -299,7 +299,7 @@ impl SOPSEnvironment {
 impl GeneticAlgo {
     #[inline]
     fn genome_init_rng(granularity: u16) -> Uniform<u16> {
-        Uniform::new_inclusive(0, granularity)
+        Uniform::new_inclusive(1, granularity)
     }
 
     #[inline]
@@ -377,7 +377,7 @@ impl GeneticAlgo {
                 } else {
                     genome[i] - 1
                 })
-                .clamp(0, self.granularity);
+                .clamp(1, self.granularity);
                 // let scale = if per_dir { 0.1 } else { -0.1 };
                 // print!("{y:.5?} ",y=scale*genome[i]);
                 // new_genome[i] = (genome[i] + scale*genome[i]).clamp(0.0, 1.0);
@@ -611,7 +611,7 @@ fn main() {
 
     let print_redirect = Redirect::stdout(log).unwrap();
 
-    let mut ga_sops = GeneticAlgo::init_ga(20, 50, 3, 1, 0.07, 10, false);
+    let mut ga_sops = GeneticAlgo::init_ga(50, 200, 3, 1, 0.07, 10, false);
     ga_sops.run_through();
 
     /*
