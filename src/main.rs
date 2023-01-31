@@ -50,7 +50,7 @@ struct GeneticAlgo {
     mut_rate: f64,
     granularity: u16,
     genome_cache: HashMap<[u16; 6], f64>,
-    perform_cross: bool
+    perform_cross: bool,
 }
 
 impl SOPSEnvironment {
@@ -327,7 +327,7 @@ impl GeneticAlgo {
         elitist_cnt: u16,
         mut_rate: f64,
         granularity: u16,
-        perform_cross: bool
+        perform_cross: bool,
     ) -> Self {
         let mut starting_pop: Vec<Genome> = vec![];
 
@@ -358,7 +358,7 @@ impl GeneticAlgo {
             mut_rate,
             granularity,
             genome_cache,
-            perform_cross
+            perform_cross,
         }
     }
 
@@ -443,8 +443,7 @@ impl GeneticAlgo {
                     &self.population[p_genome_idx1].string,
                     &self.population[p_genome_idx2].string,
                 ));
-            }
-            else {
+            } else {
                 selected_g.push(self.population[p_genome_idx1].string); // added
             }
         }
@@ -482,28 +481,34 @@ impl GeneticAlgo {
         let trials = self.trial_cnt;
 
         // TODO: run each genome in a separate compute node
-        
+
         // TODO: use RefCell or lazy static to make the whole check and update into a single loop.
         let mut genome_fitnesses = vec![-1.0; self.population.len()];
-        
+
         // check if the cache has the genome's fitness calculated
-        self.population.iter().enumerate().for_each(|(idx, genome)| {
-            let genome_s = genome.string.clone();
-            match self.genome_cache.get(&genome_s) {
-                Some(fitness) => {
-                    genome_fitnesses.insert(idx, *fitness);
-                    return;
+        self.population
+            .iter()
+            .enumerate()
+            .for_each(|(idx, genome)| {
+                let genome_s = genome.string.clone();
+                match self.genome_cache.get(&genome_s) {
+                    Some(fitness) => {
+                        genome_fitnesses.insert(idx, *fitness);
+                        return;
+                    }
+                    None => return,
                 }
-                None => return,
-            }
-        });
-        
+            });
+
         // update the genome if the value exists in the cache
-        self.population.iter_mut().enumerate().for_each(|(idx, genome)| {
-            if genome_fitnesses[idx] > -1.0 {
-                genome.fitness = genome_fitnesses[idx];
-            }
-        });
+        self.population
+            .iter_mut()
+            .enumerate()
+            .for_each(|(idx, genome)| {
+                if genome_fitnesses[idx] > -1.0 {
+                    genome.fitness = genome_fitnesses[idx];
+                }
+            });
 
         self.population.par_iter_mut().for_each(|genome| {
             //bypass if genome has already fitness value calculated
@@ -512,18 +517,17 @@ impl GeneticAlgo {
                 return;
             }
 
-            let fitness_tot: f64 = (0..trials)
+            let fitness_trials = (0..trials)
                 .into_par_iter()
-                .fold(
-                    || 0_f64,
-                    |sum, _| {
-                        let mut genome_env = SOPSEnvironment::static_init(&genome_s);
-                        let g_fitness = genome_env.simulate();
-                        // let g_fitness = 1; // added
-                        sum + g_fitness as f64
-                    },
-                )
-                .sum();
+                .map(|_| {
+                    let mut genome_env = SOPSEnvironment::static_init(&genome_s);
+                    let g_fitness = genome_env.simulate();
+                    // let g_fitness = 1; // added
+                    g_fitness as f64
+                });
+            let mut sorted_fitness_eval: Vec<f64> = Vec::new();
+            fitness_trials.collect_into_vec(&mut sorted_fitness_eval);
+            sorted_fitness_eval.sort_by(|a, b| a.partial_cmp(b).unwrap());
             // let mut fitness_t = 0.0;
             // for _ in 0..trials {
             //     // let mut genome_env = SOPSEnvironment::static_init(&genome_s);
@@ -531,8 +535,10 @@ impl GeneticAlgo {
             //     let g_fitness: f64 = genome_s.iter().sum(); // added
             //     fitness_t += g_fitness;
             // }
-            let fitness_val = fitness_tot / (trials as f64) as f64;
-            genome.fitness = fitness_val;
+            // let fitness_val = fitness_tot / (trials as f64) as f64;
+            // println!("Trials: {y:?}",y = sorted_fitness_eval);
+            // println!("Mid: {y}",y=((trials / 2) as usize));
+            genome.fitness = sorted_fitness_eval[((trials / 2) as usize)];
         });
 
         // populate the cache
@@ -578,6 +584,12 @@ impl GeneticAlgo {
         // let utc: DateTime<Utc> = Utc::now();
         // let file_path = format!("{ROOT_PATH}exp_{dt}",dt = utc.format("%d_%m_%Y_%H:%M"));
         // let mut file = File::create(file_path)?;
+        println!("Max Gen:{y}", y = self.max_gen);
+        println!("Trial Count:{y}", y = self.trial_cnt);
+        println!("mutation Rate:{y}", y = self.mut_rate);
+        println!("Granularity:{y}", y = self.granularity);
+        println!("Crossover ?:{y}", y = self.perform_cross);
+        println!("Population Size:{y}", y = self.population.len());
         for gen in 0..self.max_gen {
             println!("Starting Gen:{}", gen);
             let now = Instant::now();
@@ -611,7 +623,7 @@ fn main() {
 
     let print_redirect = Redirect::stdout(log).unwrap();
 
-    let mut ga_sops = GeneticAlgo::init_ga(50, 200, 3, 1, 0.07, 10, false);
+    let mut ga_sops = GeneticAlgo::init_ga(20, 50, 3, 0, 0.15, 10, false);
     ga_sops.run_through();
 
     /*

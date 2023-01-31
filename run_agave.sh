@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -N 1  # number of nodes
-#SBATCH -n 28  # number of "tasks" (default: allocates 1 core per task)
+#SBATCH -n 24  # number of "tasks" (default: allocates 1 core per task)
 #SBATCH -t 0-06:00:00   # time in d-hh:mm:ss 
 #SBATCH -q normal       # QOS
 #SBATCH -o slurm.%j.out # file to save job's STDOUT (%j = JobId)
