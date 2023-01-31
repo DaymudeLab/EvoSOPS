@@ -6,4 +6,7 @@ This is a research project in Swarm robotics using Genetic algorithm as the back
 To install latest rust compiler run command:<br>
 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`<br>
 Then to compile and run the simulation run command:<br>
-`cargo run`
+`cargo run`<br><br>
+##### TODO
+- [ ] Split the code into modules
+- [ ] define directory structure for future changes
