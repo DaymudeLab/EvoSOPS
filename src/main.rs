@@ -511,34 +511,39 @@ impl GeneticAlgo {
             });
 
         self.population.par_iter_mut().for_each(|genome| {
-            //bypass if genome has already fitness value calculated
+            // bypass if genome has already fitness value calculated
             let genome_s = genome.string.clone();
             if gen > 0 && genome.fitness > 0.0 {
                 return;
             }
 
-            let fitness_trials = (0..trials)
+            // A specific size calculate the fitness for 'n' number of trials
+            let fitness_tot: f64 = (0..trials)
                 .into_par_iter()
                 .map(|_| {
                     let mut genome_env = SOPSEnvironment::static_init(&genome_s);
                     let g_fitness = genome_env.simulate();
+                    // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
+                    let particle_cnt = genome_env.participants.len();
                     // let g_fitness = 1; // added
-                    g_fitness as f64
-                });
-            let mut sorted_fitness_eval: Vec<f64> = Vec::new();
-            fitness_trials.collect_into_vec(&mut sorted_fitness_eval);
-            sorted_fitness_eval.sort_by(|a, b| a.partial_cmp(b).unwrap());
-            // let mut fitness_t = 0.0;
+                    g_fitness as f64 / (particle_cnt as f64)
+                }).sum();
+            // Choose the median of the returned values
+            // let mut sorted_fitness_eval: Vec<f64> = Vec::new();
+            // fitness_trials.collect_into_vec(&mut sorted_fitness_eval);
+            // sorted_fitness_eval.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            // 
             // for _ in 0..trials {
             //     // let mut genome_env = SOPSEnvironment::static_init(&genome_s);
             //     // let g_fitness = genome_env.simulate();
             //     let g_fitness: f64 = genome_s.iter().sum(); // added
             //     fitness_t += g_fitness;
             // }
-            // let fitness_val = fitness_tot / (trials as f64) as f64;
+            let fitness_val = fitness_tot / (trials as f64) as f64;
             // println!("Trials: {y:?}",y = sorted_fitness_eval);
             // println!("Mid: {y}",y=((trials / 2) as usize));
-            genome.fitness = sorted_fitness_eval[((trials / 2) as usize)];
+            // genome.fitness = sorted_fitness_eval[((trials / 2) as usize)];
+            genome.fitness = fitness_val;
         });
 
         // populate the cache
@@ -623,7 +628,7 @@ fn main() {
 
     let print_redirect = Redirect::stdout(log).unwrap();
 
-    let mut ga_sops = GeneticAlgo::init_ga(20, 50, 3, 0, 0.15, 10, false);
+    let mut ga_sops = GeneticAlgo::init_ga(50, 200, 5, 0, 0.16, 20, false);
     ga_sops.run_through();
 
     /*
