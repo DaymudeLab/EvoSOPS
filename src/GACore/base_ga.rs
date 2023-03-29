@@ -260,7 +260,7 @@ impl GeneticAlgo {
                 .into_par_iter()
                 .map(|trial| {
                     let mut genome_env = SOPSEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into());
-                    let g_fitness = genome_env.simulate();
+                    let g_fitness = genome_env.simulate(false);
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
                     // let g_fitness = 1; // added

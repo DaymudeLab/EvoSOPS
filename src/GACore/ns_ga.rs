@@ -12,3 +12,7 @@ pub struct  NSGA {
     sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>
 }
+
+impl NSGA {
+    
+}

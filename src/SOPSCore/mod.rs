@@ -317,12 +317,17 @@ impl SOPSEnvironment {
         edges / 2
     }
 
-    pub fn simulate(&mut self) -> u32 {
-        for _ in 0..self.sim_duration {
+    pub fn simulate(&mut self, take_snaps: bool) -> u32 {
+        for step in 0..self.sim_duration {
             // let now = Instant::now();
             self.move_particles((self.participants.len() as f32 * 0.03) as usize);
             // let elapsed = now.elapsed().as_micros();
             // println!("Step Elapsed Time: {:.2?}", elapsed);
+            if take_snaps && (step == (self.participants.len() as u64) || step == (self.participants.len() as u64).pow(2)) {
+                self.print_grid();
+                println!("Edge Count: {}", self.evaluate_fitness());
+                println!("Fitness: {}", self.evaluate_fitness() as f32/ self.get_max_edge_cnt() as f32);
+            }
         }
         let fitness = self.evaluate_fitness();
         self.fitness_val = fitness as f64;
