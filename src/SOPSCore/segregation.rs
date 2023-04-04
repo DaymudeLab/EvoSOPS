@@ -9,14 +9,14 @@ use std::usize;
 pub struct SOPSegEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [[u16; 6]; 7],
+    phenotype: [[f32; 6]; 7],
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
     max_fitness: u64,
     arena_layers: u16,
     particle_layers: u16,
-    phenotype_sum: u16
+    phenotype_sum: f32
 }
 
 
@@ -66,7 +66,7 @@ impl SOPSegEnvironment {
     }
 
     // Use a Random Seed value to get the same random init config
-    pub fn init_sops_env(genome: &[[u16; 6]; 7], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
+    pub fn init_sops_env(genome: &[[f32; 6]; 7], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
@@ -116,7 +116,7 @@ impl SOPSegEnvironment {
             max_fitness: agg_edge_cnt + 3*(agg_clr_edge_cnt),
             arena_layers,
             particle_layers,
-            phenotype_sum: genome.iter().map(|x| -> u16 { x.iter().sum() }).sum()
+            phenotype_sum: genome.iter().map(|x| -> f32 { x.iter().sum() }).sum()
         }
     }
 
@@ -130,22 +130,26 @@ impl SOPSegEnvironment {
         }
     }
 
-    fn get_neighbors_cnt(&self, i: u8, j: u8) -> (u8, u8) {
+    fn get_neighbors_cnt(&self, i: u8, j: u8, n_clr: u8) -> (u8, u8, u8) {
         let mut cnt = 0;
         let mut same_clr_cnt = 0;
+        let mut n_clr_cnt = 0;
         for idx in 0..6 {
             let new_i = (i as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
             let new_j = (j as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
             if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
-                if self.grid[new_i][new_j] != 0 && self.grid[new_i][new_j] != 4 {
+                if self.grid[new_i][new_j] != 4 {
                     cnt += 1;
                     if self.grid[new_i][new_j] == self.grid[i as usize][j as usize] {
                         same_clr_cnt += 1;
+                    } else if self.grid[new_i][new_j] == n_clr {
+                        n_clr_cnt += 1;
                     }
                 }
             }
         }
-        (cnt, same_clr_cnt)
+        // TODO: reduce neighbor color count by 1 since we don't want to consider the neighbor itself
+        (cnt, same_clr_cnt, n_clr_cnt)
     }
 
     fn move_particle_to(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
@@ -189,6 +193,7 @@ impl SOPSegEnvironment {
 
     fn move_particles(&mut self, cnt: usize) {
         let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
+        /*
         for _ in 0..cnt {
             let par_idx = SOPSegEnvironment::rng().sample(&self.unfrm_par());
             let particle: &Particle = &self.participants[par_idx];
@@ -211,6 +216,38 @@ impl SOPSegEnvironment {
                     par_moves.push((par_idx, move_dir));
                 }
             }
+        }
+         */
+
+         for _ in 0..cnt {
+            let par_idx = SOPSegEnvironment::rng().sample(&self.unfrm_par());
+            let particle: &Particle = &self.participants[par_idx];
+            let move_dir = SOPSegEnvironment::directions()
+                        [SOPSegEnvironment::rng().sample(&SOPSegEnvironment::unfrm_dir())];
+            let new_i = (particle.x as i32 + move_dir.0) as usize;
+            let new_j = (particle.y as i32 + move_dir.1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if self.grid[new_i][new_j] == 4 || self.grid[new_i][new_j] == self.grid[particle.x as usize][particle.y as usize] {
+                continue;
+            }
+            let (egde_cnt, clr_edge_cnt, n_clr_cnt) = self.get_neighbors_cnt(particle.x, particle.y, self.grid[new_i][new_j]);
+            if clr_edge_cnt < 6 {
+                let move_prb: f64 =
+                self.phenotype[n_clr_cnt as usize][clr_edge_cnt as usize].into();
+                // if SOPSegEnvironment::move_nrng().generate_range(1_u64..=1000)
+                //     <= (move_prb * 1000.0) as u64
+                // {
+                //     let move_dir = SOPSegEnvironment::directions()
+                //         [SOPSegEnvironment::move_nrng().generate_range(1..6)];
+                //     par_moves.push((par_idx, move_dir));
+                // }
+                if SOPSegEnvironment::move_frng().u64(1_u64..=10000)
+                    <= (move_prb * 10000.0) as u64
+                {
+                    par_moves.push((par_idx, move_dir));
+                }
+            }
+        }
         }
 
         // Parallel execution
@@ -250,11 +287,11 @@ impl SOPSegEnvironment {
     pub fn evaluate_fitness(&self) -> u32 {
         let mut clr_edges = [0_u32; 3];
         let edges = self.participants.iter().fold(0, |sum: u32, particle| {
-            let neigbor_edges = self.get_neighbors_cnt(particle.x, particle.y);
+            let neigbor_edges = self.get_neighbors_cnt(particle.x, particle.y, 0);
             clr_edges[(particle.color-1) as usize] += neigbor_edges.1 as u32;
             sum + neigbor_edges.0 as u32
         });
-        (edges + clr_edges.iter().sum::<u32>()) / 2
+        (clr_edges.iter().sum::<u32>()) / 2
     }
 
     pub fn simulate(&mut self, take_snaps: bool) -> u32 {
