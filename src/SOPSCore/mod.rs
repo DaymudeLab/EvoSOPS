@@ -1,3 +1,4 @@
+pub mod segregation;
 use rand::SeedableRng;
 use rand::{distributions::Bernoulli, distributions::Open01, distributions::Uniform, rngs, Rng};
 use nanorand::{Rng as NanoRng, WyRand};
@@ -5,6 +6,7 @@ use std::usize;
 struct Particle {
     x: u8,
     y: u8,
+    color: u8
 }
 
 pub struct SOPSEnvironment {
@@ -14,9 +16,10 @@ pub struct SOPSEnvironment {
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
-    max_edge_cnt: u64,
+    max_fitness: u64,
     arena_layers: u16,
-    particle_layers: u16
+    particle_layers: u16,
+    phenotype_sum: u16
 }
 
 
@@ -160,7 +163,7 @@ impl SOPSEnvironment {
     }
     */
     // No need for static init with Seeded Random Generator
-    // Use a Random Seed value to get the previous random init behaviour
+    // Use a Random Seed value to get the same random init config
     pub fn init_sops_env(genome: &[u16; 6], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
@@ -187,6 +190,7 @@ impl SOPSEnvironment {
                 participants.push(Particle {
                     x: i as u8,
                     y: j as u8,
+                    color: 0
                 });
                 grid[i][j] = 1;
             }
@@ -200,9 +204,10 @@ impl SOPSEnvironment {
             sim_duration: (num_particles as u64).pow(3),
             fitness_val: 0.0,
             size: grid_size,
-            max_edge_cnt: agg_edge_cnt,
+            max_fitness: agg_edge_cnt,
             arena_layers,
-            particle_layers
+            particle_layers,
+            phenotype_sum: genome.iter().sum()
         }
     }
 
@@ -259,7 +264,7 @@ impl SOPSEnvironment {
                 continue;
             }
             let move_prb: f64 =
-                self.phenotype[n_cnt] as f64 / (self.phenotype.iter().sum::<u16>() as f64);
+                self.phenotype[n_cnt] as f64 / (self.phenotype_sum as f64);
             // if SOPSEnvironment::move_nrng().generate_range(1_u64..=1000)
             //     <= (move_prb * 1000.0) as u64
             // {
@@ -326,7 +331,7 @@ impl SOPSEnvironment {
             if take_snaps && (step == (self.participants.len() as u64) || step == (self.participants.len() as u64).pow(2)) {
                 self.print_grid();
                 println!("Edge Count: {}", self.evaluate_fitness());
-                println!("Fitness: {}", self.evaluate_fitness() as f32/ self.get_max_edge_cnt() as f32);
+                println!("Fitness: {}", self.evaluate_fitness() as f32/ self.get_max_fitness() as f32);
             }
         }
         let fitness = self.evaluate_fitness();
@@ -334,8 +339,8 @@ impl SOPSEnvironment {
         fitness
     }
 
-    pub fn get_max_edge_cnt(&self) -> u64 {
-        self.max_edge_cnt
+    pub fn get_max_fitness(&self) -> u64 {
+        self.max_fitness
     }
 
     pub fn get_participant_cnt(&self) -> usize {

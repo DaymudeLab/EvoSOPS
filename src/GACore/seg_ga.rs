@@ -1,6 +1,6 @@
-use crate::SOPSCore::SOPSEnvironment;
+use crate::SOPSCore::segregation::SOPSegEnvironment;
 
-use super::Genome;
+use super::SegGenome;
 use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -8,19 +8,19 @@ use std::convert::TryInto;
 use std::time::Instant;
 use std::usize;
 
-pub struct GeneticAlgo {
+pub struct SegGA {
     max_gen: u16,
     elitist_cnt: u16,
-    population: Vec<Genome>,
+    population: Vec<SegGenome>,
     mut_rate: f64,
     granularity: u16,
-    genome_cache: HashMap<[u16; 6], f64>,
+    genome_cache: HashMap<[[u16; 6]; 7], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>
 }
 
-impl GeneticAlgo {
+impl SegGA {
     #[inline]
     fn rng() -> rngs::ThreadRng {
         rand::thread_rng()
@@ -41,7 +41,7 @@ impl GeneticAlgo {
     // }
 
     fn cross_pnt() -> Uniform<u16> {
-        Uniform::new_inclusive(0, 5)
+        Uniform::new_inclusive(0, 27)
     }
 
     fn mut_sign() -> Bernoulli {
@@ -59,26 +59,28 @@ impl GeneticAlgo {
         sizes: Vec<(u16, u16)>,
         trial_seeds: Vec<u64>
     ) -> Self {
-        let mut starting_pop: Vec<Genome> = vec![];
+        let mut starting_pop: Vec<SegGenome> = vec![];
 
         for _ in 0..population_size {
             //init genome
-            let genome: [u16; 6] = TryInto::try_into(
-                (0..6)
-                    .map(|_| GeneticAlgo::rng().sample(GeneticAlgo::genome_init_rng(granularity)))
-                    .collect::<Vec<u16>>()
-            )
-            .unwrap();
-            starting_pop.push(Genome {
+            let mut genome: [[u16; 6]; 7] = [[0; 6]; 7];
+            for i in 0_u8..7 {
+                for j in 0_u8..6 {
+                    if j <= i {
+                        genome[i as usize][j as usize] = SegGA::rng().sample(SegGA::genome_init_rng(granularity))
+                    }
+                }
+            }
+            starting_pop.push(SegGenome {
                 string: (genome),
                 fitness: (0.0),
             });
         }
 
         // let mut genome_cache: RefCell<HashMap<[u16; 6], f64>> = RefCell::new(HashMap::new());
-        let genome_cache: HashMap<[u16; 6], f64> = HashMap::new();
+        let genome_cache: HashMap<[[u16; 6]; 7], f64> = HashMap::new();
 
-        GeneticAlgo {
+        SegGA {
             max_gen,
             elitist_cnt,
             population: starting_pop,
@@ -91,48 +93,58 @@ impl GeneticAlgo {
         }
     }
 
-    fn mutate_genome(&self, genome: &[u16; 6]) -> [u16; 6] {
+    fn mutate_genome(&self, genome: &[[u16; 6]; 7]) -> [[u16; 6]; 7] {
         let mut new_genome = genome.clone();
         //mutate genome
-        for i in 0..genome.len() {
-            let smpl = GeneticAlgo::rng().sample(&GeneticAlgo::unfrm_100());
-            if smpl as f64 <= self.mut_rate * 100.0 {
-                // let perturb = SOPSEnvironment::rng().sample(self.mut_val());
-                let per_dir = GeneticAlgo::rng().sample(&GeneticAlgo::mut_sign());
-                new_genome[i] = (if per_dir {
-                    genome[i] + 1
-                } else if genome[i] == 0 {
-                    0
-                } else {
-                    genome[i] - 1
-                })
-                .clamp(1, self.granularity);
-                // let scale = if per_dir { 0.1 } else { -0.1 };
-                // print!("{y:.5?} ",y=scale*genome[i]);
-                // new_genome[i] = (genome[i] + scale*genome[i]).clamp(0.0, 1.0);
+        for i in 0..7 {
+            for j in 0..6 {
+                if j <= i {
+                    let smpl = SegGA::rng().sample(&SegGA::unfrm_100());
+                    if smpl as f64 <= self.mut_rate * 100.0 {
+                        // let perturb = SOPSEnvironment::rng().sample(self.mut_val());
+                        let per_dir = SegGA::rng().sample(&SegGA::mut_sign());
+                        new_genome[i][j] = (if per_dir {
+                            genome[i][j] + 1
+                        } else if genome[i][j] == 0 {
+                            0
+                        } else {
+                            genome[i][j] - 1
+                        })
+                        .clamp(1, self.granularity);
+                        // let scale = if per_dir { 0.1 } else { -0.1 };
+                        // print!("{y:.5?} ",y=scale*genome[i]);
+                        // new_genome[i] = (genome[i] + scale*genome[i]).clamp(0.0, 1.0);
+                    }
+                    // print!("\t");
+                }
             }
-            // print!("\t");
         }
         // println!("");
         new_genome
     }
 
-    fn generate_offspring(&self, parent1: &[u16; 6], parent2: &[u16; 6]) -> [u16; 6] {
-        let mut new_genome: [u16; 6] = [0; 6];
-        let cross_pnt = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
-        for i in 0..new_genome.len() {
-            if i as u16 <= cross_pnt {
-                new_genome[i] = parent1[i];
-            } else {
-                new_genome[i] = parent2[i];
+    fn generate_offspring(&self, parent1: &[[u16; 6]; 7], parent2: &[[u16; 6]; 7]) -> [[u16; 6]; 7] {
+        let mut new_genome: [[u16; 6]; 7] = [[0; 6]; 7];
+        let cross_pnt = SegGA::rng().sample(&SegGA::cross_pnt());
+        let mut cnt = 0;
+        for i in 0..7 {
+            for j in 0..6 {
+                if j <= i {
+                    if cnt < cross_pnt {
+                        new_genome[i][j] = parent1[i][j];
+                    } else {
+                        new_genome[i][j] = parent2[i][j];
+                    }
+                    cnt += 1; 
+                }
             }
         }
         new_genome
     }
 
     fn generate_new_pop(&mut self) {
-        let mut new_pop: Vec<Genome> = vec![];
-        let mut selected_g: Vec<[u16; 6]> = vec![];
+        let mut new_pop: Vec<SegGenome> = vec![];
+        let mut selected_g: Vec<[[u16; 6]; 7]> = vec![];
         let mut rank_wheel: Vec<usize> = vec![];
         //sort the genomes in population by fitness value
         self.population.sort_unstable_by(|genome_a, genome_b| {
@@ -141,7 +153,7 @@ impl GeneticAlgo {
         // /*
         //print genomes for analysis
         let best_genome = self.population[0];
-        println!("Best Genome -> {best_genome:.5?}");
+        println!("Best SegGenome -> {best_genome:.5?}");
 
         for idx in 1..self.population.len() {
             println!("{y:.5?}", y = self.population[idx]);
@@ -163,10 +175,10 @@ impl GeneticAlgo {
         //perform selection and then (if perform_cross flag is set) single-point crossover
         let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
         for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
-            let mut wheel_idx = GeneticAlgo::rng().sample(&rank_wheel_rng);
+            let mut wheel_idx = SegGA::rng().sample(&rank_wheel_rng);
             let p_genome_idx1 = rank_wheel[wheel_idx];
             if self.perform_cross {
-                wheel_idx = GeneticAlgo::rng().sample(&rank_wheel_rng);
+                wheel_idx = SegGA::rng().sample(&rank_wheel_rng);
                 let p_genome_idx2 = rank_wheel[wheel_idx];
                 selected_g.push(self.generate_offspring(
                     &self.population[p_genome_idx1].string,
@@ -195,9 +207,9 @@ impl GeneticAlgo {
         //perform mutation
         for idx in 0..selected_g.len() {
             let genome = selected_g[idx];
-            // println!("Genome:{} mutations", idx);
+            // println!("SegGenome:{} mutations", idx);
             let mutated_g = self.mutate_genome(&genome);
-            new_pop.push(Genome {
+            new_pop.push(SegGenome {
                 string: mutated_g,
                 fitness: 0.0,
             });
@@ -259,7 +271,7 @@ impl GeneticAlgo {
             let fitness_tot: f64 = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
-                    let mut genome_env = SOPSEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into());
+                    let mut genome_env = SOPSegEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into());
                     let g_fitness = genome_env.simulate(false);
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
@@ -307,14 +319,18 @@ impl GeneticAlgo {
             for j in (i + 1)..self.population.len() {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
-                let genome1_sum = genome1.string.iter().sum::<u16>() as f64;
-                let genome2_sum = genome2.string.iter().sum::<u16>() as f64;
+                let genome1_sum = genome1.string.iter().map(|x| -> u16 { x.iter().sum() }).sum::<u16>() as f64;
+                let genome2_sum = genome2.string.iter().map(|x| -> u16 { x.iter().sum() }).sum::<u16>() as f64;
                 let mut dis_sum: f64 = 0.0;
-                for idx in 0..genome1.string.len() {
-                    let genome1_prob = genome1.string[idx] as f64 / genome1_sum;
-                    let genome2_prob = genome2.string[idx] as f64 / genome2_sum;
-                    let dis = (genome1_prob - genome2_prob).abs();
-                    dis_sum += dis.powf(2.0);
+                for i in 0..7 {
+                    for j in 0..6 {
+                        if j <= i {
+                            let genome1_prob = genome1.string[i][j] as f64 / genome1_sum;
+                            let genome2_prob = genome2.string[i][j] as f64 / genome2_sum;
+                            let dis = (genome1_prob - genome2_prob).abs();
+                            dis_sum += dis.powf(2.0);
+                        }
+                    }
                 }
                 // pop_dist.push(dis_sum.sqrt());
                 pop_dist.push(dis_sum);
