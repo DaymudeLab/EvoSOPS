@@ -1,6 +1,6 @@
 pub mod base_ga;
 pub mod ns_ga;
-// pub mod seg_ga;
+pub mod seg_ga;
 
 #[derive(Debug, Copy, Clone)]
 struct Genome {
@@ -10,6 +10,6 @@ struct Genome {
 
 #[derive(Debug, Copy, Clone)]
 struct SegGenome {
-    string: [[u16; 6]; 7],
+    string: [[[u16; 6]; 7]; 7],
     fitness: f64,
 }

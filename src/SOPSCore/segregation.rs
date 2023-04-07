@@ -9,14 +9,14 @@ use std::usize;
 pub struct SOPSegEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [[[f32; 6]; 7];7],
+    phenotype: [[[u16; 6]; 7];7],
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
     max_fitness: u64,
     arena_layers: u16,
     particle_layers: u16,
-    phenotype_sum: f32
+    phenotype_sum: u16
 }
 
 
@@ -66,7 +66,7 @@ impl SOPSegEnvironment {
     }
 
     // Use a Random Seed value to get the same random init config
-    pub fn init_sops_env(genome: &[[[f32; 6]; 7];7], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
+    pub fn init_sops_env(genome: &[[[u16; 6]; 7]; 7], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
@@ -110,14 +110,13 @@ impl SOPSegEnvironment {
             grid,
             participants,
             phenotype: *genome,
-            sim_duration: (num_particles as u64).pow(3)*6,
+            sim_duration: (num_particles as u64).pow(3)*3,
             fitness_val: 0.0,
             size: grid_size,
             max_fitness: agg_edge_cnt + 3*(agg_clr_edge_cnt),
             arena_layers,
             particle_layers,
-            // phenotype_sum: genome.iter().map(|x| -> f32 { x.iter().sum() }).sum()
-            phenotype_sum: 10.0,
+            phenotype_sum: genome.iter().map(|y| -> u16 { y.iter().map(|x| -> u16 { x.iter().sum() }).sum() }).sum()
         }
     }
 
@@ -149,7 +148,7 @@ impl SOPSegEnvironment {
                 }
             }
         }
-        // TODO: reduce neighbor color count by 1 since we don't want to consider the neighbor itself
+        // NOT_NEEDED: reduce neighbor color count by 1 since we don't want to consider the neighbor itself
         (cnt, same_clr_cnt, n_clr_cnt)
     }
 
@@ -194,31 +193,6 @@ impl SOPSegEnvironment {
 
     fn move_particles(&mut self, cnt: usize) {
         let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
-        /*
-        for _ in 0..cnt {
-            let par_idx = SOPSegEnvironment::rng().sample(&self.unfrm_par());
-            let particle: &Particle = &self.participants[par_idx];
-            let (egde_cnt, clr_edge_cnt) = self.get_neighbors_cnt(particle.x, particle.y);
-            if clr_edge_cnt < 6 {
-                let move_prb: f64 =
-                self.phenotype[egde_cnt as usize][clr_edge_cnt as usize] as f64 / (self.phenotype_sum as f64);
-                // if SOPSegEnvironment::move_nrng().generate_range(1_u64..=1000)
-                //     <= (move_prb * 1000.0) as u64
-                // {
-                //     let move_dir = SOPSegEnvironment::directions()
-                //         [SOPSegEnvironment::move_nrng().generate_range(1..6)];
-                //     par_moves.push((par_idx, move_dir));
-                // }
-                if SOPSegEnvironment::move_frng().u64(1_u64..=1000)
-                    <= (move_prb * 1000.0) as u64
-                {
-                    let move_dir = SOPSegEnvironment::directions()
-                        [SOPSegEnvironment::rng().sample(&SOPSegEnvironment::unfrm_dir())];
-                    par_moves.push((par_idx, move_dir));
-                }
-            }
-        }
-         */
 
          for _ in 0..cnt {
             let par_idx = SOPSegEnvironment::rng().sample(&self.unfrm_par());
@@ -234,7 +208,7 @@ impl SOPSegEnvironment {
             let (egde_cnt, clr_edge_cnt, n_clr_cnt) = self.get_neighbors_cnt(particle.x, particle.y, self.grid[new_i][new_j]);
             if clr_edge_cnt < 6 {
                 let move_prb: f64 =
-                self.phenotype[egde_cnt as usize][n_clr_cnt as usize][clr_edge_cnt as usize].into();
+                self.phenotype[egde_cnt as usize][n_clr_cnt as usize][clr_edge_cnt as usize] as f64 / (self.phenotype_sum as f64);
                 // if SOPSegEnvironment::move_nrng().generate_range(1_u64..=1000)
                 //     <= (move_prb * 1000.0) as u64
                 // {
