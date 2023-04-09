@@ -110,7 +110,7 @@ impl SOPSegEnvironment {
             grid,
             participants,
             phenotype: *genome,
-            sim_duration: (num_particles as u64).pow(3)*3,
+            sim_duration: (num_particles as u64).pow(3),
             fitness_val: 0.0,
             size: grid_size,
             max_fitness: agg_edge_cnt + 3*(agg_clr_edge_cnt),
@@ -259,30 +259,30 @@ impl SOPSegEnvironment {
         }
     }
 
-    pub fn evaluate_fitness(&self) -> u32 {
+    pub fn evaluate_fitness(&self) -> f32 {
         let mut clr_edges = [0_u32; 3];
         let edges = self.participants.iter().fold(0, |sum: u32, particle| {
             let neigbor_edges = self.get_neighbors_cnt(particle.x, particle.y, 0);
             clr_edges[(particle.color-1) as usize] += neigbor_edges.1 as u32;
             sum + neigbor_edges.0 as u32
         });
-        (edges + clr_edges.iter().sum::<u32>()) / 2
+        ((edges as f32) + (clr_edges.iter().sum::<u32>() as f32)) / 2.0
     }
 
-    pub fn simulate(&mut self, take_snaps: bool) -> u32 {
+    pub fn simulate(&mut self, take_snaps: bool) -> f32 {
         for step in 0..self.sim_duration {
             // let now = Instant::now();
-            self.move_particles((self.participants.len() as f32 * 0.03) as usize);
+            self.move_particles(1 as usize);
             // let elapsed = now.elapsed().as_micros();
             // println!("Step Elapsed Time: {:.2?}", elapsed);
             if take_snaps && (step == (self.participants.len() as u64) || step == (self.participants.len() as u64).pow(2) || step == (self.participants.len() as u64).pow(3) || step == (self.participants.len() as u64).pow(3)*2|| step == (self.participants.len() as u64).pow(3)*3|| step == (self.participants.len() as u64).pow(3)*4|| step == (self.participants.len() as u64).pow(3)*5) {
                 self.print_grid();
                 println!("Step {}", step);
-                println!("No. of Participants {:?}", self.get_participant_cnt());
-                let particles_cnt = self.get_participant_cnt();
-                if particles_cnt.iter().any(|&x| x != (self.participants.len() as u8/3)) {
-                    panic!("Something is wrong");
-                }
+                // println!("No. of Participants {:?}", self.get_participant_cnt());
+                // let particles_cnt = self.get_participant_cnt();
+                // if particles_cnt.iter().any(|&x| x != (self.participants.len() as u16/3)) {
+                //     panic!("Something is wrong");
+                // }
                 println!("Edge Count: {}", self.evaluate_fitness());
                 println!("Fitness: {}", self.evaluate_fitness() as f32/ self.get_max_fitness() as f32);
             }
@@ -296,8 +296,8 @@ impl SOPSegEnvironment {
         self.max_fitness
     }
 
-    pub fn get_participant_cnt(&self) -> [u8; 3] {
-        let mut clr_particles = [0_u8; 3];
+    pub fn get_participant_cnt(&self) -> [u16; 3] {
+        let mut clr_particles = [0_u16; 3];
         for i in 0..self.grid.len() {
             for j in 0..self.grid[0].len() {
                 if self.grid[i][j] != 0 && self.grid[i][j] != 4 {

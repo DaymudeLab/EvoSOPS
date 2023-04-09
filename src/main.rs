@@ -27,7 +27,7 @@ use std::usize;
 
 fn get_temp_filepath(trial_seed: u64) -> String {
     #[cfg(unix)]
-    return "./output/trial_full_".to_string() + &trial_seed.to_string() + &".log".to_string();
+    return "./output/trial_large_nw_eval_".to_string() + &trial_seed.to_string() + &".log".to_string();
 }
 // static mut genome_cache: Option<HashMap<[u16; 6], f64>> = None;
 
@@ -48,8 +48,8 @@ fn main() {
     let print_redirect = Redirect::stdout(log).unwrap();
     //size = [(6,4),(10,7),(13,9),(20,14),(27,19)]
     //seeds = [31728, 26812, 73921, 92031, 84621]
-    let mut ga_sops = SegGA::init_ga(2, 2, 1, 0.12, 20, true, [(6,4),(10,7),(13,9)].to_vec(), [31728, 26812, 73921].to_vec());
-    ga_sops.run_through();
+    // let mut ga_sops = SegGA::init_ga(50, 100, 1, 0.12, 20, true, [(10,7)].to_vec(), [31728, 26812, 73921].to_vec());
+    // ga_sops.run_through();
 
     // /*
     // Block for running single experiments
@@ -144,16 +144,16 @@ fn main() {
 //  [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], 
 //  [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]]];
 //     println!("{:?}", genome);
+    
     // best genome -> 0.56849
-
-    // let genome = 
-    // [[[19, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-    // [[18, 18, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[11, 18, 2, 0, 0, 0], [6, 5, 0, 0, 0, 0], [5, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[9, 1, 1, 7, 0, 0], [3, 5, 13, 0, 0, 0], [9, 6, 0, 0, 0, 0], [17, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0,0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 2, 0], [6, 9, 5, 9, 0, 0], [9, 2, 6, 0, 0, 0], [13, 15, 0, 0, 0, 0], [16, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-    // [[2, 1, 1, 1, 1, 4], [1, 4, 6, 2, 3, 0], [2, 14, 4, 3, 0, 0], [10, 10, 11, 0, 0, 0], [13, 10, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 11, 1, 15, 1, 4], [1, 1, 11, 12, 17,9], [4, 15, 5, 1, 20, 0], [2, 1, 3, 15, 0, 0], [10, 16, 13, 0, 0, 0], [15, 20, 0, 0, 0, 0], [19, 0, 0, 0, 0, 0]]];
+    let genome = 
+    [[[19, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
+    [[18, 18, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    [[11, 18, 2, 0, 0, 0], [6, 5, 0, 0, 0, 0], [5, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    [[9, 1, 1, 7, 0, 0], [3, 5, 13, 0, 0, 0], [9, 6, 0, 0, 0, 0], [17, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0,0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    [[1, 1, 1, 1, 2, 0], [6, 9, 5, 9, 0, 0], [9, 2, 6, 0, 0, 0], [13, 15, 0, 0, 0, 0], [16, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
+    [[2, 1, 1, 1, 1, 4], [1, 4, 6, 2, 3, 0], [2, 14, 4, 3, 0, 0], [10, 10, 11, 0, 0, 0], [13, 10, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    [[1, 11, 1, 15, 1, 4], [1, 1, 11, 12, 17,9], [4, 15, 5, 1, 20, 0], [2, 1, 3, 15, 0, 0], [10, 16, 13, 0, 0, 0], [15, 20, 0, 0, 0, 0], [19, 0, 0, 0, 0, 0]]];
     // // 2nd best genome -> 0.56469
     // let genome = 
     // [[[20, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
@@ -190,24 +190,36 @@ fn main() {
     // [[1, 1, 1, 1, 1, 0], [7, 11, 5, 1, 0, 0], [9, 1, 3, 0, 0, 0], [15, 16, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
     // [[1, 1, 1, 1, 2, 3], [1, 5, 6, 2, 2, 0], [1, 15, 3, 1, 0, 0], [10, 10, 9, 0, 0, 0], [12, 9, 0, 0, 0, 0], [9, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
     // [[1, 9, 1, 13, 1, 4], [1, 1, 10, 11, 15, 7], [4, 15, 5, 1, 20, 0], [1, 1, 5, 15, 0, 0], [10, 16, 13, 0, 0, 0], [14, 20, 0, 0, 0, 0], [19, 0, 0, 0, 0, 0]]];
+    
+    // weighted fitness best genome 0.24277
+    // let genome = 
+    // [[[15, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    // [[18, 20, 0, 0, 0, 0], [8, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    // [[17, 4, 1, 0, 0, 0], [9, 1, 0, 0, 0, 0], [5, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    // [[15, 1, 2, 1, 0, 0], [5, 2, 1, 0, 0, 0], [16, 1, 0, 0, 0, 0], [18, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    // [[17, 15, 1, 1, 1, 0], [1, 1, 2, 1, 0, 0], [9, 9, 1, 0, 0, 0], [2, 16, 0, 0, 0, 0], [13, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
+    // [[17, 16, 1, 1, 1, 7], [12, 1, 1, 1, 1, 0], [5, 4, 1, 1, 0, 0], [10, 16, 1, 0, 0, 0], [6, 1, 0, 0, 0, 0], [6, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
+    // [[1, 2, 2, 1, 3, 2], [11, 14, 9, 1, 17, 4], [15, 2, 12, 1, 1, 0], [9, 3, 7, 5, 0, 0], [4, 6, 8, 0, 0, 0], [12, 5, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0]]];
 
-    // println!("{:?}", genome);
+    println!("{:?}", genome);
 
-    // let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome, 10, 7, 31728);
-    // sops_trial.print_grid();
-    // let edge_cnt: u64 = sops_trial.evaluate_fitness().into();
-    // println!("Edge Count: {}", edge_cnt);
-    // println!("Max Fitness: {}", sops_trial.get_max_fitness());
-    // println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
-    // println!("No. of Participants {:?}", sops_trial.get_participant_cnt());
-    // let now = Instant::now();
-    // let edge_cnt: u64 = sops_trial.simulate(true).into();
-    // let elapsed = now.elapsed().as_secs();
-    // sops_trial.print_grid();
-    // println!("Edge Count: {}", edge_cnt);
-    // println!("Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
-    // println!("No. of Participants {:?}", sops_trial.get_participant_cnt());
-    // println!("Trial Elapsed Time: {:.2?}", elapsed);
+    let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome, 27, 19, 31728);
+    sops_trial.print_grid();
+    let edge_cnt: f32 = sops_trial.evaluate_fitness();
+    println!("Edge Count: {}", edge_cnt);
+    println!("Max Fitness: {}", sops_trial.get_max_fitness());
+    println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+    println!("No. of Participants {:?}", sops_trial.get_participant_cnt());
+    let now = Instant::now();
+    let edge_cnt: f32 = sops_trial.simulate(true);
+    let elapsed = now.elapsed().as_secs();
+    sops_trial.print_grid();
+    println!("Edge Count: {}", edge_cnt);
+    println!("Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+    println!("No. of Participants {:?}", sops_trial.get_participant_cnt());
+    println!("Trial Elapsed Time: {:.2?}", elapsed);
+
+    // Find avg. time and scores
     // let scores: Vec<u32> = (0..10)
     //     .into_iter()
     //     .map(|idx| {
