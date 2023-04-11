@@ -1,6 +1,6 @@
-mod GACore;
+// mod GACore;
 mod SOPSCore;
-use GACore::base_ga::GeneticAlgo;
+// use GACore::base_ga::GeneticAlgo;
 use crate::SOPSCore::SOPSEnvironment;
 use gag::Redirect;
 use rand::SeedableRng;
@@ -25,7 +25,7 @@ use std::usize;
 
 fn get_temp_filepath() -> String {
     #[cfg(unix)]
-    return "./output/trial.log".into();
+    return "./output/sample_single_trial_theory_agg.log".into();
 }
 // static mut genome_cache: Option<HashMap<[u16; 6], f64>> = None;
 
@@ -68,9 +68,8 @@ fn main() {
     //     0.2769269870929103,
     //     0.523770334862512,
     // ];
-    let genome = [
-        19, 20, 18, 1, 1, 1
-    ];
+    let genome = [1.0, 0.166, 0.0027, 0.0046, 0.00077, 0.00013];
+    // let genome = [18, 20, 20, 1, 1, 1];
     // println!("{:?}", genome);
 
     let mut sops_trial = SOPSEnvironment::init_sops_env(&genome, 6, 4, 31728);

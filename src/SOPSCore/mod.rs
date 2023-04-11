@@ -10,7 +10,7 @@ struct Particle {
 pub struct SOPSEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [u16; 6],
+    phenotype: [f32; 6],
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
@@ -161,7 +161,7 @@ impl SOPSEnvironment {
     */
     // No need for static init with Seeded Random Generator
     // Use a Random Seed value to get the previous random init behaviour
-    pub fn init_sops_env(genome: &[u16; 6], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
+    pub fn init_sops_env(genome: &[f32; 6], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
@@ -259,7 +259,9 @@ impl SOPSEnvironment {
                 continue;
             }
             let move_prb: f64 =
-                self.phenotype[n_cnt] as f64 / (self.phenotype.iter().sum::<u16>() as f64);
+                self.phenotype[n_cnt].into();
+            // let move_prb: f64 =
+            //     self.phenotype[n_cnt] as f64 / (self.phenotype.iter().sum::<u16>() as f64);
             // if SOPSEnvironment::move_nrng().generate_range(1_u64..=1000)
             //     <= (move_prb * 1000.0) as u64
             // {
@@ -267,8 +269,8 @@ impl SOPSEnvironment {
             //         [SOPSEnvironment::move_nrng().generate_range(1..6)];
             //     par_moves.push((par_idx, move_dir));
             // }
-            if SOPSEnvironment::move_frng().u64(1_u64..=1000)
-                <= (move_prb * 1000.0) as u64
+            if SOPSEnvironment::move_frng().u64(1_u64..=10000)
+                <= (move_prb * 10000.0) as u64
             {
                 let move_dir = SOPSEnvironment::directions()
                     [SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_dir())];
@@ -320,7 +322,7 @@ impl SOPSEnvironment {
     pub fn simulate(&mut self, take_snaps: bool) -> u32 {
         for step in 0..self.sim_duration {
             // let now = Instant::now();
-            self.move_particles((self.participants.len() as f32 * 0.03) as usize);
+            self.move_particles(1 as usize);
             // let elapsed = now.elapsed().as_micros();
             // println!("Step Elapsed Time: {:.2?}", elapsed);
             if take_snaps && (step == (self.participants.len() as u64) || step == (self.participants.len() as u64).pow(2)) {
