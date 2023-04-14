@@ -1,6 +1,6 @@
 pub mod base_ga;
 pub mod ns_ga;
-pub mod seg_ga;
+// pub mod seg_ga;
 
 #[derive(Debug, Copy, Clone)]
 struct Genome {

@@ -9,7 +9,7 @@ use std::usize;
 pub struct SOPSegEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [[[u16; 6]; 7];7],
+    phenotype: [[[f32; 6]; 7];7],
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
@@ -66,7 +66,7 @@ impl SOPSegEnvironment {
     }
 
     // Use a Random Seed value to get the same random init config
-    pub fn init_sops_env(genome: &[[[u16; 6]; 7]; 7], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
+    pub fn init_sops_env(genome: &[[[f32; 6]; 7]; 7], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
@@ -116,7 +116,8 @@ impl SOPSegEnvironment {
             max_fitness: agg_edge_cnt + 3*(agg_clr_edge_cnt),
             arena_layers,
             particle_layers,
-            phenotype_sum: genome.iter().map(|y| -> u16 { y.iter().map(|x| -> u16 { x.iter().sum() }).sum() }).sum()
+            // phenotype_sum: genome.iter().map(|y| -> f32 { y.iter().map(|x| -> f32 { x.iter().sum() }).sum() }).sum()
+            phenotype_sum: 100
         }
     }
 
@@ -138,7 +139,7 @@ impl SOPSegEnvironment {
             let new_i = (i as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
             let new_j = (j as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
             if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
-                if self.grid[new_i][new_j] != 0 && self.grid[new_i][new_j] != 4 {
+                if self.grid[new_i][new_j] != 4 {
                     cnt += 1;
                     if self.grid[new_i][new_j] == self.grid[i as usize][j as usize] {
                         same_clr_cnt += 1;
@@ -207,8 +208,10 @@ impl SOPSegEnvironment {
             }
             let (egde_cnt, clr_edge_cnt, n_clr_cnt) = self.get_neighbors_cnt(particle.x, particle.y, self.grid[new_i][new_j]);
             if clr_edge_cnt < 6 {
+                // let move_prb: f64 =
+                // self.phenotype[egde_cnt as usize][n_clr_cnt as usize][clr_edge_cnt as usize] as f64 / (self.phenotype_sum as f64);
                 let move_prb: f64 =
-                self.phenotype[egde_cnt as usize][n_clr_cnt as usize][clr_edge_cnt as usize] as f64 / (self.phenotype_sum as f64);
+                self.phenotype[egde_cnt as usize][n_clr_cnt as usize][clr_edge_cnt as usize].into();
                 // if SOPSegEnvironment::move_nrng().generate_range(1_u64..=1000)
                 //     <= (move_prb * 1000.0) as u64
                 // {
