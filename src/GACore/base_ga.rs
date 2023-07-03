@@ -8,6 +8,11 @@ use std::convert::TryInto;
 use std::time::Instant;
 use std::usize;
 
+/*
+ * Main GA class for Separation behavior (use as a model to structure and write other GA extensions for other GA's)
+ * Provides basic 3 operators of the GAs and a step by step (1 step = 1 generation)
+ * population generator for each step
+ *  */
 pub struct GeneticAlgo {
     max_gen: u16,
     elitist_cnt: u16,
@@ -48,6 +53,9 @@ impl GeneticAlgo {
         Bernoulli::new(0.3).unwrap()
     }
 
+    /*
+     * Initialize GA with given parameters and a random set of genome vectors
+     *  */
     #[inline]
     pub fn init_ga(
         population_size: u16,
@@ -75,7 +83,6 @@ impl GeneticAlgo {
             });
         }
 
-        // let mut genome_cache: RefCell<HashMap<[u16; 6], f64>> = RefCell::new(HashMap::new());
         let genome_cache: HashMap<[u16; 6], f64> = HashMap::new();
 
         GeneticAlgo {
@@ -91,13 +98,13 @@ impl GeneticAlgo {
         }
     }
 
+    // mutate genome based on set mutation rate for every gene of the genome
     fn mutate_genome(&self, genome: &[u16; 6]) -> [u16; 6] {
         let mut new_genome = genome.clone();
-        //mutate genome
         for i in 0..genome.len() {
             let smpl = GeneticAlgo::rng().sample(&GeneticAlgo::unfrm_100());
             if smpl as f64 <= self.mut_rate * 100.0 {
-                // let perturb = SOPSEnvironment::rng().sample(self.mut_val());
+                // a random + or - mutation operation on each gene
                 let per_dir = GeneticAlgo::rng().sample(&GeneticAlgo::mut_sign());
                 new_genome[i] = (if per_dir {
                     genome[i] + 1
@@ -107,16 +114,14 @@ impl GeneticAlgo {
                     genome[i] - 1
                 })
                 .clamp(1, self.granularity);
-                // let scale = if per_dir { 0.1 } else { -0.1 };
-                // print!("{y:.5?} ",y=scale*genome[i]);
-                // new_genome[i] = (genome[i] + scale*genome[i]).clamp(0.0, 1.0);
             }
-            // print!("\t");
         }
-        // println!("");
         new_genome
     }
 
+    /*
+     * Implements a simple single-point crossover operator with crossover point choosen at random in genome vector
+     *  */
     fn generate_offspring(&self, parent1: &[u16; 6], parent2: &[u16; 6]) -> [u16; 6] {
         let mut new_genome: [u16; 6] = [0; 6];
         let cross_pnt = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
@@ -130,6 +135,10 @@ impl GeneticAlgo {
         new_genome
     }
 
+    /*
+     * Performs the 3 operations (in sequence 1. selection, 2. crossover, 3. mutation) 
+     * on the existing populations to generate new population
+     *  */
     fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<Genome> = vec![];
         let mut selected_g: Vec<[u16; 6]> = vec![];
@@ -138,7 +147,7 @@ impl GeneticAlgo {
         self.population.sort_unstable_by(|genome_a, genome_b| {
             genome_b.fitness.partial_cmp(&genome_a.fitness).unwrap()
         });
-        // /*
+
         //print genomes for analysis
         let best_genome = self.population[0];
         println!("Best Genome -> {best_genome:.5?}");
@@ -146,8 +155,7 @@ impl GeneticAlgo {
         for idx in 1..self.population.len() {
             println!("{y:.5?}", y = self.population[idx]);
         }
-        // */
-        // /*
+        
         //bifercate genomes
         for (index, genome) in self.population.iter().enumerate() {
             if index < self.elitist_cnt as usize {
@@ -160,6 +168,7 @@ impl GeneticAlgo {
                 rank_wheel.push(index);
             }
         }
+
         //perform selection and then (if perform_cross flag is set) single-point crossover
         let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
         for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
@@ -176,21 +185,6 @@ impl GeneticAlgo {
                 selected_g.push(self.population[p_genome_idx1].string); // added
             }
         }
-        // */
-        /*
-        //dummy pass
-        for idx in 0..(self.population.len()) {
-            // let mut wheel_idx = SOPSEnvironment::rng().sample(&rank_wheel_rng);
-            // let p_genome_idx1 = rank_wheel[wheel_idx];
-            // wheel_idx = SOPSEnvironment::rng().sample(&rank_wheel_rng);
-            // let p_genome_idx2 = rank_wheel[wheel_idx];
-            // selected_g.push(self.generate_offspring(
-            //     &self.population[p_genome_idx1].string,
-            //     &self.population[p_genome_idx2].string,
-            // ));
-            selected_g.push(self.population[idx].string); // added
-        }
-        */
 
         //perform mutation
         for idx in 0..selected_g.len() {
@@ -205,11 +199,13 @@ impl GeneticAlgo {
         self.population = new_pop;
     }
 
+    // A single step of GA ie. generation, where following happens in sequence
+    // 1. calculate new population's fitness values
+    // 2. Save each genome's fitness value based on mean fitness for 'n' eval trials
+    // 3. Generate new population based on these fitness values
     fn step_through(&mut self, gen: u16) {
-        //simulate a single step for the ga -> calculate new population's fitness values
         let trials = self.trial_seeds.len();
         let seeds = self.trial_seeds.clone();
-        // let trials_vec: Vec<(u16, usize)> = vec![(0,0); (trials*(self.sizes.len() as u16)).into()];
 
         let trials_vec: Vec<((u16,u16),u64)> = self
             .sizes.clone()
@@ -219,7 +215,6 @@ impl GeneticAlgo {
             .collect();
 
         // TODO: run each genome in a separate compute node
-
         // TODO: use RefCell or lazy static to make the whole check and update into a single loop.
         let mut genome_fitnesses = vec![-1.0; self.population.len()];
 
@@ -255,7 +250,7 @@ impl GeneticAlgo {
                 return;
             }
 
-            // A specific size calculate the fitness for 'n' number of trials
+            // Calculate the fitness for 'n' number of trials
             let fitness_tot: f64 = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
@@ -267,21 +262,17 @@ impl GeneticAlgo {
                     g_fitness as f64 / (genome_env.get_max_fitness() as f64)
                 })
                 .sum();
-            // Choose the median of the returned values
+            
+            /* Snippet to calculate Median fitness value of the 'n' trials
             // let mut sorted_fitness_eval: Vec<f64> = Vec::new();
             // fitness_trials.collect_into_vec(&mut sorted_fitness_eval);
             // sorted_fitness_eval.sort_by(|a, b| a.partial_cmp(b).unwrap());
-            //
-            // for _ in 0..trials {
-            //     // let mut genome_env = SOPSEnvironment::static_init(&genome_s);
-            //     // let g_fitness = genome_env.simulate();
-            //     let g_fitness: f64 = genome_s.iter().sum(); // added
-            //     fitness_t += g_fitness;
-            // }
-            let fitness_val = fitness_tot / (trials_vec.len() as f64) as f64;
             // println!("Trials: {y:?}",y = sorted_fitness_eval);
             // println!("Mid: {y}",y=((trials / 2) as usize));
             // genome.fitness = sorted_fitness_eval[((trials / 2) as usize)];
+            */
+
+            let fitness_val = fitness_tot / (trials_vec.len() as f64) as f64;
             genome.fitness = fitness_val;
         });
 
@@ -301,7 +292,10 @@ impl GeneticAlgo {
             "Avg. Fitness -> {}",
             fit_sum / (self.population.len() as f64)
         );
-        //calculate population diversity
+
+        // calculate population diversity
+        // based on simple component wise euclidean distance
+        // of the genome vectors
         let mut pop_dist: Vec<f64> = vec![];
         for i in 0..self.population.len() {
             for j in (i + 1)..self.population.len() {
@@ -329,24 +323,23 @@ impl GeneticAlgo {
         self.generate_new_pop();
     }
 
+    /*
+     * The main loop of the GA which runs the full scale GA steps untill stopping criterion (ie. MAX Generations)
+     * is reached
+     *  */
     pub fn run_through(&mut self) {
-        // let utc: DateTime<Utc> = Utc::now();
-        // let file_path = format!("{ROOT_PATH}exp_{dt}",dt = utc.format("%d_%m_%Y_%H:%M"));
-        // let mut file = File::create(file_path)?;
-        println!("Max Gen:{y}", y = self.max_gen);
-        println!("Trial Count:{y}", y = self.trial_seeds.len());
-        println!("mutation Rate:{y}", y = self.mut_rate);
-        println!("Granularity:{y}", y = self.granularity);
-        println!("Crossover ?:{y}", y = self.perform_cross);
-        println!("Population Size:{y}", y = self.population.len());
+
+        // Run the GA for given #. of Generations
         for gen in 0..self.max_gen {
             println!("Starting Gen:{}", gen);
             let now = Instant::now();
             self.step_through(gen);
             let elapsed = now.elapsed().as_secs();
             println!("Elapsed Time: {:.2?}", elapsed);
-            // std::io::stdout().flush().expect("some error message");
         }
+        /*
+         * Snippet to evaluate the final best genome evolved at the end of GA execution
+         * TODO: Accept a parameter to run this snippet ?? Or save the best genomes to files if need be ?
         // let best_genome = self.population[0];
         // let mut best_genome_env = SOPSEnvironment::static_init(&best_genome.string);
         // best_genome_env.print_grid();
@@ -354,5 +347,6 @@ impl GeneticAlgo {
         // best_genome_env.print_grid();
         // println!("Best genome's fitness is {}", g_fitness);
         // println!("{best_genome:?}");
+         */
     }
 }

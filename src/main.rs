@@ -1,265 +1,340 @@
 mod GACore;
 mod SOPSCore;
+mod utils;
 use GACore::base_ga::GeneticAlgo;
 use GACore::seg_ga::SegGA;
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::segregation::SOPSegEnvironment;
-use gag::Redirect;
-use rand::SeedableRng;
-use rand::{distributions::Bernoulli, distributions::Open01, distributions::Uniform, rngs, Rng};
-use nanorand::{Rng as NanoRng, WyRand};
 use rayon::prelude::*;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::convert::TryInto;
+use gag::Redirect;
+use std::{path::PathBuf, ops::Not};
 use std::time::Instant;
-// use std::env;
+use std::fs;
 use std::fs::OpenOptions;
-use std::io::{Read, Seek, SeekFrom, Write};
 use std::usize;
-// use std::path::Path;
-// use std::fs::File;
-// use std::io::prelude::*;
-// use chrono::prelude::*;
+use clap::{Parser, ValueEnum};
 
-// const EXP: &'static str = "1";
-// const ROOT_PATH: &'static str = "/output/";
-
-fn get_temp_filepath(trial_seed: u64) -> String {
+fn get_temp_filepath(filename: &String) -> String {
     #[cfg(unix)]
-    return "./output/trial_large_nw_eval_".to_string() + &trial_seed.to_string() + &".log".to_string();
+    return "./output/".to_string() + filename + &".log".to_string();
 }
-// static mut genome_cache: Option<HashMap<[u16; 6], f64>> = None;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Behaviour to run
+    #[arg(short, long, value_enum)]
+    behavior: Behavior,
+
+    /// Type of Experiment to run
+    #[arg(short, long="exp", value_enum)]
+    experiment_type: Experiment,
+
+    /// Maximum no. of generations to run the Genetic Algorithm Experiment
+    #[arg(short='g', long="gen", default_value_t=0)]
+    max_generations: u16,
+
+    /// No. of genomes in the population for a Genetic Algorithm Experiment
+    #[arg(short='p', long="pop", default_value_t=0)]
+    population: u16,
+
+    /// Genome representation granularity
+    #[arg(long="gran", default_value_t=20)]
+    granularity: u16,
+
+    /// Mutation rate per gene
+    #[arg(short='m', long="mut", default_value_t=0.08)]
+    mutation_rate: f64,
+
+    /// Maximum no. of elite genomes to preserve in a generation
+    #[arg(long="eli", default_value_t=0)]
+    elitist_count: u16,
+
+    /// Particle Sizes to run on (eg. use multiple -k<String"(<u64>,<u64>)"> arguments to specify multiple sizes)
+    #[arg(short='k', long="ks", required=true, action = clap::ArgAction::Append)]
+    particle_sizes: Vec<String>,
+
+    /// Seed values to run experiments with, for reproducable trials (eg. use multiple -s<u64> arguments to specify seeded trials)
+    #[arg(short, long="seed", required=true, action = clap::ArgAction::Append)]
+    seeds: Vec<u64>,
+
+    /// File to read genome value from
+    #[arg(long, value_name = "FILE")]
+    path: Option<PathBuf>,
+
+    /// Specify if execution description is written to the output
+    #[arg(short, long)]
+    verbose: bool,
+
+    /// Specify if snapshots of the experiment run are written to the output (only valid for stand-alone experiments)
+    #[arg(long)]
+    snaps: bool,
+}
+
+#[derive(ValueEnum, Debug, Clone)] // ArgEnum here
+enum Behavior {
+    /// Aggregation
+    Agg,
+    /// Separation
+    Sep,
+}
+
+#[derive(ValueEnum, Debug, Clone)] // ArgEnum here
+enum Experiment {
+    /// Full scale genetic algorithm run
+    GA,
+    /// Stand-alone single genome run
+    GM,
+    /// Stand-alone single theory given solution run
+    TH,
+}
 
 fn main() {
-    // save a cache
-    // unsafe {
-    //     genome_cache = Some(HashMap::new());
-    // }
-    // Open a log
+    let args = Args::parse();
+
+    /*
+     * Pipe the output to the file with Experiment Parameters as its name
+     */
+    let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity);
     let log = OpenOptions::new()
         .truncate(true)
         .read(true)
         .create(true)
         .write(true)
-        .open(get_temp_filepath(fastrand::Rng::new().u64(1_u64..=u64::MAX)))
+        .open(get_temp_filepath(&file_name))
         .unwrap();
 
-    let print_redirect = Redirect::stdout(log).unwrap();
-    //size = [(6,4),(10,7),(13,9),(20,14),(27,19)]
-    //seeds = [31728, 26812, 73921, 92031, 84621]
-    // let mut ga_sops = SegGA::init_ga(50, 100, 1, 0.12, 20, true, [(10,7)].to_vec(), [31728, 26812, 73921].to_vec());
-    // ga_sops.run_through();
+    // let print_redirect = Redirect::stdout(log).unwrap();
 
-    // /*
-    // Block for running single experiments
-    // Genome from know solution space -> 307
-    // let genome = [
-    //     0.879410923312898,
-    //     0.7072823455008604,
-    //     0.0758316160483933,
-    //     0.0447528743281018,
-    //     0.005321085020900764,
-    //     0.0018268442926183,
-    // ];
-    // let genome = [
-    //     0.5994110836839489,
-    //     0.6183247501358494,
-    //     0.5522009562182426,
-    //     0.4959382596880117,
-    //     0.2769269870929103,
-    //     0.523770334862512,
-    // ];
-    // let genome = [[17, 0, 0, 0, 0, 0, 0], [12, 20, 0, 0, 0, 0, 0], [10, 3, 15, 0, 0, 0, 0], [7, 8, 13, 2, 0, 0, 0], [1, 20, 16, 14, 2, 0, 0], [1, 16, 9, 2, 7, 13, 0], [4, 20, 3, 12, 11, 15, 7]];
-    // let genome = [[16, 0, 0, 0, 0, 0, 0], [20, 20, 0, 0, 0, 0, 0], [15, 14, 13, 0, 0, 0, 0], [18, 1, 3, 9, 0, 0, 0], [12, 1, 5, 1, 2, 0, 0], [17, 4, 20, 1, 2, 7, 0], [4, 10, 4, 1, 14, 4, 14]];
-    // let genome = [[16, 0, 0, 0, 0, 0], [20, 20, 0, 0, 0, 0], [15, 14, 13, 0, 0, 0], [18, 1, 3, 9, 0, 0], [12, 1, 5, 1, 2, 0], [17, 4, 20, 1, 2, 7], [4, 10, 4, 1, 14, 4]];
-    // given by theory
-    // let genome = [[20, 0, 0, 0, 0, 0], [3, 1, 0, 0, 0, 0], [2, 1, 1, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]];
-    // MY TWEAKS
-    // let genome = [[20, 0, 0, 0, 0, 0], [3, 1, 0, 0, 0, 0], [2, 2, 1, 0, 0, 0], [2, 1, 1, 0, 0, 0], [2, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0]];
-    // let genome = [[20, 0, 0, 0, 0, 0], [13, 1, 0, 0, 0, 0], [12, 5, 1, 0, 0, 0], [10, 5, 1, 0, 0, 0], [10, 5, 0, 0, 0, 0], [10, 6, 0, 0, 0, 0], [10, 6, 0, 0, 0, 0]];
+    /*
+     * Print out the options for the current run of the script
+     */
+    println!("Target Behavior: {:?}", &args.behavior);
+    println!("Experiment Type: {:?}", &args.experiment_type);
+    println!("Particle Sizes: {:?}", &args.particle_sizes);
+    println!("Initialization Seeds: {:?}", &args.seeds);
+    println!("Representation Granularity: {:?}", &args.granularity);
+
+    /*
+     * Convert Particle Sizes from Vec<String> to Vec<(u16,u16)>
+     */
+    let size_strings = args.particle_sizes
+        .iter()
+        .map(|s| s.split(&['(', ')', ','][..])
+        .filter_map(|ss| 
+            ss.parse::<u16>().ok()
+        ).collect::<Vec<u16>>());
+    let particle_sizes: Vec<(u16,u16)> = size_strings.map(|c| (c[0],c[1])).collect::<Vec<(u16,u16)>>();
+
+    /*
+     * Based on Experiment type and Behaviour setup required experiment parameters
+     */
+    match &args.experiment_type {
+        Experiment::GA => {
+            println!("Population Size: {:?}", &args.population);
+            println!("Max Generations: {:?}", &args.max_generations);
+            println!("Mutation Rate: {:?}", &args.mutation_rate);
+            println!("Elitist Count: {:?}", &args.elitist_count);
+            /*
+             * Perform a single run of Full length Genetic algorithm for respective behaviour
+             */
+            match &args.behavior {
+                Behavior::Agg => {
+                    println!("\nStarting Aggregation GA Experiment...\n");
+                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
+                    ga_sops.run_through();
+                },
+                Behavior::Sep => {
+                    println!("\nStarting Separation GA Experiment...\n");
+                    let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
+                    ga_sops.run_through();
+
+                },
+            }
+        },
+        ref other_experiment => {
+            println!("Snapshots: {:?}", &args.snaps);
+
+            assert_eq!(&args.path.is_some(), &true);
+
+            let path = &args.path.clone().unwrap();
+
+            assert_eq!(&path.is_file(), &true);
+
+            println!("Genome file path: {}", &path.display());
+            // Read Genome file content and pre-process it
+            let contents = fs::read_to_string(&path)
+                .expect("Should have been able to read the file");
+            let mut striped_content = contents.replace("[", "").replace("]", "").replace(" ", "");
+            striped_content.pop();
+
+            /*
+             * Perform a standalone evaluation runs of given Genomes for respective behaviours
+             * Total Runs = #. of Particle Sizes x #. of Seeds
+             */
+            match &other_experiment {
+                Experiment::GM => {
+                    let all_entries: Vec<u16> = striped_content.split(',').filter_map(|x| x.parse::<u16>().ok()).collect();
+        
+                    match &args.behavior {
+                        Behavior::Agg => {
+                            println!("\nStarting Aggregation Single Genome Trial...\n");
+                            // Construct the genome in required dimension
+                            let mut genome: [u16; 6] = [0; 6];
+                            let mut idx = 0;
+                            for i in 0_u8..6 {
+                                genome[i as usize] = all_entries[idx];
+                                idx += 1;
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            /*
+                             * Sample snippet for computing variance and mean stats of the trials
+                            // let scores: Vec<u32> => (for each particle sizes and seed value)
+                            // let mean = scores.clone().into_iter().fold(0, |sum, score| sum + score) / 1;
+                            // let variance = scores
+                            //     .into_iter()
+                            //     .fold(0, |sum, score| sum + (score as i32 - mean as i32).pow(2))
+                            //     / 1;
+                            // println!("N^3 Mean:{}", mean);
+                            // println!("N^3 Variance:{}", variance);
+                            */
+
+                            // Run the trials in parallel
+                            let trials = args.seeds.len();
+                            let seeds = args.seeds.clone();
+
+                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                                .into_iter()
+                                .zip(seeds)
+                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+                                .collect();
+
+                            let fitness_tot: f64 = trials_vec.clone()
+                            .into_par_iter()
+                            .map(|trial| {
+                                /*
+                                     * Single Evaluation run of the Genome
+                                     */
+                                    let mut sops_trial = SOPSEnvironment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1);
+                                    sops_trial.print_grid();
+                                    let edge_cnt: u32 = sops_trial.evaluate_fitness();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    println!("Max Fitness: {}", sops_trial.get_max_fitness());
+                                    println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+                                    let now = Instant::now();
+                                    let edge_cnt: u32 = sops_trial.simulate(true);
+                                    let elapsed = now.elapsed().as_secs();
+                                    sops_trial.print_grid();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    let t_fitness = edge_cnt as f64/ sops_trial.get_max_fitness() as f64;
+                                    println!("Fitness: {}", &t_fitness);
+                                    println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                    t_fitness
+                            })
+                            .sum();
+
+                            println!("Total Fitness: {}", &fitness_tot);
+                        },
+                        Behavior::Sep => {
+                            println!("\nStarting Separation Single Genome Trial...\n");
+                            // Construct the genome in required dimension
+                            let mut genome: [[[u16; 6]; 7]; 7] = [[[0; 6]; 7]; 7];
+                            let mut idx = 0;
+                            for n in 0_u8..7 {
+                                for j in 0_u8..7 {
+                                    for i in 0_u8..6 {
+                                        // if i+j <= n {
+                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                            idx += 1;
+                                        // }
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            // Run the trials in parallel
+                            let trials = args.seeds.len();
+                            let seeds = args.seeds.clone();
+
+                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                                .into_iter()
+                                .zip(seeds)
+                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+                                .collect();
+
+                            let fitness_tot: f64 = trials_vec.clone()
+                            .into_par_iter()
+                            .map(|trial| {
+                                /*
+                                 * Single Evaluation run of the Genome
+                                 */
+                                let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1);
+                                sops_trial.print_grid();
+                                let edge_cnt: f32 = sops_trial.evaluate_fitness();
+                                println!("Edge Count: {}", edge_cnt);
+                                println!("Max Fitness: {}", sops_trial.get_max_fitness());
+                                println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+                                let now = Instant::now();
+                                let edge_cnt: f32 = sops_trial.simulate(true);
+                                let elapsed = now.elapsed().as_secs();
+                                sops_trial.print_grid();
+                                println!("Edge Count: {}", edge_cnt);
+                                let t_fitness = edge_cnt as f64/ sops_trial.get_max_fitness() as f64;
+                                println!("Fitness: {}", &t_fitness);
+                                println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                t_fitness
+                            })
+                            .sum();
     
-    // let genome = [[20, 0, 0, 0, 0, 0], [3, 1, 0, 0, 0, 0], [2, 2, 1, 0, 0, 0], [2, 1, 1, 0, 0, 0], [2, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0]];
-    
-//     let genome: [[[f32;6];7];7] = [[[0.1667, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-//    [[0.1667, 0.0278, 0.0, 0.0, 0.0, 0.0], 
-//     [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-//    [[0.1667, 0.0278, 0.0046, 0.0, 0.0, 0.0], 
-//     [1.0, 0.1667, 0.0, 0.0, 0.0, 0.0], 
-//     [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-//    [[0.1667, 0.0278, 0.0046, 0.0008, 0.0, 0.0], 
-//     [1.0, 0.1667, 0.0278, 0.0, 0.0, 0.0], 
-//     [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], 
-//     [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-//    [[0.1667, 0.0278, 0.0046, 0.0008, 0.0001, 0.0], 
-//     [1.0, 0.1667, 0.0278, 0.0046, 0.0, 0.0], 
-//     [1.0, 1.0, 0.1667, 0.0, 0.0, 0.0], 
-//     [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], 
-//     [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-//    [[0.1667, 0.0278, 0.0046, 0.0008, 0.0001, 0.0], 
-//     [1.0, 0.1667, 0.0278, 0.0046, 0.0008, 0.0], 
-//     [1.0, 1.0, 0.1667, 0.0278, 0.0, 0.0], 
-//     [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], 
-//     [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], 
-//     [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-//     [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-//    [[0.1667, 0.0278, 0.0046, 0.0008, 0.0001, 0.0], 
-//     [1.0, 0.1667, 0.0278, 0.0046, 0.0008, 0.0001], 
-//     [1.0, 1.0, 0.1667, 0.0278, 0.0046, 0.0], 
-//     [1.0, 1.0, 1.0, 0.1667, 0.0, 0.0], 
-//     [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], 
-//     [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], 
-//     [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]]];
-// let genome = [[[1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-// [[1.0, 0.1667, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-// [[1.0, 0.1667, 0.0278, 0.0, 0.0, 0.0], [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-// [[1.0, 0.1667, 0.0278, 0.0046, 0.0, 0.0], [1.0, 1.0, 0.1667, 0.0, 0.0, 0.0], [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-// [[1.0, 0.1667, 0.0278, 0.0046, 0.0008, 0.0], [1.0, 1.0, 0.1667, 0.0278, 0.0, 0.0], [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-// [[1.0, 0.1667, 0.0278, 0.0046, 0.0008, 0.0001], [1.0, 1.0, 0.1667, 0.0278, 0.0046, 0.0], [1.0, 1.0, 1.0, 0.1667, 0.0, 0.0], [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]], 
-// [[1.0, 0.1667, 0.0278, 0.0046, 0.0008, 0.0001], 
-//  [1.0, 1.0, 0.1667, 0.0278, 0.0046, 0.0008], 
-//  [1.0, 1.0, 1.0, 0.1667, 0.0278, 0.0], 
-//  [1.0, 1.0, 1.0, 1.0, 0.0, 0.0], 
-//  [1.0, 1.0, 1.0, 0.0, 0.0, 0.0], 
-//  [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], 
-//  [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]]];
-//     println!("{:?}", genome);
-    
-    // best genome -> 0.56849
-    let genome = 
-    [[[19, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-    [[18, 18, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    [[11, 18, 2, 0, 0, 0], [6, 5, 0, 0, 0, 0], [5, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    [[9, 1, 1, 7, 0, 0], [3, 5, 13, 0, 0, 0], [9, 6, 0, 0, 0, 0], [17, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0,0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    [[1, 1, 1, 1, 2, 0], [6, 9, 5, 9, 0, 0], [9, 2, 6, 0, 0, 0], [13, 15, 0, 0, 0, 0], [16, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-    [[2, 1, 1, 1, 1, 4], [1, 4, 6, 2, 3, 0], [2, 14, 4, 3, 0, 0], [10, 10, 11, 0, 0, 0], [13, 10, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    [[1, 11, 1, 15, 1, 4], [1, 1, 11, 12, 17,9], [4, 15, 5, 1, 20, 0], [2, 1, 3, 15, 0, 0], [10, 16, 13, 0, 0, 0], [15, 20, 0, 0, 0, 0], [19, 0, 0, 0, 0, 0]]];
-    // // 2nd best genome -> 0.56469
-    // let genome = 
-    // [[[20, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[19, 20, 0, 0, 0, 0], [8, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[9, 17, 1, 0, 0, 0], [3, 2, 0, 0, 0, 0], [4, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[8, 1, 2, 8, 0, 0], [3, 1, 12, 0, 0, 0], [11, 5, 0, 0, 0, 0], [18, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 1, 0], [7, 12, 5, 4, 0, 0], [7, 2, 4, 0, 0, 0], [13, 13, 0, 0, 0, 0], [14, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 1, 7], [2, 4, 5, 1, 1, 0], [2, 14, 3, 3, 0, 0], [10, 12, 11, 0, 0, 0], [12, 9, 0, 0, 0, 0], [9, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[2, 11, 1, 15, 2, 4], [1, 1, 11, 12, 17, 6], [10, 14, 6, 1, 18, 0], [1, 5, 1, 14, 0, 0], [11, 13, 11, 0, 0, 0], [15, 17, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0]]];
-    // // 3th best genome -> 0.56012
-    // let genome = 
-    // [[[17, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[19, 20, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[6, 18, 1, 0, 0, 0], [3, 6, 0, 0, 0, 0], [3, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[8, 1, 1, 7, 0, 0], [3, 4, 13, 0, 0, 0], [11, 5, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 1, 0], [7, 11, 5, 3, 0, 0], [8, 2, 4, 0, 0, 0], [14, 14, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 1, 2], [2, 3, 6, 1, 2, 0], [1, 12, 4, 2, 0, 0], [9, 10, 10, 0, 0, 0], [13, 11, 0, 0, 0, 0], [8, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 11, 1, 15, 1, 2], [1, 1, 12, 11, 16, 8], [5, 14, 4, 1, 16, 0], [2, 1, 4, 15, 0, 0], [11, 16, 13, 0, 0, 0], [15, 20, 0, 0, 0, 0], [17, 0, 0, 0, 0, 0]]];    
-    // // 4th best genome -> 0.55670
-    // let genome = 
-    // [[[18, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[19, 20, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[8, 18, 1, 0, 0, 0], [3, 7, 0, 0, 0, 0], [3, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[8, 1, 1, 7, 0, 0], [3, 4, 13, 0, 0, 0], [11, 5, 0, 0, 0, 0], [16, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 1, 0], [7, 11, 5, 1, 0, 0], [9, 1, 3, 0, 0, 0], [15, 16, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 2, 3], [1, 5, 6, 2, 2, 0], [1, 15, 3, 1, 0, 0], [10, 10, 9, 0, 0, 0], [12, 9, 0, 0, 0, 0], [9, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 9, 1, 13, 1, 4], [1, 1, 10, 11, 15, 7], [4, 15, 5, 1, 20, 0], [1, 1, 5, 15, 0, 0], [10, 16, 13, 0, 0, 0], [14, 20, 0, 0, 0, 0], [19, 0, 0, 0, 0, 0]]];
-    // // 5rd best genome
-    // let genome = 
-    // [[[18, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[19, 20, 0, 0, 0, 0], [10, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[8, 18, 1, 0, 0, 0], [3, 7, 0, 0, 0, 0], [3, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[8, 1, 1, 7, 0, 0], [3, 4, 13, 0, 0, 0], [11, 5, 0, 0, 0, 0], [16, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 1, 0], [7, 11, 5, 1, 0, 0], [9, 1, 3, 0, 0, 0], [15, 16, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 1, 1, 1, 2, 3], [1, 5, 6, 2, 2, 0], [1, 15, 3, 1, 0, 0], [10, 10, 9, 0, 0, 0], [12, 9, 0, 0, 0, 0], [9, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 9, 1, 13, 1, 4], [1, 1, 10, 11, 15, 7], [4, 15, 5, 1, 20, 0], [1, 1, 5, 15, 0, 0], [10, 16, 13, 0, 0, 0], [14, 20, 0, 0, 0, 0], [19, 0, 0, 0, 0, 0]]];
-    
-    // weighted fitness best genome 0.24277
-    // let genome = 
-    // [[[15, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[18, 20, 0, 0, 0, 0], [8, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[17, 4, 1, 0, 0, 0], [9, 1, 0, 0, 0, 0], [5, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[15, 1, 2, 1, 0, 0], [5, 2, 1, 0, 0, 0], [16, 1, 0, 0, 0, 0], [18, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[17, 15, 1, 1, 1, 0], [1, 1, 2, 1, 0, 0], [9, 9, 1, 0, 0, 0], [2, 16, 0, 0, 0, 0], [13, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]],
-    // [[17, 16, 1, 1, 1, 7], [12, 1, 1, 1, 1, 0], [5, 4, 1, 1, 0, 0], [10, 16, 1, 0, 0, 0], [6, 1, 0, 0, 0, 0], [6, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]], 
-    // [[1, 2, 2, 1, 3, 2], [11, 14, 9, 1, 17, 4], [15, 2, 12, 1, 1, 0], [9, 3, 7, 5, 0, 0], [4, 6, 8, 0, 0, 0], [12, 5, 0, 0, 0, 0], [15, 0, 0, 0, 0, 0]]];
+                            println!("Total Fitness: {}", &fitness_tot);
+                        },
+                    }
+                },
+                Experiment::TH => {
+                    let all_entries: Vec<f32> = striped_content.split(',').map(|x| x.parse::<f32>().unwrap()).collect();
+        
+                    match &args.behavior {
+                        Behavior::Agg => {
+                            let mut genome: [f32; 6] = [0.0; 6];
+                            let mut idx = 0;
+                            for i in 0_u8..6 {
+                                genome[i as usize] = all_entries[idx];
+                                idx += 1;
+                            }
 
-    println!("{:?}", genome);
+                            println!("Read Genome:\n{:?}", genome);
 
-    let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome, 27, 19, 31728);
-    sops_trial.print_grid();
-    let edge_cnt: f32 = sops_trial.evaluate_fitness();
-    println!("Edge Count: {}", edge_cnt);
-    println!("Max Fitness: {}", sops_trial.get_max_fitness());
-    println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
-    println!("No. of Participants {:?}", sops_trial.get_participant_cnt());
-    let now = Instant::now();
-    let edge_cnt: f32 = sops_trial.simulate(true);
-    let elapsed = now.elapsed().as_secs();
-    sops_trial.print_grid();
-    println!("Edge Count: {}", edge_cnt);
-    println!("Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
-    println!("No. of Participants {:?}", sops_trial.get_participant_cnt());
-    println!("Trial Elapsed Time: {:.2?}", elapsed);
+                            // Need to create a new class that takes the Genome's float values and operates on them
+                            todo!()
+                        },
+                        Behavior::Sep => {
+                            let mut genome: [[[f32; 6]; 7]; 7] = [[[0.0; 6]; 7]; 7];
+                            let mut idx = 0;
+                            for n in 0_u8..7 {
+                                for j in 0_u8..7 {
+                                    for i in 0_u8..6 {
+                                        // if i+j <= n {
+                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                            idx += 1;
+                                        // }
+                                    }
+                                }
+                            }
 
-    // Find avg. time and scores
-    // let scores: Vec<u32> = (0..10)
-    //     .into_iter()
-    //     .map(|idx| {
-    //         let mut sops_trial_2 = SOPSEnvironment::static_init(&genome);
-    //         // sops_trial_2.print_grid();
-    //         // println!("{}", sops_trial_2.evaluate_fitness());
-    //         // // println!("{}",sops_trial.evaluate_fitness());
-    //         // println!("{}", );
-    //         // sops_trial_2.print_grid();
-    //         let now = Instant::now();
-    //         let score = sops_trial_2.simulate();
-    //         let elapsed = now.elapsed().as_secs();
-    //         println!("Trial {idx} Elapsed Time: {:.2?}", elapsed);
-    //         score
-    //     })
-    //     .collect();
+                            println!("Read Genome:\n{:?}", genome);
 
-    // let mean = scores.clone().into_iter().fold(0, |sum, score| sum + score) / 1;
+                            // Need to create a new class that takes the Genome's float values and operates on them
+                            todo!()
+                        },
+                    }
+                },
+                _ => {},
+            }
+        },
+    }
 
-    // let variance = scores
-    //     .into_iter()
-    //     .fold(0, |sum, score| sum + (score as i32 - mean as i32).pow(2))
-    //     / 1;
-
-    // println!("N^3 Mean:{}", mean);
-    // println!("N^3 Variance:{}", variance);
-    // scores.for_each(|s| { println!("{}", s);});
-    //  */
-    // let mut grid: [[bool; 18]; 18] = [[false; 18]; 18];
-    // let init_nrm = Normal::new(0.0, 0.05).unwrap();
-    // let bi = Bernoulli::new(0.5).unwrap();
-    // let mut rng = rand::thread_rng();
-    // let grid_rng = Uniform::new(0, grid.len());
-    // let mut cnt = 0;
-    // for _i in 0..1000 {
-    //     let v = rng.sample(&bi);
-    //     // println!("{}", v);
-    //     if v { cnt += 1; }
-    // }
-    // println!("{}",cnt);
-    // println!("{} particles in grid of {} vertices",(((grid.len()*grid.len()) as f32)*0.3) as u64, grid.len()*grid.len());
-    print_redirect.into_inner();
+    // print_redirect.into_inner();
 }
