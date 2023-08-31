@@ -18,26 +18,29 @@ pub struct GeneticAlgo {
     elitist_cnt: u16,
     population: Vec<Genome>,
     mut_rate: f64,
-    granularity: u16,
-    genome_cache: HashMap<[u16; 6], f64>,
+    granularity: u8,
+    genome_cache: HashMap<[[[u8; 4]; 3]; 4], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>
 }
 
 impl GeneticAlgo {
+
+    const GENOME_LEN: u16 = 4 * 3 * 4;
+    
     #[inline]
     fn rng() -> rngs::ThreadRng {
         rand::thread_rng()
     }
 
     #[inline]
-    fn genome_init_rng(granularity: u16) -> Uniform<u16> {
+    fn genome_init_rng(granularity: u8) -> Uniform<u8> {
         Uniform::new_inclusive(1, granularity)
     }
 
     #[inline]
-    fn unfrm_100() -> Uniform<u16> {
+    fn unfrm_100() -> Uniform<u8> {
         Uniform::new_inclusive(1, 100)
     }
 
@@ -46,7 +49,7 @@ impl GeneticAlgo {
     // }
 
     fn cross_pnt() -> Uniform<u16> {
-        Uniform::new_inclusive(0, 5)
+        Uniform::new_inclusive(0, GeneticAlgo::GENOME_LEN-1)
     }
 
     fn mut_sign() -> Bernoulli {
@@ -62,7 +65,7 @@ impl GeneticAlgo {
         max_gen: u16,
         elitist_cnt: u16,
         mut_rate: f64,
-        granularity: u16,
+        granularity: u8,
         perform_cross: bool,
         sizes: Vec<(u16, u16)>,
         trial_seeds: Vec<u64>
@@ -71,19 +74,23 @@ impl GeneticAlgo {
 
         for _ in 0..population_size {
             //init genome
-            let genome: [u16; 6] = TryInto::try_into(
-                (0..6)
-                    .map(|_| GeneticAlgo::rng().sample(GeneticAlgo::genome_init_rng(granularity)))
-                    .collect::<Vec<u16>>()
-            )
-            .unwrap();
+            let mut genome: [[[u8; 4]; 3]; 4] = [[[0_u8; 4]; 3]; 4];
+            for n in 0_u8..4 {
+                for j in 0_u8..3 {
+                    for i in 0_u8..4 {
+                        if i+j <= n {
+                            genome[n as usize][j as usize][i as usize] = GeneticAlgo::rng().sample(GeneticAlgo::genome_init_rng(granularity))
+                        }
+                    }
+                }
+            }
             starting_pop.push(Genome {
                 string: (genome),
                 fitness: (0.0),
             });
         }
 
-        let genome_cache: HashMap<[u16; 6], f64> = HashMap::new();
+        let genome_cache: HashMap<[[[u8; 4]; 3]; 4], f64> = HashMap::new();
 
         GeneticAlgo {
             max_gen,
@@ -99,21 +106,25 @@ impl GeneticAlgo {
     }
 
     // mutate genome based on set mutation rate for every gene of the genome
-    fn mutate_genome(&self, genome: &[u16; 6]) -> [u16; 6] {
+    fn mutate_genome(&self, genome: &[[[u8; 4]; 3]; 4]) -> [[[u8; 4]; 3]; 4] {
         let mut new_genome = genome.clone();
-        for i in 0..genome.len() {
-            let smpl = GeneticAlgo::rng().sample(&GeneticAlgo::unfrm_100());
-            if smpl as f64 <= self.mut_rate * 100.0 {
-                // a random + or - mutation operation on each gene
-                let per_dir = GeneticAlgo::rng().sample(&GeneticAlgo::mut_sign());
-                new_genome[i] = (if per_dir {
-                    genome[i] + 1
-                } else if genome[i] == 0 {
-                    0
-                } else {
-                    genome[i] - 1
-                })
-                .clamp(1, self.granularity);
+        for n in 0..4 {
+            for i in 0..3 {
+                for j in 0..4 {
+                    let smpl = GeneticAlgo::rng().sample(&GeneticAlgo::unfrm_100());
+                    if smpl as f64 <= self.mut_rate * 100.0 {
+                        // a random + or - mutation operation on each gene
+                        let per_dir = GeneticAlgo::rng().sample(&GeneticAlgo::mut_sign());
+                        new_genome[n][i][j] = (if per_dir {
+                            genome[n][i][j] + 1
+                        } else if genome[n][i][j] == 0 {
+                            0
+                        } else {
+                            genome[n][i][j] - 1
+                        })
+                        .clamp(1, self.granularity.into());
+                    }
+                }
             }
         }
         new_genome
@@ -122,8 +133,8 @@ impl GeneticAlgo {
     /*
      * Implements a simple single-point crossover operator with crossover point choosen at random in genome vector
      *  */
-    fn generate_offspring(&self, parent1: &[u16; 6], parent2: &[u16; 6]) -> [u16; 6] {
-        let mut new_genome: [u16; 6] = [0; 6];
+    fn generate_offspring(&self, parent1: &[[[u8; 4]; 3]; 4], parent2: &[[[u8; 4]; 3]; 4]) -> [[[u8; 4]; 3]; 4] {
+        let mut new_genome: [[[u8; 4]; 3]; 4] = [[[0_u8; 4]; 3]; 4];
         let cross_pnt = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
         for i in 0..new_genome.len() {
             if i as u16 <= cross_pnt {
@@ -141,7 +152,7 @@ impl GeneticAlgo {
      *  */
     fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<Genome> = vec![];
-        let mut selected_g: Vec<[u16; 6]> = vec![];
+        let mut selected_g: Vec<[[[u8; 4]; 3]; 4]> = vec![];
         let mut rank_wheel: Vec<usize> = vec![];
         //sort the genomes in population by fitness value
         self.population.sort_unstable_by(|genome_a, genome_b| {
@@ -206,6 +217,7 @@ impl GeneticAlgo {
     fn step_through(&mut self, gen: u16) {
         let trials = self.trial_seeds.len();
         let seeds = self.trial_seeds.clone();
+        let granularity = self.granularity.clone();
 
         let trials_vec: Vec<((u16,u16),u64)> = self
             .sizes.clone()
@@ -254,7 +266,7 @@ impl GeneticAlgo {
             let fitness_tot: f64 = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
-                    let mut genome_env = SOPSEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into());
+                    let mut genome_env = SOPSEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity);
                     let g_fitness = genome_env.simulate(false);
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
@@ -294,21 +306,25 @@ impl GeneticAlgo {
         );
 
         // calculate population diversity
-        // based on simple component wise euclidean distance
+        // based on simple component wise euclidean distance squared*
         // of the genome vectors
         let mut pop_dist: Vec<f64> = vec![];
         for i in 0..self.population.len() {
             for j in (i + 1)..self.population.len() {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
-                let genome1_sum = genome1.string.iter().sum::<u16>() as f64;
-                let genome2_sum = genome2.string.iter().sum::<u16>() as f64;
                 let mut dis_sum: f64 = 0.0;
-                for idx in 0..genome1.string.len() {
-                    let genome1_prob = genome1.string[idx] as f64 / genome1_sum;
-                    let genome2_prob = genome2.string[idx] as f64 / genome2_sum;
-                    let dis = (genome1_prob - genome2_prob).abs();
-                    dis_sum += dis.powf(2.0);
+                for n in 0..4 {
+                    for i in 0..3 {
+                        for j in 0..4 {
+                            if j+i <= n {
+                                let genome1_prob = genome1.string[n][i][j] as f64 / (self.granularity as f64);
+                                let genome2_prob = genome2.string[n][i][j] as f64 / (self.granularity as f64);
+                                let dis = (genome1_prob - genome2_prob).abs();
+                                dis_sum += dis.powf(2.0);
+                            }
+                        }
+                    }
                 }
                 // pop_dist.push(dis_sum.sqrt());
                 pop_dist.push(dis_sum);
