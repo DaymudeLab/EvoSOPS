@@ -1,7 +1,8 @@
-pub mod segregation;
+// pub mod segregation;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;
+use std::collections::HashMap;
 
 /*
  * A particle in SOPS grid used in all the behavior's SOPS grids
@@ -22,18 +23,26 @@ struct Particle {
 pub struct SOPSEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [u16; 6],
+    phenotype: [[[u8; 4]; 3]; 4],
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
     max_fitness: u64,
     arena_layers: u16,
     particle_layers: u16,
-    phenotype_sum: u16
+    granularity: u8
 }
 
 
 impl SOPSEnvironment {
+
+    const EMPTY: u8 = 0;
+    const PARTICLE: u8 = 1;
+    const BOUNDARY: u8 = 2;
+
+    const BACK: u8 = 0;
+    const MID: u8 = 1;
+    const FRONT: u8 = 2;
 
     #[inline]
     fn rng() -> rngs::ThreadRng {
@@ -82,7 +91,7 @@ impl SOPSEnvironment {
      * Calculates Max edge count possible for all the particles of the same color
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
-    pub fn init_sops_env(genome: &[u16; 6], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
+    pub fn init_sops_env(genome: &[[[u8; 4]; 3]; 4], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
@@ -94,8 +103,8 @@ impl SOPSEnvironment {
         for i in 0..arena_layers {
             let mut j = 1;
             while i+arena_layers+j < (grid_size as u16) {
-                grid[i as usize][(i+arena_layers+j) as usize] = 2;
-                grid[(i+arena_layers+j) as usize][i as usize] = 2;
+                grid[i as usize][(i+arena_layers+j) as usize] = SOPSEnvironment::BOUNDARY;
+                grid[(i+arena_layers+j) as usize][i as usize] = SOPSEnvironment::BOUNDARY;
                 j +=1;
             }
         }
@@ -110,7 +119,7 @@ impl SOPSEnvironment {
                     y: j as u8,
                     color: 0
                 });
-                grid[i][j] = 1;
+                grid[i][j] = SOPSEnvironment::PARTICLE;
             }
             
         }
@@ -125,7 +134,7 @@ impl SOPSEnvironment {
             max_fitness: agg_edge_cnt,
             arena_layers,
             particle_layers,
-            phenotype_sum: genome.iter().sum()
+            granularity
         }
     }
 
@@ -157,23 +166,70 @@ impl SOPSEnvironment {
     }
 
     /*
-     * Func to make changes to SOPS grid by moving a particle in a given direction <- most basic operation
+     * Func to calculate a particle's extended neighbor count
      *  */
-    fn move_particle_to(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
+    fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8) {
+        let mut back_cnt = 0;
+        let mut mid_cnt = 0;
+        let mut front_cnt = 0;
+        let particle = &self.participants[particle_idx];
+        let move_i = (particle.x as i32 + direction.0) as usize;
+        let move_j = (particle.y as i32 + direction.1) as usize;
+        let mut seen_neighbor_cache: HashMap<[usize; 2], bool> = HashMap::new();
+        // Neighborhood for original position
+        for idx in 0..6 {
+            let new_i = (particle.x as i32 + SOPSEnvironment::directions()[idx].0) as usize;
+            let new_j = (particle.y as i32 + SOPSEnvironment::directions()[idx].1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+                seen_neighbor_cache.insert([new_i, new_j], true);
+                if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE {
+                    back_cnt += 1;
+                }
+            }
+        }
+        // Neighborhood for new position
+        for idx in 0..6 {
+            let new_i = (move_i as i32 + SOPSEnvironment::directions()[idx].0) as usize;
+            let new_j = (move_j as i32 + SOPSEnvironment::directions()[idx].1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+                let mut position_type = SOPSEnvironment::FRONT;
+                match seen_neighbor_cache.get(&[new_i, new_j]) {
+                    Some(_exists) => {
+                        position_type = SOPSEnvironment::MID;
+                    }
+                    None => {},
+                }
+                if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE {
+                    match position_type {
+                        SOPSEnvironment::FRONT => {
+                            front_cnt += 1;
+                        }
+                        SOPSEnvironment::MID => {
+                            mid_cnt += 1;
+                            back_cnt -= 1;
+                        }
+                        _ => todo!()
+                    }
+                }
+            }
+        }
+        (back_cnt.clamp(0, 3), mid_cnt.clamp(0, 2), front_cnt.clamp(0, 3))
+    }
+
+    /*
+     * Func to check if the proposed move is possible or not for a particle
+     *  */
+     fn particle_move_possible(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
         let mut particle = &mut self.participants[particle_idx];
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
         // Move particle if movement is within bound
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
             // check to see if move is valid ie. within bounds and not in an already occupied location
-            if self.grid[new_i][new_j] == 1 || self.grid[new_i][new_j] == 2 {
+            if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE || self.grid[new_i][new_j] == SOPSEnvironment::BOUNDARY {
                 return false;
             } else {
-                // move the particle
-                self.grid[particle.x as usize][particle.y as usize] = 0;
-                self.grid[new_i][new_j] = 1;
-                particle.x = new_i as u8;
-                particle.y = new_j as u8;
+                // can move the particle
                 return true;
             }
         } else {
@@ -182,32 +238,49 @@ impl SOPSEnvironment {
     }
 
     /*
+     * Func to make changes to SOPS grid by moving a particle in a given direction <- most basic operation
+     *  */
+    fn move_particle_to(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
+        let mut particle = &mut self.participants[particle_idx];
+        let new_i = (particle.x as i32 + direction.0) as usize;
+        let new_j = (particle.y as i32 + direction.1) as usize;
+        // move the particle
+        self.grid[particle.x as usize][particle.y as usize] = SOPSEnvironment::EMPTY;
+        self.grid[new_i][new_j] = SOPSEnvironment::PARTICLE;
+        particle.x = new_i as u8;
+        particle.y = new_j as u8;
+        return true;
+    }
+
+    /*
      * Func to move 'n' particles in random directions in the SOPS grid
      *  */
     fn move_particles(&mut self, cnt: usize) {
-        let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
-        for _ in 0..cnt {
+        
+        // Code for multiple particles moving is not needed, sequentially atleast
+        // let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
+        // for _ in 0..cnt {
             // Choose a random particle for movement
             let par_idx = SOPSEnvironment::rng().sample(&self.unfrm_par());
-            let particle: &Particle = &self.participants[par_idx];
-            // Based on the neighbor count decide if movement is possible (not possible if 6 neighbors)
-            let n_cnt = self.get_neighbors_cnt(particle.x, particle.y) as usize;
-            if n_cnt == 6 {
-                continue;
-            }
-            // Move basis probability given by the genome for moving for given 
-            // #. of neighbors
-            let move_prb: f64 =
-                self.phenotype[n_cnt] as f64 / (self.phenotype_sum as f64);
-            if SOPSEnvironment::move_frng().u64(1_u64..=10000)
-                <= (move_prb * 10000.0) as u64
-            {
-                // Choose a direction at random (out of the 6)
-                let move_dir = SOPSEnvironment::directions()
+            // let particle: &Particle = &self.participants[par_idx];
+            // Choose a random direction and validate
+            let move_dir = SOPSEnvironment::directions()
                     [SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_dir())];
-                par_moves.push((par_idx, move_dir));
+
+            if self.particle_move_possible(par_idx, move_dir) {
+                // Get the neighborhood configuration
+                let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+                // Move basis probability given by the genome for moving for given configuration
+                // if back_cnt >= 4 || mid_cnt >= 3 || front_cnt >= 4 { panic!() }
+                let move_prb: f64 =
+                    self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
+                if SOPSEnvironment::move_frng().u64(1_u64..=10000)
+                    <= (move_prb * 10000.0) as u64
+                {
+                    self.move_particle_to(par_idx, move_dir);
+                }
             }
-        }
+        // }
 
         // Parallel execution
         /*
@@ -238,9 +311,9 @@ impl SOPSEnvironment {
         }).collect();
          */
 
-        for moves in par_moves.iter() {
-            self.move_particle_to(moves.0, moves.1);
-        }
+        // for moves in par_moves.iter() {
+        //     self.move_particle_to(moves.0, moves.1);
+        // }
     }
 
     /*
@@ -259,7 +332,7 @@ impl SOPSEnvironment {
      *  */
     pub fn simulate(&mut self, take_snaps: bool) -> u32 {
         for step in 0..self.sim_duration {
-            self.move_particles((self.participants.len() as f32 * 0.03) as usize);
+            self.move_particles(1 as usize);
             if take_snaps && (step == (self.participants.len() as u64) || step == (self.participants.len() as u64).pow(2)) {
                 self.print_grid();
                 println!("Edge Count: {}", self.evaluate_fitness());

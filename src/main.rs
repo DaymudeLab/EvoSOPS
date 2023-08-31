@@ -1,10 +1,12 @@
 mod GACore;
-mod SOPSCore;
+mod SOPSCore; 
 mod utils;
 use GACore::base_ga::GeneticAlgo;
+/* 
 use GACore::seg_ga::SegGA;
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::segregation::SOPSegEnvironment;
+*/
 use rayon::prelude::*;
 use gag::Redirect;
 use std::{path::PathBuf, ops::Not};
@@ -40,7 +42,7 @@ struct Args {
 
     /// Genome representation granularity
     #[arg(long="gran", default_value_t=20)]
-    granularity: u16,
+    granularity: u8,
 
     /// Mutation rate per gene
     #[arg(short='m', long="mut", default_value_t=0.08)]
@@ -91,11 +93,12 @@ enum Experiment {
 
 fn main() {
     let args = Args::parse();
-
     /*
      * Pipe the output to the file with Experiment Parameters as its name
      */
     let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity);
+    println!("Running the experiment... \nPlease check: {:?} file in ./output folder", &file_name);
+    
     let log = OpenOptions::new()
         .truncate(true)
         .read(true)
@@ -104,7 +107,7 @@ fn main() {
         .open(get_temp_filepath(&file_name))
         .unwrap();
 
-    // let print_redirect = Redirect::stdout(log).unwrap();
+    let print_redirect = Redirect::stdout(log).unwrap();
 
     /*
      * Print out the options for the current run of the script
@@ -131,28 +134,35 @@ fn main() {
      */
     match &args.experiment_type {
         Experiment::GA => {
+            let crossover = true;
             println!("Population Size: {:?}", &args.population);
             println!("Max Generations: {:?}", &args.max_generations);
             println!("Mutation Rate: {:?}", &args.mutation_rate);
             println!("Elitist Count: {:?}", &args.elitist_count);
+            println!("Cross-over: {:?}", &crossover);
             /*
              * Perform a single run of Full length Genetic algorithm for respective behaviour
              */
             match &args.behavior {
                 Behavior::Agg => {
                     println!("\nStarting Aggregation GA Experiment...\n");
-                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
+                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, crossover, particle_sizes, args.seeds);
                     ga_sops.run_through();
                 },
                 Behavior::Sep => {
+                    todo!();
+                    /*
                     println!("\nStarting Separation GA Experiment...\n");
                     let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
                     ga_sops.run_through();
+                     */
 
                 },
             }
         },
         ref other_experiment => {
+            todo!()
+            /*
             println!("Snapshots: {:?}", &args.snaps);
 
             assert_eq!(&args.path.is_some(), &true);
@@ -333,8 +343,9 @@ fn main() {
                 },
                 _ => {},
             }
+             */
         },
     }
 
-    // print_redirect.into_inner();
+    print_redirect.into_inner();
 }
