@@ -78,9 +78,7 @@ impl GeneticAlgo {
             for n in 0_u8..4 {
                 for j in 0_u8..3 {
                     for i in 0_u8..4 {
-                        if i+j <= n {
-                            genome[n as usize][j as usize][i as usize] = GeneticAlgo::rng().sample(GeneticAlgo::genome_init_rng(granularity))
-                        }
+                        genome[n as usize][j as usize][i as usize] = GeneticAlgo::rng().sample(GeneticAlgo::genome_init_rng(granularity))
                     }
                 }
             }
@@ -136,11 +134,17 @@ impl GeneticAlgo {
     fn generate_offspring(&self, parent1: &[[[u8; 4]; 3]; 4], parent2: &[[[u8; 4]; 3]; 4]) -> [[[u8; 4]; 3]; 4] {
         let mut new_genome: [[[u8; 4]; 3]; 4] = [[[0_u8; 4]; 3]; 4];
         let cross_pnt = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
-        for i in 0..new_genome.len() {
-            if i as u16 <= cross_pnt {
-                new_genome[i] = parent1[i];
-            } else {
-                new_genome[i] = parent2[i];
+        let mut cnt = 0;
+        for n in 0..4 {
+            for i in 0..3 {
+                for j in 0..4 {
+                    if cnt < cross_pnt {
+                        new_genome[n][i][j] = parent1[n][i][j];
+                    } else {
+                        new_genome[n][i][j] = parent2[n][i][j];
+                    }
+                    cnt += 1; 
+                }
             }
         }
         new_genome

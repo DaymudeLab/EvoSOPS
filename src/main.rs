@@ -107,7 +107,7 @@ fn main() {
         .open(get_temp_filepath(&file_name))
         .unwrap();
 
-    let print_redirect = Redirect::stdout(log).unwrap();
+    // let print_redirect = Redirect::stdout(log).unwrap();
 
     /*
      * Print out the options for the current run of the script
@@ -347,5 +347,5 @@ fn main() {
         },
     }
 
-    print_redirect.into_inner();
+    // print_redirect.into_inner();
 }
