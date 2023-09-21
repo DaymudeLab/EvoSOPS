@@ -17,27 +17,30 @@ pub struct SegGA {
     elitist_cnt: u16,
     population: Vec<SegGenome>,
     mut_rate: f64,
-    granularity: u16,
-    genome_cache: HashMap<[[[u16; 6]; 7]; 7], f64>,
+    granularity: u8,
+    genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>
 }
 
 impl SegGA {
+
+    const GENOME_LEN: u16 = 10 * 6 * 10;
+
     #[inline]
     fn rng() -> rngs::ThreadRng {
         rand::thread_rng()
     }
 
     #[inline]
-    fn genome_init_rng(granularity: u16) -> Uniform<u16> {
+    fn genome_init_rng(granularity: u8) -> Uniform<u8> {
         Uniform::new_inclusive(1, granularity)
     }
 
     #[inline]
-    fn unfrm_100() -> Uniform<u16> {
-        Uniform::new_inclusive(1, 100)
+    fn mut_frng() -> fastrand::Rng {
+        fastrand::Rng::new()
     }
 
     // fn mut_val(&self) -> Normal<f64> {
@@ -45,7 +48,7 @@ impl SegGA {
     // }
 
     fn cross_pnt() -> Uniform<u16> {
-        Uniform::new_inclusive(0, 83)
+        Uniform::new_inclusive(0, SegGA::GENOME_LEN-1)
     }
 
     fn mut_sign() -> Bernoulli {
@@ -61,7 +64,7 @@ impl SegGA {
         max_gen: u16,
         elitist_cnt: u16,
         mut_rate: f64,
-        granularity: u16,
+        granularity: u8,
         perform_cross: bool,
         sizes: Vec<(u16, u16)>,
         trial_seeds: Vec<u64>
@@ -70,13 +73,11 @@ impl SegGA {
 
         for _ in 0..population_size {
             //init genome
-            let mut genome: [[[u16; 6]; 7]; 7] = [[[0; 6]; 7]; 7];
-            for n in 0_u8..7 {
-                for j in 0_u8..7 {
-                    for i in 0_u8..6 {
-                        if i+j <= n {
-                            genome[n as usize][j as usize][i as usize] = SegGA::rng().sample(SegGA::genome_init_rng(granularity))
-                        }
+            let mut genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
+            for n in 0_u8..10 {
+                for j in 0_u8..6 {
+                    for i in 0_u8..10 {
+                        genome[n as usize][j as usize][i as usize] = SegGA::rng().sample(SegGA::genome_init_rng(granularity))
                     }
                 }
             }
@@ -86,7 +87,7 @@ impl SegGA {
             });
         }
 
-        let genome_cache: HashMap<[[[u16; 6]; 7]; 7], f64> = HashMap::new();
+        let genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64> = HashMap::new();
 
         SegGA {
             max_gen,
@@ -102,25 +103,23 @@ impl SegGA {
     }
 
     // mutate genome based on set mutation rate for every gene of the genome
-    fn mutate_genome(&self, genome: &[[[u16; 6]; 7]; 7]) -> [[[u16; 6]; 7]; 7] {
+    fn mutate_genome(&self, genome: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
         let mut new_genome = genome.clone();
-        for n in 0..7 {
-            for i in 0..7 {
-                for j in 0..6 {
-                    if i+j <= n {
-                        let smpl = SegGA::rng().sample(&SegGA::unfrm_100());
-                        if smpl as f64 <= self.mut_rate * 100.0 {
-                            // a random + or - mutation operation on each gene
-                            let per_dir = SegGA::rng().sample(&SegGA::mut_sign());
-                            new_genome[n][i][j] = (if per_dir {
-                                genome[n][i][j] + 1
-                            } else if genome[n][i][j] == 0 {
-                                0
-                            } else {
-                                genome[n][i][j] - 1
-                            })
-                            .clamp(1, self.granularity);
-                        }
+        for n in 0..10 {
+            for i in 0..6 {
+                for j in 0..10 {
+                    let smpl = SegGA::mut_frng().u64(1_u64..=10000);
+                    if smpl as f64 <= (self.mut_rate * 10000.0) {
+                        // a random + or - mutation operation on each gene
+                        let per_dir = SegGA::rng().sample(&SegGA::mut_sign());
+                        new_genome[n][i][j] = (if per_dir {
+                            genome[n][i][j] + 1
+                        } else if genome[n][i][j] == 0 {
+                            0
+                        } else {
+                            genome[n][i][j] - 1
+                        })
+                        .clamp(1, self.granularity.into());
                     }
                 }
             }
@@ -131,21 +130,19 @@ impl SegGA {
     /*
      * Implements a simple single-point crossover operator with crossover point choosen at random in genome vector
      *  */
-    fn generate_offspring(&self, parent1: &[[[u16; 6]; 7]; 7], parent2: &[[[u16; 6]; 7]; 7]) -> [[[u16; 6]; 7]; 7] {
-        let mut new_genome: [[[u16; 6]; 7]; 7] = [[[0; 6]; 7]; 7];
+    fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
+        let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
         let cross_pnt = SegGA::rng().sample(&SegGA::cross_pnt());
         let mut cnt = 0;
-        for n in 0..7 {
-            for i in 0..7 {
-                for j in 0..6 {
-                    if i+j <= n {
-                        if cnt < cross_pnt {
-                            new_genome[n][i][j] = parent1[n][i][j];
-                        } else {
-                            new_genome[n][i][j] = parent2[n][i][j];
-                        }
-                        cnt += 1; 
+        for n in 0..10 {
+            for i in 0..6 {
+                for j in 0..10 {
+                    if cnt < cross_pnt {
+                        new_genome[n][i][j] = parent1[n][i][j];
+                    } else {
+                        new_genome[n][i][j] = parent2[n][i][j];
                     }
+                    cnt += 1; 
                 }
             }
         }
@@ -158,7 +155,7 @@ impl SegGA {
      *  */
     fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<SegGenome> = vec![];
-        let mut selected_g: Vec<[[[u16; 6]; 7]; 7]> = vec![];
+        let mut selected_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
         let mut rank_wheel: Vec<usize> = vec![];
         //sort the genomes in population by fitness value
         self.population.sort_unstable_by(|genome_a, genome_b| {
@@ -167,10 +164,10 @@ impl SegGA {
 
         //print genomes for analysis
         let best_genome = self.population[0];
-        println!("Best SegGenome -> {best_genome:.5?}");
+        println!("Best Genome -> {best_genome:.5?}");
 
         for idx in 1..self.population.len() {
-            println!("{y:.5?}", y = self.population[idx]);
+            println!("{y:.5?}", y = self.population[idx].fitness);
         }
         
         //bifercate genomes
@@ -206,7 +203,7 @@ impl SegGA {
         //perform mutation
         for idx in 0..selected_g.len() {
             let genome = selected_g[idx];
-            // println!("SegGenome:{} mutations", idx);
+            // println!("Genome:{} mutations", idx);
             let mutated_g = self.mutate_genome(&genome);
             new_pop.push(SegGenome {
                 string: mutated_g,
@@ -223,6 +220,7 @@ impl SegGA {
     fn step_through(&mut self, gen: u16) {
         let trials = self.trial_seeds.len();
         let seeds = self.trial_seeds.clone();
+        let granularity = self.granularity.clone();
 
         let trials_vec: Vec<((u16,u16),u64)> = self
             .sizes.clone()
@@ -271,7 +269,7 @@ impl SegGA {
             let fitness_tot: f64 = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
-                    let mut genome_env = SOPSegEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into());
+                    let mut genome_env = SOPSegEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity);
                     let g_fitness = genome_env.simulate(false);
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
@@ -311,25 +309,21 @@ impl SegGA {
         );
 
         // calculate population diversity
-        // based on simple component wise euclidean distance
+        // based on simple component wise euclidean distance squared*
         // of the genome vectors
         let mut pop_dist: Vec<f64> = vec![];
         for i in 0..self.population.len() {
             for j in (i + 1)..self.population.len() {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
-                let genome1_sum = genome1.string.iter().map(|y| -> u16 { y.iter().map(|x| -> u16 { x.iter().sum() }).sum() }).sum::<u16>() as f64;
-                let genome2_sum = genome2.string.iter().map(|y| -> u16 { y.iter().map(|x| -> u16 { x.iter().sum() }).sum() }).sum::<u16>() as f64;
                 let mut dis_sum: f64 = 0.0;
-                for n in 0..7 {
-                    for i in 0..7 {
-                        for j in 0..6 {
-                            if j+i <= n {
-                                let genome1_prob = genome1.string[n][i][j] as f64 / genome1_sum;
-                                let genome2_prob = genome2.string[n][i][j] as f64 / genome2_sum;
-                                let dis = (genome1_prob - genome2_prob).abs();
-                                dis_sum += dis.powf(2.0);
-                            }
+                for n in 0..10 {
+                    for i in 0..6 {
+                        for j in 0..10 {
+                            let genome1_prob = genome1.string[n][i][j] as f64 / (self.granularity as f64);
+                            let genome2_prob = genome2.string[n][i][j] as f64 / (self.granularity as f64);
+                            let dis = (genome1_prob - genome2_prob).abs();
+                            dis_sum += dis.powf(2.0);
                         }
                     }
                 }
@@ -342,7 +336,6 @@ impl SegGA {
             "Population diversity -> {}",
             pop_diversity / (pop_dist.len() as f64)
         );
-        
         //generate new population
         self.generate_new_pop();
     }

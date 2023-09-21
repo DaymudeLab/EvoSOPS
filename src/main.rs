@@ -2,14 +2,14 @@ mod GACore;
 mod SOPSCore; 
 mod utils;
 use GACore::base_ga::GeneticAlgo;
-/* 
+
 use GACore::seg_ga::SegGA;
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::segregation::SOPSegEnvironment;
-*/
+
 use rayon::prelude::*;
 use gag::Redirect;
-use std::{path::PathBuf, ops::Not};
+use std::path::PathBuf;
 use std::time::Instant;
 use std::fs;
 use std::fs::OpenOptions;
@@ -107,7 +107,7 @@ fn main() {
         .open(get_temp_filepath(&file_name))
         .unwrap();
 
-    // let print_redirect = Redirect::stdout(log).unwrap();
+    let print_redirect = Redirect::stdout(log).unwrap();
 
     /*
      * Print out the options for the current run of the script
@@ -150,19 +150,14 @@ fn main() {
                     ga_sops.run_through();
                 },
                 Behavior::Sep => {
-                    todo!();
-                    /*
                     println!("\nStarting Separation GA Experiment...\n");
                     let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
                     ga_sops.run_through();
-                     */
 
                 },
             }
         },
         ref other_experiment => {
-            todo!()
-            /*
             println!("Snapshots: {:?}", &args.snaps);
 
             assert_eq!(&args.path.is_some(), &true);
@@ -184,17 +179,21 @@ fn main() {
              */
             match &other_experiment {
                 Experiment::GM => {
-                    let all_entries: Vec<u16> = striped_content.split(',').filter_map(|x| x.parse::<u16>().ok()).collect();
+                    let all_entries: Vec<u8> = striped_content.split(',').filter_map(|x| x.parse::<u8>().ok()).collect();
         
                     match &args.behavior {
                         Behavior::Agg => {
                             println!("\nStarting Aggregation Single Genome Trial...\n");
                             // Construct the genome in required dimension
-                            let mut genome: [u16; 6] = [0; 6];
+                            let mut genome: [[[u8; 4]; 3]; 4] = [[[0; 4]; 3]; 4];
                             let mut idx = 0;
-                            for i in 0_u8..6 {
-                                genome[i as usize] = all_entries[idx];
-                                idx += 1;
+                            for n in 0_u8..4 {
+                                for j in 0_u8..3 {
+                                    for i in 0_u8..4 {
+                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                        idx += 1;
+                                    }
+                                }
                             }
 
                             println!("Read Genome:\n{:?}", genome);
@@ -227,7 +226,7 @@ fn main() {
                                 /*
                                      * Single Evaluation run of the Genome
                                      */
-                                    let mut sops_trial = SOPSEnvironment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1);
+                                    let mut sops_trial = SOPSEnvironment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
                                     sops_trial.print_grid();
                                     let edge_cnt: u32 = sops_trial.evaluate_fitness();
                                     println!("Edge Count: {}", edge_cnt);
@@ -250,15 +249,13 @@ fn main() {
                         Behavior::Sep => {
                             println!("\nStarting Separation Single Genome Trial...\n");
                             // Construct the genome in required dimension
-                            let mut genome: [[[u16; 6]; 7]; 7] = [[[0; 6]; 7]; 7];
+                            let mut genome: [[[u8; 10]; 6]; 10] = [[[0; 10]; 6]; 10];
                             let mut idx = 0;
-                            for n in 0_u8..7 {
-                                for j in 0_u8..7 {
-                                    for i in 0_u8..6 {
-                                        // if i+j <= n {
-                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
-                                            idx += 1;
-                                        // }
+                            for n in 0_u8..10 {
+                                for j in 0_u8..6 {
+                                    for i in 0_u8..10 {
+                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                        idx += 1;
                                     }
                                 }
                             }
@@ -281,7 +278,7 @@ fn main() {
                                 /*
                                  * Single Evaluation run of the Genome
                                  */
-                                let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1);
+                                let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity);
                                 sops_trial.print_grid();
                                 let edge_cnt: f32 = sops_trial.evaluate_fitness();
                                 println!("Edge Count: {}", edge_cnt);
@@ -343,9 +340,8 @@ fn main() {
                 },
                 _ => {},
             }
-             */
         },
     }
 
-    // print_redirect.into_inner();
+    print_redirect.into_inner();
 }

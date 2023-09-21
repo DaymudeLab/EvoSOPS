@@ -4,7 +4,6 @@ use super::Genome;
 use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
 use rayon::prelude::*;
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::time::Instant;
 use std::usize;
 
@@ -321,12 +320,10 @@ impl GeneticAlgo {
                 for n in 0..4 {
                     for i in 0..3 {
                         for j in 0..4 {
-                            if j+i <= n {
-                                let genome1_prob = genome1.string[n][i][j] as f64 / (self.granularity as f64);
-                                let genome2_prob = genome2.string[n][i][j] as f64 / (self.granularity as f64);
-                                let dis = (genome1_prob - genome2_prob).abs();
-                                dis_sum += dis.powf(2.0);
-                            }
+                            let genome1_prob = genome1.string[n][i][j] as f64 / (self.granularity as f64);
+                            let genome2_prob = genome2.string[n][i][j] as f64 / (self.granularity as f64);
+                            let dis = (genome1_prob - genome2_prob).abs();
+                            dis_sum += dis.powf(2.0);
                         }
                     }
                 }
@@ -355,7 +352,7 @@ impl GeneticAlgo {
             let now = Instant::now();
             self.step_through(gen);
             let elapsed = now.elapsed().as_secs();
-            println!("Elapsed Time: {:.2?}", elapsed);
+            println!("Elapsed Time: {:.2?}s", elapsed);
         }
         /*
          * Snippet to evaluate the final best genome evolved at the end of GA execution

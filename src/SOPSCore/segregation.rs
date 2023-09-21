@@ -3,6 +3,7 @@ use super::Particle;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;
+use std::collections::HashMap;
 
 /*
  * Main Class for the Separation Behaviour Experiments on SOPS grid
@@ -13,18 +14,26 @@ use std::usize;
 pub struct SOPSegEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [[[u16; 6]; 7];7],
+    phenotype: [[[u8; 10]; 6]; 10],
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
     max_fitness: u64,
     arena_layers: u16,
     particle_layers: u16,
-    phenotype_sum: u16
+    granularity: u8,
+    lookup_dim_idx: HashMap<(u8, u8, u8), u8>
 }
 
 
 impl SOPSegEnvironment {
+    const EMPTY: u8 = 0;
+    const BOUNDARY: u8 = 4;
+
+    const BACK: u8 = 0;
+    const MID: u8 = 1;
+    const FRONT: u8 = 2;
+
     #[inline]
     fn rng() -> rngs::ThreadRng {
         rand::thread_rng()
@@ -41,8 +50,8 @@ impl SOPSegEnvironment {
     }
 
     #[inline]
-    fn grid_rng(size: usize) -> Uniform<usize> {
-        Uniform::new(0, size)
+    fn grid_rng(size_s: usize, size_e: usize) -> Uniform<usize> {
+        Uniform::new(size_s, size_e)
     }
 
     #[inline]
@@ -72,8 +81,12 @@ impl SOPSegEnvironment {
      * Calculates Max edge count possible for all the particles of the same color
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
-    pub fn init_sops_env(genome: &[[[u16; 6]; 7]; 7], arena_layers: u16, particle_layers: u16, seed: u64) -> Self {
+    pub fn init_sops_env(genome: &[[[u8; 10]; 6]; 10], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
+        // let init_compartment_layers = arena_layers-10;
+        // let init_compartment_size = ((particle_layers)*2 + 1) as usize;
+        // let init_compartment_start = (grid_size/4) as usize;
+        // let init_compartment_end = init_compartment_start + init_compartment_size;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
         let num_particles = 6*particle_layers*(1+particle_layers)/2;
@@ -85,8 +98,8 @@ impl SOPSegEnvironment {
         for i in 0..arena_layers {
             let mut j = 1;
             while i+arena_layers+j < (grid_size as u16) {
-                grid[i as usize][(i+arena_layers+j) as usize] = 4;
-                grid[(i+arena_layers+j) as usize][i as usize] = 4;
+                grid[i as usize][(i+arena_layers+j) as usize] = SOPSegEnvironment::BOUNDARY;
+                grid[(i+arena_layers+j) as usize][i as usize] = SOPSegEnvironment::BOUNDARY;
                 j +=1;
             }
         }
@@ -94,8 +107,10 @@ impl SOPSegEnvironment {
         let mut current_color = 1;
         //init grid and particles
         while participants.len() < num_particles.into() {
-            let i = grid_rng.sample(&SOPSegEnvironment::grid_rng(grid_size));
-            let j = grid_rng.sample(&SOPSegEnvironment::grid_rng(grid_size));
+            // let i = grid_rng.sample(&SOPSegEnvironment::grid_rng(init_compartment_start,init_compartment_end));
+            // let j = grid_rng.sample(&SOPSegEnvironment::grid_rng(init_compartment_start,init_compartment_end));
+            let i = grid_rng.sample(&SOPSegEnvironment::grid_rng(0,grid_size));
+            let j = grid_rng.sample(&SOPSegEnvironment::grid_rng(0,grid_size));
             if grid[i][j] == 0 {
                 participants.push(Particle {
                     x: i as u8,
@@ -108,21 +123,41 @@ impl SOPSegEnvironment {
                     current_color_cnt = 0;
                     current_color +=1;
                 }
-            }
-            
+            }   
         }
+
+        // TODO: Make this a static const variable
+        let lookup_dim_idx: HashMap<(u8, u8, u8), u8> = ([
+            ((0,0,2), 0),
+            ((1,1,2), 1),
+            ((1,0,2), 2),
+            ((2,2,2), 3),
+            ((2,1,2), 4),
+            ((2,0,2), 5),
+            ((0,0,3), 0),
+            ((1,1,3), 1),
+            ((1,0,3), 2),
+            ((2,2,3), 3),
+            ((2,1,3), 4),
+            ((2,0,3), 5),
+            ((3,3,3), 6),
+            ((3,2,3), 7),
+            ((3,1,3), 8),
+            ((3,0,3), 9),
+        ]).into();
 
         SOPSegEnvironment {
             grid,
             participants,
             phenotype: *genome,
-            sim_duration: (num_particles as u64).pow(3),
+            sim_duration: (num_particles as u64).pow(3)*3,
             fitness_val: 0.0,
             size: grid_size,
             max_fitness: agg_edge_cnt + 3*(agg_clr_edge_cnt),
             arena_layers,
             particle_layers,
-            phenotype_sum: genome.iter().map(|y| -> u16 { y.iter().map(|x| -> u16 { x.iter().sum() }).sum() }).sum()
+            granularity,
+            lookup_dim_idx
         }
     }
 
@@ -170,12 +205,12 @@ impl SOPSegEnvironment {
         let new_j = (particle.y as i32 + direction.1) as usize;
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
             // not need to move/swap if the particle is swapping with a particle of same color or is going out of bounds
-            if self.grid[new_i][new_j] == 4 || self.grid[new_i][new_j] == self.grid[particle.x as usize][particle.y as usize] {
+            if self.grid[new_i][new_j] == SOPSegEnvironment::BOUNDARY || self.grid[new_i][new_j] == self.grid[particle.x as usize][particle.y as usize] {
                 return false;
-            } else if self.grid[new_i][new_j] == 0 {
+            } else if self.grid[new_i][new_j] == SOPSegEnvironment::EMPTY {
                 // simple move in empty location
                 // println!("Particle at {},{},c{} moves to {},{}", particle.x, particle.y, particle.color, new_i, new_j);
-                self.grid[particle.x as usize][particle.y as usize] = 0;
+                self.grid[particle.x as usize][particle.y as usize] = SOPSegEnvironment::EMPTY;
                 self.grid[new_i][new_j] = particle.color;
                 let mut particle_mut = &mut self.participants[particle_idx];
                 particle_mut.x = new_i as u8;
@@ -203,21 +238,181 @@ impl SOPSegEnvironment {
         }
     }
 
+    /*
+     * Func to get index into a genome's dimension
+     */
+    fn get_dim_idx(&self, all_cnt: u8, same_cnt: u8, all_possible_cnt: u8) -> u8 {
+
+        match self.lookup_dim_idx.get(&(all_cnt, same_cnt, all_possible_cnt)) {
+            Some(idx) => {
+                return *idx;
+            }
+            None => {0},
+        }
+    }
+
+    /*
+     * Func to calculate a particle's extended neighbor count
+     *  */
+     fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8) {
+        let mut back_cnt: u8 = 0;
+        let mut back_same_clr_cnt: u8 = 0;
+        let mut mid_cnt: u8 = 0;
+        let mut mid_same_clr_cnt: u8 = 0;
+        let mut front_cnt: u8 = 0;
+        let mut front_same_clr_cnt: u8 = 0;
+        let particle = &self.participants[particle_idx];
+        let move_i = (particle.x as i32 + direction.0) as usize;
+        let move_j = (particle.y as i32 + direction.1) as usize;
+        let mut seen_neighbor_cache: HashMap<[usize; 2], bool> = HashMap::new();
+        // Neighborhood for original position
+        for idx in 0..6 {
+            let new_i = (particle.x as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
+            let new_j = (particle.y as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+                seen_neighbor_cache.insert([new_i, new_j], true);
+                if self.grid[new_i][new_j] != SOPSegEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSegEnvironment::BOUNDARY  {
+                    back_cnt += 1;
+                    if particle.color == self.grid[new_i][new_j] {
+                        back_same_clr_cnt += 1;
+                    }
+                }
+            }
+        }
+        // Neighborhood for new position
+        for idx in 0..6 {
+            let new_i = (move_i as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
+            let new_j = (move_j as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+                let mut position_type = SOPSegEnvironment::FRONT;
+                match seen_neighbor_cache.get(&[new_i, new_j]) {
+                    Some(_exists) => {
+                        position_type = SOPSegEnvironment::MID;
+                    }
+                    None => {},
+                }
+                if self.grid[new_i][new_j] != SOPSegEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSegEnvironment::BOUNDARY {
+                    match position_type {
+                        SOPSegEnvironment::FRONT => {
+                            front_cnt += 1;
+                            if particle.color == self.grid[new_i][new_j] {
+                                front_same_clr_cnt += 1;
+                            }
+                        }
+                        SOPSegEnvironment::MID => {
+                            mid_cnt += 1;
+                            back_cnt -= 1;
+                            if particle.color == self.grid[new_i][new_j] {
+                                mid_same_clr_cnt += 1;
+                                back_same_clr_cnt -= 1;
+                            }
+                        }
+                        _ => todo!()
+                    }
+                }
+            }
+        }
+        let back_idx: u8 = self.get_dim_idx(back_cnt, back_same_clr_cnt, 3);
+        let mid_idx: u8 = self.get_dim_idx(mid_cnt, mid_same_clr_cnt, 2);
+        let front_idx: u8 = self.get_dim_idx(front_cnt, front_same_clr_cnt, 3);
+        // TODO: Remove this hardcoding of the values. Should come from genome's dimenions
+        (back_idx.clamp(0, 9), mid_idx.clamp(0, 5), front_idx.clamp(0, 9))
+    }
+
+    /*
+     * Func to check if the proposed move is possible or not for a particle
+     *  */
+     fn particle_move_possible(&self, particle_idx: usize, direction: (i32, i32)) -> u8 {
+        let particle = &self.participants[particle_idx];
+        let new_i = (particle.x as i32 + direction.0) as usize;
+        let new_j = (particle.y as i32 + direction.1) as usize;
+        // Move particle if movement is within grid array's bound
+        if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            // check to see if move is valid ie. within arena bounds
+            if self.grid[new_i][new_j] == SOPSegEnvironment::BOUNDARY {
+                return 0;
+            } else {
+                // can move the particle
+                if self.grid[new_i][new_j] == SOPSegEnvironment::EMPTY {
+                    return 2;
+                }
+                // can swap with the neighbor
+                return 1;
+            }
+        } else {
+            return 0;
+        }
+    }
+
+    /*
+     * Func to check if the proposed move is possible or not for a particle
+     *  */
+     fn get_adjacent_particle(&self, particle_idx: usize, direction: (i32, i32)) -> usize {
+        let particle = &self.participants[particle_idx];
+        let new_i = (particle.x as i32 + direction.0) as u8;
+        let new_j = (particle.y as i32 + direction.1) as u8;
+        let adjacent_particle_idx = &self.participants.iter().position(|par| par.x == new_i && par.y == new_j).unwrap();
+        return *adjacent_particle_idx;
+    }
 
     /*
      * Func to move 'n' particles in random directions in the SOPS grid
      *  */
     fn move_particles(&mut self, cnt: usize) {
-        let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
+        // let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
 
-         for _ in 0..cnt {
+        //  for _ in 0..cnt {
             // Choose a random particle for movement
             let par_idx = SOPSegEnvironment::rng().sample(&self.unfrm_par());
-            let particle: &Particle = &self.participants[par_idx];
             // Choose a direction at random (out of the 6)
             let move_dir = SOPSegEnvironment::directions()
                         [SOPSegEnvironment::rng().sample(&SOPSegEnvironment::unfrm_dir())];
+            
+            match self.particle_move_possible(par_idx, move_dir) {
+                1 => {
+                    // swap
+                    // Get the neighborhood configuration
+                    let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+                    // Move basis probability given by the genome for moving for given configuration
+                    // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
+                    let move_prb_p1: f64 =
+                        self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
+        
+                    let par_2_idx = &self.get_adjacent_particle(par_idx, move_dir);
+                    let flip_direction = (move_dir.0 * -1, move_dir.1 * -1);
+                    let (back_cnt_2, mid_cnt_2, front_cnt_2) = self.get_ext_neighbors_cnt(*par_2_idx, flip_direction);
+                    // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
+                    let move_prb_p2: f64 =
+                        self.phenotype[back_cnt_2 as usize][mid_cnt_2 as usize][front_cnt_2 as usize] as f64 / (self.granularity as f64);
+                    
+                    let move_prb = move_prb_p1 * move_prb_p2;
+                    
+                    if SOPSegEnvironment::move_frng().u64(1_u64..=10000)
+                        <= (move_prb * 10000.0) as u64
+                    {
+                        self.move_particle_to(par_idx, move_dir);
+                    }
+                }
+                2 => {
+                    // move
+                    // Get the neighborhood configuration
+                    let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+                    // Move basis probability given by the genome for moving for given configuration
+                    // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
+                    let move_prb: f64 =
+                        self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
+                    if SOPSegEnvironment::move_frng().u64(1_u64..=10000)
+                        <= (move_prb * 10000.0) as u64
+                    {
+                        self.move_particle_to(par_idx, move_dir);
+                    }
+                }
+                _ => {}
+            }
+            
+            /*
             // Move the particle
+            let particle: &Particle = &self.participants[par_idx];
             let new_i = (particle.x as i32 + move_dir.0) as usize;
             let new_j = (particle.y as i32 + move_dir.1) as usize;
             // Check for Invalid move like going out of bounds and don't move if thats the case
@@ -227,7 +422,6 @@ impl SOPSegEnvironment {
             }
             
             // Choosing if to move
-
             let (egde_cnt, clr_edge_cnt, n_clr_cnt) = self.get_neighbors_cnt(particle.x, particle.y, self.grid[new_i][new_j]);
             // Don't move if all the neighbors are of same color
             if clr_edge_cnt < 6 {
@@ -243,8 +437,9 @@ impl SOPSegEnvironment {
                     par_moves.push((par_idx, move_dir));
                 }
             }
-        }
-        }
+             */
+        // }
+        // }
 
         // Parallel execution
         /*
@@ -268,9 +463,9 @@ impl SOPSegEnvironment {
         }).collect();
          */
 
-        for moves in par_moves.iter() {
-            self.move_particle_to(moves.0, moves.1);
-        }
+        // for moves in par_moves.iter() {
+        //     self.move_particle_to(moves.0, moves.1);
+        // }
     }
 
     /*

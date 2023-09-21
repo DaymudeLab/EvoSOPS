@@ -1,5 +1,5 @@
 pub mod base_ga;
-// pub mod seg_ga;
+pub mod seg_ga;
 
 /*
  * Main file all the basic classes needed for GA to work
@@ -19,6 +19,6 @@ struct Genome {
   */
 #[derive(Debug, Copy, Clone)]
 struct SegGenome {
-    string: [[[u8; 6]; 7]; 7],
+    string: [[[u8; 10]; 6]; 10],
     fitness: f64,
 }

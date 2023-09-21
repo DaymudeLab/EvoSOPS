@@ -1,4 +1,4 @@
-// pub mod segregation;
+pub mod segregation;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;
@@ -213,14 +213,15 @@ impl SOPSEnvironment {
                 }
             }
         }
+        // TODO: Remove this hardcoding of the values. Should come from genome's dimenions
         (back_cnt.clamp(0, 3), mid_cnt.clamp(0, 2), front_cnt.clamp(0, 3))
     }
 
     /*
      * Func to check if the proposed move is possible or not for a particle
      *  */
-     fn particle_move_possible(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
-        let mut particle = &mut self.participants[particle_idx];
+     fn particle_move_possible(&self, particle_idx: usize, direction: (i32, i32)) -> bool {
+        let particle = &self.participants[particle_idx];
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
         // Move particle if movement is within bound
@@ -271,7 +272,7 @@ impl SOPSEnvironment {
                 // Get the neighborhood configuration
                 let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
                 // Move basis probability given by the genome for moving for given configuration
-                // if back_cnt >= 4 || mid_cnt >= 3 || front_cnt >= 4 { panic!() }
+                // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
                 let move_prb: f64 =
                     self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
                 if SOPSEnvironment::move_frng().u64(1_u64..=10000)
