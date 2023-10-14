@@ -1,5 +1,5 @@
 mod GACore;
-mod SOPSCore; 
+mod SOPSCore;
 mod utils;
 use GACore::base_ga::GeneticAlgo;
 
@@ -272,7 +272,7 @@ fn main() {
                                 .flat_map(|v| std::iter::repeat(v).take(trials.into()))
                                 .collect();
 
-                            let fitness_tot: f64 = trials_vec.clone()
+                            let fitness_tot: f32 = trials_vec.clone()
                             .into_par_iter()
                             .map(|trial| {
                                 /*
@@ -280,16 +280,12 @@ fn main() {
                                  */
                                 let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity);
                                 sops_trial.print_grid();
-                                let edge_cnt: f32 = sops_trial.evaluate_fitness();
-                                println!("Edge Count: {}", edge_cnt);
-                                println!("Max Fitness: {}", sops_trial.get_max_fitness());
-                                println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+                                let fitness: f32 = sops_trial.evaluate_fitness();
+                                println!("Starting Fitness: {}", fitness);
                                 let now = Instant::now();
-                                let edge_cnt: f32 = sops_trial.simulate(true);
+                                let t_fitness: f32 = sops_trial.simulate(true);
                                 let elapsed = now.elapsed().as_secs();
                                 sops_trial.print_grid();
-                                println!("Edge Count: {}", edge_cnt);
-                                let t_fitness = edge_cnt as f64/ sops_trial.get_max_fitness() as f64;
                                 println!("Fitness: {}", &t_fitness);
                                 println!("Trial Elapsed Time: {:.2?}s", elapsed);
                                 t_fitness

@@ -16,9 +16,10 @@ pub struct SOPSegEnvironment {
     participants: Vec<Particle>,
     phenotype: [[[u8; 10]; 6]; 10],
     sim_duration: u64,
-    fitness_val: f64,
+    fitness_val: f32,
     size: usize,
-    max_fitness: u64,
+    max_fitness_c1: f32,
+    max_fitness_c2: f32,
     arena_layers: u16,
     particle_layers: u16,
     granularity: u8,
@@ -33,6 +34,9 @@ impl SOPSegEnvironment {
     const BACK: u8 = 0;
     const MID: u8 = 1;
     const FRONT: u8 = 2;
+
+    const W1: f32 = 0.65; //Induce aggregation
+    const W2: f32 = 0.35; //Induce separation
 
     #[inline]
     fn rng() -> rngs::ThreadRng {
@@ -91,8 +95,12 @@ impl SOPSegEnvironment {
         let mut participants: Vec<Particle> = vec![];
         let num_particles = 6*particle_layers*(1+particle_layers)/2;
         let num_particles_clr = num_particles/3;
-        let agg_edge_cnt: u64 = (3*(3*particle_layers.pow(2)+particle_layers-1)).into();
-        let agg_clr_edge_cnt: u64 = (3*particle_layers.pow(2)-particle_layers-1).into();
+        
+        // No. of edges in the aggregated config with one less particle than aggregation behavior
+        let agg_edge_cnt: f32 = (3*(3*particle_layers.pow(2)+particle_layers-1)).into();
+        // No. of edges in the aggregated config for each color
+        let agg_clr_edge_cnt: f32 = (3*particle_layers.pow(2)-particle_layers-1).into();
+        
         let mut grid_rng = SOPSegEnvironment::seed_rng(seed);
         //init grid bounds
         for i in 0..arena_layers {
@@ -153,7 +161,8 @@ impl SOPSegEnvironment {
             sim_duration: (num_particles as u64).pow(3)*3,
             fitness_val: 0.0,
             size: grid_size,
-            max_fitness: agg_edge_cnt + 3*(agg_clr_edge_cnt),
+            max_fitness_c1: agg_edge_cnt,
+            max_fitness_c2: agg_clr_edge_cnt,
             arena_layers,
             particle_layers,
             granularity,
@@ -479,7 +488,15 @@ impl SOPSegEnvironment {
             clr_edges[(particle.color-1) as usize] += neigbor_edges.1 as u32;
             sum + neigbor_edges.0 as u32
         });
-        ((edges as f32) + (clr_edges.iter().sum::<u32>() as f32)) / 2.0
+        // println!("Total edges: {}", (edges as f32) / 2.0);
+        // println!("Colored edges: {:?}", clr_edges);
+        let edge_cnt = ((edges as f32) / 2.0, (clr_edges.iter().sum::<u32>() as f32) / (2.0 * (clr_edges.len() as f32)));
+        // println!("Edges: {:?}", edge_cnt);
+        let c1 =  edge_cnt.0 / self.max_fitness_c1;
+        let c2 = edge_cnt.1 / self.max_fitness_c2;
+        // println!("C1: {:?}", c1);
+        // println!("C2: {:?}", c2);
+        SOPSegEnvironment::W1 * c1 + SOPSegEnvironment::W2 * c2
     }
 
     /*
@@ -489,26 +506,26 @@ impl SOPSegEnvironment {
         for step in 0..self.sim_duration {
             self.move_particles(1 as usize);
             if take_snaps && (step == (self.participants.len() as u64) || step == (self.participants.len() as u64).pow(2) || step == (self.participants.len() as u64).pow(3) || step == (self.participants.len() as u64).pow(3)*2|| step == (self.participants.len() as u64).pow(3)*3|| step == (self.participants.len() as u64).pow(3)*4|| step == (self.participants.len() as u64).pow(3)*5) {
-                self.print_grid();
                 println!("Step {}", step);
+                self.print_grid();
                 // Check to see if swaps and other motion is working correctly by checking total #. of particles
                 // println!("No. of Participants {:?}", self.get_participant_cnt());
                 // let particles_cnt = self.get_participant_cnt();
                 // if particles_cnt.iter().any(|&x| x != (self.participants.len() as u16/3)) {
                 //     panic!("Something is wrong");
                 // }
-                println!("Edge Count: {}", self.evaluate_fitness());
-                println!("Fitness: {}", self.evaluate_fitness() as f32/ self.get_max_fitness() as f32);
+                let fitness = self.evaluate_fitness();
+                println!("Fitness: {}", fitness);
             }
         }
         let fitness = self.evaluate_fitness();
-        self.fitness_val = fitness as f64;
+        self.fitness_val = fitness;
         fitness
     }
 
-    pub fn get_max_fitness(&self) -> u64 {
-        self.max_fitness
-    }
+    // pub fn get_max_fitness(&self) -> (f32, f32) {
+    //     (self.max_fitness_c1, self.max_fitness_c1)
+    // }
 
     pub fn get_participant_cnt(&self) -> [u16; 3] {
         let mut clr_particles = [0_u16; 3];

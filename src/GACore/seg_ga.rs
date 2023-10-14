@@ -69,6 +69,8 @@ impl SegGA {
         sizes: Vec<(u16, u16)>,
         trial_seeds: Vec<u64>
     ) -> Self {
+
+        println!("Weights: 0.65 x Total + 0.35 x Avg. Same Clr");
         let mut starting_pop: Vec<SegGenome> = vec![];
 
         for _ in 0..population_size {
@@ -274,7 +276,8 @@ impl SegGA {
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
                     // let g_fitness = 1; // added
-                    g_fitness as f64 / (genome_env.get_max_fitness() as f64)
+                    // g_fitness as f64 / (genome_env.get_max_fitness() as f64)
+                    g_fitness as f64
                 })
                 .sum();
 
