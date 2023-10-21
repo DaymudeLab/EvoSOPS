@@ -151,7 +151,7 @@ fn main() {
                 },
                 Behavior::Sep => {
                     println!("\nStarting Separation GA Experiment...\n");
-                    let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
+                    let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
                     ga_sops.run_through();
 
                 },
@@ -278,7 +278,7 @@ fn main() {
                                 /*
                                  * Single Evaluation run of the Genome
                                  */
-                                let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity);
+                                let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
                                 sops_trial.print_grid();
                                 let fitness: f32 = sops_trial.evaluate_fitness();
                                 println!("Starting Fitness: {}", fitness);

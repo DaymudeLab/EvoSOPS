@@ -22,3 +22,11 @@ struct SegGenome {
     string: [[[u8; 10]; 6]; 10],
     fitness: f64,
 }
+
+#[derive(Debug, Copy, Clone)]
+enum DiversThresh {
+  /// Initial state when diversity is high and mutation rate is standard
+  INIT,
+  /// Low diversity state and hence mutation rate is x2
+  LOWER_HIT,
+}

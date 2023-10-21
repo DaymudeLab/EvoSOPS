@@ -23,7 +23,9 @@ pub struct SOPSegEnvironment {
     arena_layers: u16,
     particle_layers: u16,
     granularity: u8,
-    lookup_dim_idx: HashMap<(u8, u8, u8), u8>
+    lookup_dim_idx: HashMap<(u8, u8, u8), u8>,
+    w1: f32,
+    w2: f32
 }
 
 
@@ -35,8 +37,8 @@ impl SOPSegEnvironment {
     const MID: u8 = 1;
     const FRONT: u8 = 2;
 
-    const W1: f32 = 0.65; //Induce aggregation
-    const W2: f32 = 0.35; //Induce separation
+    // const W1: f32 = 0.65; //Induce aggregation
+    // const W2: f32 = 0.35; //Induce separation
 
     #[inline]
     fn rng() -> rngs::ThreadRng {
@@ -83,9 +85,10 @@ impl SOPSegEnvironment {
      * of the SOPS grid and this also defines the total density of particles in the arena.
      * Calculates Max edge count possible for all the particles irrespective of the color
      * Calculates Max edge count possible for all the particles of the same color
+     * Also accept the weights for Agg and Sep components
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
-    pub fn init_sops_env(genome: &[[[u8; 10]; 6]; 10], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8) -> Self {
+    pub fn init_sops_env(genome: &[[[u8; 10]; 6]; 10], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8, w1: f32, w2: f32) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         // let init_compartment_layers = arena_layers-10;
         // let init_compartment_size = ((particle_layers)*2 + 1) as usize;
@@ -166,7 +169,9 @@ impl SOPSegEnvironment {
             arena_layers,
             particle_layers,
             granularity,
-            lookup_dim_idx
+            lookup_dim_idx,
+            w1,
+            w2
         }
     }
 
@@ -496,7 +501,7 @@ impl SOPSegEnvironment {
         let c2 = edge_cnt.1 / self.max_fitness_c2;
         // println!("C1: {:?}", c1);
         // println!("C2: {:?}", c2);
-        SOPSegEnvironment::W1 * c1 + SOPSegEnvironment::W2 * c2
+        self.w1 * c1 + self.w2 * c2
     }
 
     /*
