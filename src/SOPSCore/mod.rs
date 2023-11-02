@@ -1,4 +1,6 @@
 pub mod segregation;
+pub mod bridging;
+
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;

@@ -6,6 +6,7 @@ use GACore::base_ga::GeneticAlgo;
 use GACore::seg_ga::SegGA;
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::segregation::SOPSegEnvironment;
+use crate::SOPSCore::bridging::SOPBridEnvironment;
 
 use rayon::prelude::*;
 use gag::Redirect;
@@ -79,6 +80,8 @@ enum Behavior {
     Agg,
     /// Separation
     Sep,
+    /// Bridging
+    Brid,
 }
 
 #[derive(ValueEnum, Debug, Clone)] // ArgEnum here
@@ -152,6 +155,12 @@ fn main() {
                 Behavior::Sep => {
                     println!("\nStarting Separation GA Experiment...\n");
                     let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
+                    ga_sops.run_through();
+
+                },
+                Behavior::Brid => {
+                    println!("\nStarting Bridging GA Experiment...\n");
+                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
                     ga_sops.run_through();
 
                 },
@@ -294,6 +303,61 @@ fn main() {
     
                             println!("Total Fitness: {}", &fitness_tot);
                         },
+                        Behavior::Brid => {
+                            println!("\nStarting Bridging Single Genome Trial...\n");
+
+                            // Construct the genome in required dimension 
+                            const FRONT_DIM: usize = 4;
+                            const MID_DIM: usize = 3;
+                            const BACK_DIM: usize = 4;
+
+                            let mut genome: [[[u8; FRONT_DIM]; MID_DIM]; BACK_DIM] = [[[0; FRONT_DIM]; MID_DIM]; BACK_DIM];
+                            let mut idx = 0;
+                            for n in 0_u8..FRONT_DIM as u8 {
+                                for j in 0_u8..MID_DIM as u8 {
+                                    for i in 0_u8..BACK_DIM as u8 {
+                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                        idx += 1;
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            // Run the trials in parallel
+                            let trials = args.seeds.len();
+                            let seeds = args.seeds.clone();
+
+                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                                .into_iter()
+                                .zip(seeds)
+                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+                                .collect();
+
+                                let fitness_tot: f32 = trials_vec.clone()
+                                .into_par_iter()
+                                // .map(|trial| {
+                                //     /*
+                                //      * Single Evaluation run of the Genome
+                                //      */
+
+                                //     //TODO: Create SOPSBridEnviroment
+                                //     let mut sops_trial = SOPBridEnvironment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
+                                //     sops_trial.print_grid();
+                                //     let fitness: f32 = sops_trial.evaluate_fitness();
+                                //     println!("Starting Fitness: {}", fitness);
+                                //     let now = Instant::now();
+                                //     let t_fitness: f32 = sops_trial.simulate(true);
+                                //     let elapsed = now.elapsed().as_secs();
+                                //     sops_trial.print_grid();
+                                //     println!("Fitness: {}", &t_fitness);
+                                //     println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                //     t_fitness
+                                // })
+                                // .sum();
+        
+                                println!("Total Fitness: {}", &fitness_tot);
+                        },
                     }
                 },
                 Experiment::TH => {
@@ -314,6 +378,26 @@ fn main() {
                             todo!()
                         },
                         Behavior::Sep => {
+                            let mut genome: [[[f32; 6]; 7]; 7] = [[[0.0; 6]; 7]; 7];
+                            let mut idx = 0;
+                            for n in 0_u8..7 {
+                                for j in 0_u8..7 {
+                                    for i in 0_u8..6 {
+                                        // if i+j <= n {
+                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                            idx += 1;
+                                        // }
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            // Need to create a new class that takes the Genome's float values and operates on them
+                            todo!()
+                        },
+                        Behavior::Brid => {
+                            // TODO
                             let mut genome: [[[f32; 6]; 7]; 7] = [[[0.0; 6]; 7]; 7];
                             let mut idx = 0;
                             for n in 0_u8..7 {
