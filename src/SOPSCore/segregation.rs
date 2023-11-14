@@ -75,6 +75,11 @@ impl SOPSegEnvironment {
         vec![(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1)]
     }
 
+    #[inline]
+    fn gene_probability() -> Vec<u16> {
+        vec![1000, 500, 250, 125, 63, 31, 16, 8, 4, 2, 1]
+    }
+
     fn unfrm_par(&self) -> Uniform<usize> {
         Uniform::new(0, self.participants.len())
     }
@@ -138,6 +143,7 @@ impl SOPSegEnvironment {
         }
 
         // TODO: Make this a static const variable
+        // Mapping table for various configurations intra group(F/M/B) -> index in genome's dimension
         let lookup_dim_idx: HashMap<(u8, u8, u8), u8> = ([
             ((0,0,2), 0),
             ((1,1,2), 1),
@@ -283,7 +289,7 @@ impl SOPSegEnvironment {
         for idx in 0..6 {
             let new_i = (particle.x as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
             let new_j = (particle.y as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != move_i) & (new_j != move_j) {
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] != SOPSegEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSegEnvironment::BOUNDARY  {
                     back_cnt += 1;
@@ -297,7 +303,7 @@ impl SOPSegEnvironment {
         for idx in 0..6 {
             let new_i = (move_i as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j)& (new_i != particle.x.into()) & (new_j != particle.y.into()) {
                 let mut position_type = SOPSegEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
@@ -377,10 +383,13 @@ impl SOPSegEnvironment {
 
         //  for _ in 0..cnt {
             // Choose a random particle for movement
-            let par_idx = SOPSegEnvironment::rng().sample(&self.unfrm_par());
+            // let par_idx = SOPSegEnvironment::rng().sample(&self.unfrm_par());
+            let par_idx = SOPSegEnvironment::move_frng().usize(..self.participants.len());
             // Choose a direction at random (out of the 6)
+            // let move_dir = SOPSegEnvironment::directions()
+            //             [SOPSegEnvironment::rng().sample(&SOPSegEnvironment::unfrm_dir())];
             let move_dir = SOPSegEnvironment::directions()
-                        [SOPSegEnvironment::rng().sample(&SOPSegEnvironment::unfrm_dir())];
+                            [SOPSegEnvironment::move_frng().usize(..SOPSegEnvironment::directions().len())];
             
             match self.particle_move_possible(par_idx, move_dir) {
                 1 => {
@@ -388,21 +397,18 @@ impl SOPSegEnvironment {
                     // Get the neighborhood configuration
                     let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
                     // Move basis probability given by the genome for moving for given configuration
-                    // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
-                    let move_prb_p1: f64 =
-                        self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
+                    let move_prb_p1 = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
         
                     let par_2_idx = &self.get_adjacent_particle(par_idx, move_dir);
                     let flip_direction = (move_dir.0 * -1, move_dir.1 * -1);
                     let (back_cnt_2, mid_cnt_2, front_cnt_2) = self.get_ext_neighbors_cnt(*par_2_idx, flip_direction);
-                    // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
-                    let move_prb_p2: f64 =
-                        self.phenotype[back_cnt_2 as usize][mid_cnt_2 as usize][front_cnt_2 as usize] as f64 / (self.granularity as f64);
+
+                    let move_prb_p2 = self.phenotype[back_cnt_2 as usize][mid_cnt_2 as usize][front_cnt_2 as usize];
                     
-                    let move_prb = move_prb_p1 * move_prb_p2;
+                    //Choose pessimistically ie. select lesser of the two move probability 
+                    let move_prb= if move_prb_p1 > move_prb_p2 {move_prb_p1} else {move_prb_p2};
                     
-                    if SOPSegEnvironment::move_frng().u64(1_u64..=10000)
-                        <= (move_prb * 10000.0) as u64
+                    if SOPSegEnvironment::move_frng().u16(1_u16..=1000) <= SOPSegEnvironment::gene_probability()[move_prb as usize]
                     {
                         self.move_particle_to(par_idx, move_dir);
                     }
@@ -412,11 +418,8 @@ impl SOPSegEnvironment {
                     // Get the neighborhood configuration
                     let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
                     // Move basis probability given by the genome for moving for given configuration
-                    // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
-                    let move_prb: f64 =
-                        self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
-                    if SOPSegEnvironment::move_frng().u64(1_u64..=10000)
-                        <= (move_prb * 10000.0) as u64
+                    let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
+                    if SOPSegEnvironment::move_frng().u16(1_u16..=1000) <= SOPSegEnvironment::gene_probability()[move_prb as usize]
                     {
                         self.move_particle_to(par_idx, move_dir);
                     }

@@ -34,8 +34,8 @@ impl SegGA {
 
     const GENOME_LEN: u16 = 10 * 6 * 10;
     const BUFFER_LEN: usize = 10;
-    const UPPER_T: f32 = 0.2;
-    const LOWER_T: f32 = 0.02;
+    const UPPER_T: f32 = 0.3;
+    const LOWER_T: f32 = 0.05;
     
     #[inline]
     fn rng() -> rngs::ThreadRng {
@@ -44,7 +44,7 @@ impl SegGA {
 
     #[inline]
     fn genome_init_rng(granularity: u8) -> Uniform<u8> {
-        Uniform::new_inclusive(1, granularity)
+        Uniform::new_inclusive(0, granularity)
     }
 
     #[inline]
@@ -143,7 +143,7 @@ impl SegGA {
                         } else {
                             genome[n][i][j] - 1
                         })
-                        .clamp(1, self.granularity.into());
+                        .clamp(0, self.granularity.into());
                     }
                 }
             }
@@ -176,7 +176,7 @@ impl SegGA {
     /*
      * Implements a simple two-point crossover operator with crossover point choosen at random in genome vector
      *  */
-     fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
+    fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
         let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
         let cross_pnt_1 = SegGA::rng().sample(&SegGA::cross_pnt());
         let cross_pnt_2 = SegGA::rng().sample(&SegGA::cross_pnt());
@@ -194,7 +194,7 @@ impl SegGA {
                     } else {
                         new_genome[n][i][j] = parent1[n][i][j];
                     }
-                    cnt += 1; 
+                    cnt += 1;
                 }
             }
         }
@@ -234,7 +234,6 @@ impl SegGA {
     //             rank_wheel.push(index);
     //         }
     //     }
-        
     //     //perform selection and then (if perform_cross flag is set) single-point crossover
     //     let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
     //     for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
@@ -283,9 +282,9 @@ impl SegGA {
         let best_genome = self.population.iter().max_by(|&g1, &g2| g1.fitness.partial_cmp(&g2.fitness).unwrap()).unwrap();
         println!("Best Genome -> {best_genome:.5?}");
 
-        for idx in 1..self.population.len() {
-            println!("{y:.5?}", y = self.population[idx].fitness);
-        }
+        // for idx in 1..self.population.len() {
+        //     println!("{y:.5?}", y = self.population[idx].fitness);
+        // }
         
         //perform tournament selection
         for _ in 0..(population_size) {
@@ -300,9 +299,9 @@ impl SegGA {
             let genome_1 = self.population[genome_idx_1 as usize];
             let genome_2 = self.population[genome_idx_2 as usize];
             if genome_1.fitness > genome_2.fitness {
-                selected_g.push(genome_1.string); // added
+                selected_g.push(genome_1.string);
             } else {
-                selected_g.push(genome_2.string); // added
+                selected_g.push(genome_2.string);
             }
         }
         
@@ -357,32 +356,33 @@ impl SegGA {
 
         // TODO: run each genome in a separate compute node
         // TODO: use RefCell or lazy static to make the whole check and update into a single loop.
-        let mut genome_fitnesses = vec![-1.0; self.population.len()];
+        // let mut genome_fitnesses = vec![-1.0; self.population.len()];
 
         // check if the cache has the genome's fitness calculated
-        self.population
-            .iter()
-            .enumerate()
-            .for_each(|(idx, genome)| {
-                let genome_s = genome.string.clone();
-                match self.genome_cache.get(&genome_s) {
-                    Some(fitness) => {
-                        genome_fitnesses.insert(idx, *fitness);
-                        return;
-                    }
-                    None => return,
-                }
-            });
+        // self.population
+        //     .iter()
+        //     .enumerate()
+        //     .for_each(|(idx, genome)| {
+        //         let genome_s = genome.string.clone();
+        //         match self.genome_cache.get(&genome_s) {
+        //             Some(fitness) => {
+        //                 println!("Cache Hit!");
+        //                 genome_fitnesses.insert(idx, *fitness);
+        //                 return;
+        //             }
+        //             None => return,
+        //         }
+        //     });
 
         // update the genome if the value exists in the cache
-        self.population
-            .iter_mut()
-            .enumerate()
-            .for_each(|(idx, genome)| {
-                if genome_fitnesses[idx] > -1.0 {
-                    genome.fitness = genome_fitnesses[idx];
-                }
-            });
+        // self.population
+        //     .iter_mut()
+        //     .enumerate()
+        //     .for_each(|(idx, genome)| {
+        //         if genome_fitnesses[idx] > -1.0 {
+        //             genome.fitness = genome_fitnesses[idx];
+        //         }
+        //     });
 
         self.population.par_iter_mut().for_each(|genome| {
             // bypass if genome has already fitness value calculated
@@ -391,20 +391,27 @@ impl SegGA {
                 return;
             }
 
+            // println!();
+            // let now = Instant::now();
             // Calculate the fitness for 'n' number of trials
             let fitness_tot: f64 = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
+                    // let now = Instant::now();
                     let mut genome_env = SOPSegEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity, w1, w2);
                     let g_fitness = genome_env.simulate(false);
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
                     // let g_fitness = 1; // added
                     // g_fitness as f64 / (genome_env.get_max_fitness() as f64)
+                    // let elapsed = now.elapsed().as_secs();
+                    // print!("{:.2?} ", elapsed);
                     g_fitness as f64
                 })
                 .sum();
 
+            // let elapsed = now.elapsed().as_secs();
+            // println!("Genome Elapsed Time: {:.2?}s", elapsed);
             /* Snippet to calculate Median fitness value of the 'n' trials
             // let mut sorted_fitness_eval: Vec<f64> = Vec::new();
             // fitness_trials.collect_into_vec(&mut sorted_fitness_eval);
@@ -419,11 +426,11 @@ impl SegGA {
         });
 
         // populate the cache
-        for idx in 0..self.population.len() {
-            let genome_s = self.population[idx].string.clone();
-            let genome_f = self.population[idx].fitness.clone();
-            self.genome_cache.insert(genome_s, genome_f);
-        }
+        // for idx in 0..self.population.len() {
+        //     let genome_s = self.population[idx].string.clone();
+        //     let genome_f = self.population[idx].fitness.clone();
+        //     self.genome_cache.insert(genome_s, genome_f);
+        // }
 
         //avg.fitness of population
         let fit_sum = self
@@ -510,7 +517,7 @@ impl SegGA {
                 }
             }
             let elapsed = now.elapsed().as_secs();
-            println!("Elapsed Time: {:.2?}s", elapsed);
+            println!("Generation Elapsed Time: {:.2?}s", elapsed);
         }
         /*
          * Snippet to evaluate the final best genome evolved at the end of GA execution

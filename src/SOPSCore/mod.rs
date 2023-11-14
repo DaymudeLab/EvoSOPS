@@ -79,6 +79,11 @@ impl SOPSEnvironment {
         vec![(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1)]
     }
 
+    #[inline]
+    fn gene_probability() -> Vec<u16> {
+        vec![1000, 500, 250, 125, 63, 31, 16, 8, 4, 2, 1]
+    }
+
     fn unfrm_par(&self) -> Uniform<usize> {
         Uniform::new(0, self.participants.len())
     }
@@ -180,7 +185,7 @@ impl SOPSEnvironment {
         for idx in 0..6 {
             let new_i = (particle.x as i32 + SOPSEnvironment::directions()[idx].0) as usize;
             let new_j = (particle.y as i32 + SOPSEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != move_i) & (new_j != move_j) {
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE {
                     back_cnt += 1;
@@ -191,7 +196,7 @@ impl SOPSEnvironment {
         for idx in 0..6 {
             let new_i = (move_i as i32 + SOPSEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j)& (new_i != particle.x.into()) & (new_j != particle.y.into()) {
                 let mut position_type = SOPSEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
@@ -262,21 +267,21 @@ impl SOPSEnvironment {
         // let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
         // for _ in 0..cnt {
             // Choose a random particle for movement
-            let par_idx = SOPSEnvironment::rng().sample(&self.unfrm_par());
+            // let par_idx = SOPSEnvironment::rng().sample(&self.unfrm_par());
+            let par_idx = SOPSEnvironment::move_frng().usize(..self.participants.len());
             // let particle: &Particle = &self.participants[par_idx];
             // Choose a random direction and validate
+            // let move_dir = SOPSEnvironment::directions()
+            //         [SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_dir())];
             let move_dir = SOPSEnvironment::directions()
-                    [SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_dir())];
-
+                            [SOPSEnvironment::move_frng().usize(..SOPSEnvironment::directions().len())];
+            
             if self.particle_move_possible(par_idx, move_dir) {
                 // Get the neighborhood configuration
                 let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
                 // Move basis probability given by the genome for moving for given configuration
-                // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
-                let move_prb: f64 =
-                    self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
-                if SOPSEnvironment::move_frng().u64(1_u64..=10000)
-                    <= (move_prb * 10000.0) as u64
+                let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
+                if SOPSEnvironment::move_frng().u16(1_u16..=1000) <= SOPSEnvironment::gene_probability()[move_prb as usize]
                 {
                     self.move_particle_to(par_idx, move_dir);
                 }

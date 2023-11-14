@@ -21,7 +21,8 @@ pub struct GeneticAlgo {
     genome_cache: HashMap<[[[u8; 4]; 3]; 4], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16)>,
-    trial_seeds: Vec<u64>
+    trial_seeds: Vec<u64>,
+    max_div: u32,
 }
 
 impl GeneticAlgo {
@@ -35,7 +36,7 @@ impl GeneticAlgo {
 
     #[inline]
     fn genome_init_rng(granularity: u8) -> Uniform<u8> {
-        Uniform::new_inclusive(1, granularity)
+        Uniform::new_inclusive(0, granularity)
     }
 
     #[inline]
@@ -43,14 +44,20 @@ impl GeneticAlgo {
         Uniform::new_inclusive(1, 100)
     }
 
+    #[inline]
+    fn genome_rng(population_size: u16) -> Uniform<u16> {
+        Uniform::new(0, population_size)
+    }
+
     // fn mut_val(&self) -> Normal<f64> {
     //     Normal::new(self.mut_mu, self.mut_sd).unwrap()
     // }
-
+    #[inline]
     fn cross_pnt() -> Uniform<u16> {
         Uniform::new_inclusive(0, GeneticAlgo::GENOME_LEN-1)
     }
 
+    #[inline]
     fn mut_sign() -> Bernoulli {
         Bernoulli::new(0.3).unwrap()
     }
@@ -98,7 +105,9 @@ impl GeneticAlgo {
             genome_cache,
             perform_cross,
             sizes,
-            trial_seeds
+            trial_seeds,
+
+            max_div: ((granularity-1) as u32)*(GeneticAlgo::GENOME_LEN as u32),
         }
     }
 
@@ -119,7 +128,7 @@ impl GeneticAlgo {
                         } else {
                             genome[n][i][j] - 1
                         })
-                        .clamp(1, self.granularity.into());
+                        .clamp(0, self.granularity.into());
                     }
                 }
             }
@@ -130,19 +139,44 @@ impl GeneticAlgo {
     /*
      * Implements a simple single-point crossover operator with crossover point choosen at random in genome vector
      *  */
+    // fn generate_offspring(&self, parent1: &[[[u8; 4]; 3]; 4], parent2: &[[[u8; 4]; 3]; 4]) -> [[[u8; 4]; 3]; 4] {
+    //     let mut new_genome: [[[u8; 4]; 3]; 4] = [[[0_u8; 4]; 3]; 4];
+    //     let cross_pnt = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
+    //     let mut cnt = 0;
+    //     for n in 0..4 {
+    //         for i in 0..3 {
+    //             for j in 0..4 {
+    //                 if cnt < cross_pnt {
+    //                     new_genome[n][i][j] = parent1[n][i][j];
+    //                 } else {
+    //                     new_genome[n][i][j] = parent2[n][i][j];
+    //                 }
+    //                 cnt += 1; 
+    //             }
+    //         }
+    //     }
+    //     new_genome
+    // }
+
     fn generate_offspring(&self, parent1: &[[[u8; 4]; 3]; 4], parent2: &[[[u8; 4]; 3]; 4]) -> [[[u8; 4]; 3]; 4] {
         let mut new_genome: [[[u8; 4]; 3]; 4] = [[[0_u8; 4]; 3]; 4];
-        let cross_pnt = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
+        let cross_pnt_1 = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
+        let cross_pnt_2 = GeneticAlgo::rng().sample(&GeneticAlgo::cross_pnt());
+        let lower_cross_pnt = if cross_pnt_1 <= cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
+        let higher_cross_pnt = if cross_pnt_1 > cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
+
         let mut cnt = 0;
         for n in 0..4 {
             for i in 0..3 {
                 for j in 0..4 {
-                    if cnt < cross_pnt {
+                    if cnt < lower_cross_pnt {
                         new_genome[n][i][j] = parent1[n][i][j];
-                    } else {
+                    } else if cnt > lower_cross_pnt && cnt < higher_cross_pnt {
                         new_genome[n][i][j] = parent2[n][i][j];
+                    } else {
+                        new_genome[n][i][j] = parent1[n][i][j];
                     }
-                    cnt += 1; 
+                    cnt += 1;
                 }
             }
         }
@@ -153,56 +187,124 @@ impl GeneticAlgo {
      * Performs the 3 operations (in sequence 1. selection, 2. crossover, 3. mutation) 
      * on the existing populations to generate new population
      *  */
-    fn generate_new_pop(&mut self) {
+    // fn generate_new_pop(&mut self) {
+    //     let mut new_pop: Vec<Genome> = vec![];
+    //     let mut selected_g: Vec<[[[u8; 4]; 3]; 4]> = vec![];
+    //     let mut rank_wheel: Vec<usize> = vec![];
+    //     //sort the genomes in population by fitness value
+    //     self.population.sort_unstable_by(|genome_a, genome_b| {
+    //         genome_b.fitness.partial_cmp(&genome_a.fitness).unwrap()
+    //     });
+
+    //     //print genomes for analysis
+    //     let best_genome = self.population[0];
+    //     println!("Best Genome -> {best_genome:.5?}");
+
+    //     for idx in 1..self.population.len() {
+    //         println!("{y:.5?}", y = self.population[idx]);
+    //     }
+        
+    //     //bifercate genomes
+    //     for (index, genome) in self.population.iter().enumerate() {
+    //         if index < self.elitist_cnt as usize {
+    //             //separate out the elitist and directly pass them to next gen
+    //             new_pop.push(*genome);
+    //         }
+    //         let genome_rank = self.population.len() - index;
+    //         //create rank wheel for selection
+    //         for _ in 0..genome_rank {
+    //             rank_wheel.push(index);
+    //         }
+    //     }
+    //     //perform selection and then (if perform_cross flag is set) single-point crossover
+    //     let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
+    //     for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
+    //         let mut wheel_idx = GeneticAlgo::rng().sample(&rank_wheel_rng);
+    //         let p_genome_idx1 = rank_wheel[wheel_idx];
+    //         if self.perform_cross {
+    //             wheel_idx = GeneticAlgo::rng().sample(&rank_wheel_rng);
+    //             let p_genome_idx2 = rank_wheel[wheel_idx];
+    //             selected_g.push(self.generate_offspring(
+    //                 &self.population[p_genome_idx1].string,
+    //                 &self.population[p_genome_idx2].string,
+    //             ));
+    //         } else {
+    //             selected_g.push(self.population[p_genome_idx1].string); // added
+    //         }
+    //     }
+
+    //     //perform mutation
+    //     for idx in 0..selected_g.len() {
+    //         let genome = selected_g[idx];
+    //         // println!("Genome:{} mutations", idx);
+    //         let mutated_g = self.mutate_genome(&genome);
+    //         new_pop.push(Genome {
+    //             string: mutated_g,
+    //             fitness: 0.0,
+    //         });
+    //     }
+    //     self.population = new_pop;
+    // }
+
+    /*
+     * Performs the 3 operations (in sequence 1. selection, 2. crossover, 3. mutation) 
+     * on the existing populations to generate new population
+     *  */
+     fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<Genome> = vec![];
         let mut selected_g: Vec<[[[u8; 4]; 3]; 4]> = vec![];
-        let mut rank_wheel: Vec<usize> = vec![];
+        let mut crossed_g: Vec<[[[u8; 4]; 3]; 4]> = vec![];
+        let population_size = self.population.len() as u16;
         //sort the genomes in population by fitness value
-        self.population.sort_unstable_by(|genome_a, genome_b| {
-            genome_b.fitness.partial_cmp(&genome_a.fitness).unwrap()
-        });
+        // self.population.sort_unstable_by(|genome_a, genome_b| {
+        //     genome_b.fitness.partial_cmp(&genome_a.fitness).unwrap()
+        // });
 
         //print genomes for analysis
-        let best_genome = self.population[0];
+        let best_genome = self.population.iter().max_by(|&g1, &g2| g1.fitness.partial_cmp(&g2.fitness).unwrap()).unwrap();
         println!("Best Genome -> {best_genome:.5?}");
 
-        for idx in 1..self.population.len() {
-            println!("{y:.5?}", y = self.population[idx]);
+        // for idx in 1..self.population.len() {
+        //     println!("{y:.5?}", y = self.population[idx].fitness);
+        // }
+        
+        //perform tournament selection
+        for _ in 0..(population_size) {
+            let genome_idx_1 = GeneticAlgo::rng().sample(&GeneticAlgo::genome_rng(population_size));
+            let mut genome_idx_2;
+            loop {
+                genome_idx_2 = GeneticAlgo::rng().sample(&GeneticAlgo::genome_rng(population_size));
+                if genome_idx_1 != genome_idx_2 {
+                    break;
+                }
+            }
+            let genome_1 = self.population[genome_idx_1 as usize];
+            let genome_2 = self.population[genome_idx_2 as usize];
+            if genome_1.fitness > genome_2.fitness {
+                selected_g.push(genome_1.string);
+            } else {
+                selected_g.push(genome_2.string);
+            }
         }
         
-        //bifercate genomes
-        for (index, genome) in self.population.iter().enumerate() {
-            if index < self.elitist_cnt as usize {
-                //separate out the elitist and directly pass them to next gen
-                new_pop.push(*genome);
+        //perform 2-point crossover
+        for _ in 0..(population_size) {
+            let genome_idx_1 = GeneticAlgo::rng().sample(&GeneticAlgo::genome_rng(population_size));
+            let mut genome_idx_2;
+            loop {
+                genome_idx_2 = GeneticAlgo::rng().sample(&GeneticAlgo::genome_rng(population_size));
+                if genome_idx_1 != genome_idx_2 {
+                    break;
+                }
             }
-            let genome_rank = self.population.len() - index;
-            //create rank wheel for selection
-            for _ in 0..genome_rank {
-                rank_wheel.push(index);
-            }
-        }
-
-        //perform selection and then (if perform_cross flag is set) single-point crossover
-        let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
-        for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
-            let mut wheel_idx = GeneticAlgo::rng().sample(&rank_wheel_rng);
-            let p_genome_idx1 = rank_wheel[wheel_idx];
-            if self.perform_cross {
-                wheel_idx = GeneticAlgo::rng().sample(&rank_wheel_rng);
-                let p_genome_idx2 = rank_wheel[wheel_idx];
-                selected_g.push(self.generate_offspring(
-                    &self.population[p_genome_idx1].string,
-                    &self.population[p_genome_idx2].string,
-                ));
-            } else {
-                selected_g.push(self.population[p_genome_idx1].string); // added
-            }
+            let genome_1 = selected_g[genome_idx_1 as usize];
+            let genome_2 = selected_g[genome_idx_2 as usize];
+            crossed_g.push(self.generate_offspring(&genome_1,&genome_2));
         }
 
         //perform mutation
-        for idx in 0..selected_g.len() {
-            let genome = selected_g[idx];
+        for idx in 0..(population_size) {
+            let genome = crossed_g[idx as usize];
             // println!("Genome:{} mutations", idx);
             let mutated_g = self.mutate_genome(&genome);
             new_pop.push(Genome {
@@ -217,7 +319,7 @@ impl GeneticAlgo {
     // 1. calculate new population's fitness values
     // 2. Save each genome's fitness value based on mean fitness for 'n' eval trials
     // 3. Generate new population based on these fitness values
-    fn step_through(&mut self, gen: u16) {
+    fn step_through(&mut self, gen: u16) -> f32 {
         let trials = self.trial_seeds.len();
         let seeds = self.trial_seeds.clone();
         let granularity = self.granularity.clone();
@@ -311,33 +413,37 @@ impl GeneticAlgo {
         // calculate population diversity
         // based on simple component wise euclidean distance squared*
         // of the genome vectors
-        let mut pop_dist: Vec<f64> = vec![];
+        let mut pop_dist: Vec<f32> = vec![];
         for i in 0..self.population.len() {
             for j in (i + 1)..self.population.len() {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
-                let mut dis_sum: f64 = 0.0;
+                let mut dis_sum: u16 = 0;
                 for n in 0..4 {
                     for i in 0..3 {
                         for j in 0..4 {
-                            let genome1_prob = genome1.string[n][i][j] as f64 / (self.granularity as f64);
-                            let genome2_prob = genome2.string[n][i][j] as f64 / (self.granularity as f64);
-                            let dis = (genome1_prob - genome2_prob).abs();
-                            dis_sum += dis.powf(2.0);
+                            let dis = (genome1.string[n][i][j]).abs_diff(genome2.string[n][i][j]);
+                            dis_sum += dis as u16;
+                            // let genome1_prob = genome1.string[n][i][j] as f64 / (self.granularity as f64);
+                            // let genome2_prob = genome2.string[n][i][j] as f64 / (self.granularity as f64);
+                            // let dis = (genome1_prob - genome2_prob).abs();
+                            // dis_sum += dis.powf(2.0);
                         }
                     }
                 }
                 // pop_dist.push(dis_sum.sqrt());
-                pop_dist.push(dis_sum);
+                pop_dist.push(dis_sum.into());
             }
         }
-        let pop_diversity: f64 = pop_dist.iter().sum();
+        let pop_diversity: f32 = pop_dist.iter().sum();
+        let avg_pop_diversity: f32 = pop_diversity / (pop_dist.len() as f32);
         println!(
             "Population diversity -> {}",
-            pop_diversity / (pop_dist.len() as f64)
+            avg_pop_diversity / (self.max_div as f32)
         );
         //generate new population
         self.generate_new_pop();
+        avg_pop_diversity
     }
 
     /*
@@ -352,7 +458,7 @@ impl GeneticAlgo {
             let now = Instant::now();
             self.step_through(gen);
             let elapsed = now.elapsed().as_secs();
-            println!("Elapsed Time: {:.2?}s", elapsed);
+            println!("Generation Elapsed Time: {:.2?}s", elapsed);
         }
         /*
          * Snippet to evaluate the final best genome evolved at the end of GA execution
