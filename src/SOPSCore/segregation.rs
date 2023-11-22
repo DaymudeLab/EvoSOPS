@@ -75,9 +75,16 @@ impl SOPSegEnvironment {
         vec![(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1)]
     }
 
+    // granularity is 10
     #[inline]
     fn gene_probability() -> Vec<u16> {
         vec![1000, 500, 250, 125, 63, 31, 16, 8, 4, 2, 1]
+    }
+    
+    // granularity is 15
+    #[inline]
+    fn theory_gene_probability() -> Vec<u16> {
+        vec![1000, 667, 444, 296, 250, 167, 111, 74, 63, 42, 28, 19, 16, 10, 7, 5]
     }
 
     fn unfrm_par(&self) -> Uniform<usize> {
@@ -143,7 +150,8 @@ impl SOPSegEnvironment {
         }
 
         // TODO: Make this a static const variable
-        // Mapping table for various configurations intra group(F/M/B) -> index in genome's dimension
+        // Mapping table for various intra group(F/M/B) configurations -> index in genome's dimension
+        // intra group(F/M/B) configurations ie. all_cnt, same_clr_cnt, all_possible_cnt(static position cnt in F/M/B — (3/2/3))
         let lookup_dim_idx: HashMap<(u8, u8, u8), u8> = ([
             ((0,0,2), 0),
             ((1,1,2), 1),
@@ -167,7 +175,7 @@ impl SOPSegEnvironment {
             grid,
             participants,
             phenotype: *genome,
-            sim_duration: (num_particles as u64).pow(3)*3,
+            sim_duration: (num_particles as u64).pow(3),
             fitness_val: 0.0,
             size: grid_size,
             max_fitness_c1: agg_edge_cnt,
@@ -289,7 +297,8 @@ impl SOPSegEnvironment {
         for idx in 0..6 {
             let new_i = (particle.x as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
             let new_j = (particle.y as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != move_i) & (new_j != move_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == move_i) & (new_j == move_j)) {
+                // print!("{}",idx);
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] != SOPSegEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSegEnvironment::BOUNDARY  {
                     back_cnt += 1;
@@ -299,11 +308,13 @@ impl SOPSegEnvironment {
                 }
             }
         }
+        // print!("\t");
         // Neighborhood for new position
         for idx in 0..6 {
             let new_i = (move_i as i32 + SOPSegEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSegEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j)& (new_i != particle.x.into()) & (new_j != particle.y.into()) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
+                // print!("{}",idx);
                 let mut position_type = SOPSegEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
@@ -332,9 +343,11 @@ impl SOPSegEnvironment {
                 }
             }
         }
+        // print!("\t");
         let back_idx: u8 = self.get_dim_idx(back_cnt, back_same_clr_cnt, 3);
         let mid_idx: u8 = self.get_dim_idx(mid_cnt, mid_same_clr_cnt, 2);
         let front_idx: u8 = self.get_dim_idx(front_cnt, front_same_clr_cnt, 3);
+        // println!("N:{}/{}/{}\tNs:{}/{}/{}",back_cnt, mid_cnt, front_cnt, back_same_clr_cnt, mid_same_clr_cnt, front_same_clr_cnt);
         // TODO: Remove this hardcoding of the values. Should come from genome's dimenions
         (back_idx.clamp(0, 9), mid_idx.clamp(0, 5), front_idx.clamp(0, 9))
     }

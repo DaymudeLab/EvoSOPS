@@ -185,7 +185,7 @@ impl SOPSEnvironment {
         for idx in 0..6 {
             let new_i = (particle.x as i32 + SOPSEnvironment::directions()[idx].0) as usize;
             let new_j = (particle.y as i32 + SOPSEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != move_i) & (new_j != move_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == move_i) & (new_j == move_j)) {
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE {
                     back_cnt += 1;
@@ -196,7 +196,7 @@ impl SOPSEnvironment {
         for idx in 0..6 {
             let new_i = (move_i as i32 + SOPSEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j)& (new_i != particle.x.into()) & (new_j != particle.y.into()) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
                 let mut position_type = SOPSEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {

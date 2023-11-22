@@ -35,7 +35,7 @@ impl SegGA {
     const GENOME_LEN: u16 = 10 * 6 * 10;
     const BUFFER_LEN: usize = 10;
     const UPPER_T: f32 = 0.3;
-    const LOWER_T: f32 = 0.05;
+    const LOWER_T: f32 = 0.08;
     
     #[inline]
     fn rng() -> rngs::ThreadRng {
