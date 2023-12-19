@@ -84,6 +84,12 @@ impl SOPSEnvironment {
         vec![1000, 500, 250, 125, 63, 31, 16, 8, 4, 2, 1]
     }
 
+    // granularity is 6
+    #[inline]
+    fn theory_gene_probability() -> Vec<u16> {
+        vec![1000, 167, 28, 5, 1, 1]
+    }
+
     fn unfrm_par(&self) -> Uniform<usize> {
         Uniform::new(0, self.participants.len())
     }
@@ -281,7 +287,7 @@ impl SOPSEnvironment {
                 let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
                 // Move basis probability given by the genome for moving for given configuration
                 let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
-                if SOPSEnvironment::move_frng().u16(1_u16..=1000) <= SOPSEnvironment::gene_probability()[move_prb as usize]
+                if SOPSEnvironment::move_frng().u16(1_u16..=1000) <= SOPSEnvironment::theory_gene_probability()[move_prb as usize]
                 {
                     self.move_particle_to(par_idx, move_dir);
                 }
