@@ -1,4 +1,4 @@
 #!/bin/bash
 ##Run this only if code changes
-## cargo build -r
-./target/release/swarm_aggregation_ga -b agg -e ga -g 50 -p 100 --gran 10 -m 0.02 '-k(13,9)' -s566372 --path ./output/Agg_genome.log
+cargo build -r
+./target/release/swarm_aggregation_ga -b sep -e ga -g 1600 -p 600 --gran 10 -m 0.005 '-k(13,9)' -s566372 -s31728 --path ./output/Agg_genome.log

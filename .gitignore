@@ -17,3 +17,4 @@ Cargo.lock
 
 # VS code ignores
 .vscode
+**/.DS_Store

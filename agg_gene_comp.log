@@ -1,0 +1,126 @@
+Gene: 1 	Change:  0
+Back:0 Mid:0 Front:0
+Theory:1000	GA:63	Diff:937
+
+Gene: 2 	Change:  1
+
+Gene: 3 	Change:  2
+
+Gene: 4 	Change:  3
+
+Gene: 5 	Change:  0
+Back:0 Mid:1 Front:0
+Theory:1000	GA:16	Diff:984
+
+Gene: 6 	Change:  1
+
+Gene: 7 	Change:  2
+
+Gene: 8 	Change:  3
+
+Gene: 9 	Change:  0
+
+Gene: 10 	Change:  1
+Back:0 Mid:2 Front:1
+Theory:1000	GA:16	Diff:984
+
+Gene: 11 	Change:  2
+Back:0 Mid:2 Front:2
+Theory:1000	GA:1	Diff:999
+
+Gene: 12 	Change:  3
+
+Gene: 13 	Change:  -1
+
+Gene: 14 	Change:  0
+
+Gene: 15 	Change:  1
+Back:1 Mid:0 Front:2
+Theory:1000	GA:250	Diff:750
+
+Gene: 16 	Change:  2
+Back:1 Mid:0 Front:3
+Theory:1000	GA:250	Diff:750
+
+Gene: 17 	Change:  -1
+
+Gene: 18 	Change:  0
+
+Gene: 19 	Change:  1
+
+Gene: 20 	Change:  2
+
+Gene: 21 	Change:  -1
+
+Gene: 22 	Change:  0
+Back:1 Mid:2 Front:1
+Theory:1000	GA:2	Diff:998
+
+Gene: 23 	Change:  1
+Back:1 Mid:2 Front:2
+Theory:1000	GA:31	Diff:969
+
+Gene: 24 	Change:  2
+
+Gene: 25 	Change:  -2
+
+Gene: 26 	Change:  -1
+
+Gene: 27 	Change:  0
+Back:2 Mid:0 Front:2
+Theory:1000	GA:250	Diff:750
+
+Gene: 28 	Change:  1
+
+Gene: 29 	Change:  -2
+
+Gene: 30 	Change:  -1
+
+Gene: 31 	Change:  0
+
+Gene: 32 	Change:  1
+
+Gene: 33 	Change:  -2
+
+Gene: 34 	Change:  -1
+
+Gene: 35 	Change:  0
+Back:2 Mid:2 Front:2
+Theory:1000	GA:2	Diff:998
+
+Gene: 36 	Change:  1
+Back:2 Mid:2 Front:3
+Theory:1000	GA:4	Diff:996
+
+Gene: 37 	Change:  -3
+
+Gene: 38 	Change:  -2
+
+Gene: 39 	Change:  -1
+
+Gene: 40 	Change:  0
+
+Gene: 41 	Change:  -3
+
+Gene: 42 	Change:  -2
+
+Gene: 43 	Change:  -1
+
+Gene: 44 	Change:  0
+Back:3 Mid:1 Front:3
+Theory:1000	GA:4	Diff:996
+
+Gene: 45 	Change:  -3
+
+Gene: 46 	Change:  -2
+
+Gene: 47 	Change:  -1
+
+Gene: 48 	Change:  0
+Back:3 Mid:2 Front:3
+Theory:1000	GA:250	Diff:750
+
+
+Significanlty diff genes: 13
+
+Significanlty diff range: [0, 0, 0, 0, 0, 0, 0, 4, 0, 9]

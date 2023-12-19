@@ -1,0 +1,1472 @@
+Gene: 1 	N-Change:  0 	SameN-Change:  0
+
+Gene: 2 	N-Change:  1 	SameN-Change:  1
+
+Gene: 3 	N-Change:  1 	SameN-Change:  0
+
+Gene: 4 	N-Change:  2 	SameN-Change:  2
+
+Gene: 5 	N-Change:  2 	SameN-Change:  1
+Back:(0,0) Mid:(2,1) Front:(0,0)
+Theory:1000	GA:8	Diff:992
+
+Gene: 6 	N-Change:  2 	SameN-Change:  0
+
+Gene: 7 	N-Change:  3 	SameN-Change:  3
+Back:(0,0) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:2	Diff:998
+
+Gene: 8 	N-Change:  3 	SameN-Change:  2
+Back:(0,0) Mid:(3,2) Front:(0,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 9 	N-Change:  3 	SameN-Change:  1
+Back:(0,0) Mid:(3,1) Front:(0,0)
+Theory:1000	GA:1	Diff:999
+
+Gene: 10 	N-Change:  3 	SameN-Change:  0
+
+Gene: 11 	N-Change:  0 	SameN-Change:  0
+
+Gene: 12 	N-Change:  1 	SameN-Change:  1
+Back:(0,0) Mid:(1,1) Front:(1,1)
+Theory:1000	GA:125	Diff:875
+
+Gene: 13 	N-Change:  1 	SameN-Change:  0
+
+Gene: 14 	N-Change:  2 	SameN-Change:  2
+
+Gene: 15 	N-Change:  2 	SameN-Change:  1
+
+Gene: 16 	N-Change:  2 	SameN-Change:  0
+
+Gene: 17 	N-Change:  3 	SameN-Change:  3
+Back:(0,0) Mid:(3,3) Front:(1,1)
+Theory:1000	GA:1	Diff:999
+
+Gene: 18 	N-Change:  3 	SameN-Change:  2
+
+Gene: 19 	N-Change:  3 	SameN-Change:  1
+Back:(0,0) Mid:(3,1) Front:(1,1)
+Theory:1000	GA:2	Diff:998
+
+Gene: 20 	N-Change:  3 	SameN-Change:  0
+
+Gene: 21 	N-Change:  0 	SameN-Change:  0
+Back:(0,0) Mid:(0,0) Front:(1,0)
+Theory:1000	GA:16	Diff:984
+
+Gene: 22 	N-Change:  1 	SameN-Change:  1
+Back:(0,0) Mid:(1,1) Front:(1,0)
+Theory:1000	GA:31	Diff:969
+
+Gene: 23 	N-Change:  1 	SameN-Change:  0
+
+Gene: 24 	N-Change:  2 	SameN-Change:  2
+Back:(0,0) Mid:(2,2) Front:(1,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 25 	N-Change:  2 	SameN-Change:  1
+
+Gene: 26 	N-Change:  2 	SameN-Change:  0
+
+Gene: 27 	N-Change:  3 	SameN-Change:  3
+
+Gene: 28 	N-Change:  3 	SameN-Change:  2
+
+Gene: 29 	N-Change:  3 	SameN-Change:  1
+
+Gene: 30 	N-Change:  3 	SameN-Change:  0
+Back:(0,0) Mid:(3,0) Front:(1,0)
+Theory:296	GA:1000	Diff:704
+
+Gene: 31 	N-Change:  0 	SameN-Change:  0
+Back:(0,0) Mid:(0,0) Front:(2,2)
+Theory:1000	GA:63	Diff:937
+
+Gene: 32 	N-Change:  1 	SameN-Change:  1
+Back:(0,0) Mid:(1,1) Front:(2,2)
+Theory:1000	GA:63	Diff:937
+
+Gene: 33 	N-Change:  1 	SameN-Change:  0
+
+Gene: 34 	N-Change:  2 	SameN-Change:  2
+
+Gene: 35 	N-Change:  2 	SameN-Change:  1
+Back:(0,0) Mid:(2,1) Front:(2,2)
+Theory:1000	GA:4	Diff:996
+
+Gene: 36 	N-Change:  2 	SameN-Change:  0
+
+Gene: 37 	N-Change:  3 	SameN-Change:  3
+
+Gene: 38 	N-Change:  3 	SameN-Change:  2
+
+Gene: 39 	N-Change:  3 	SameN-Change:  1
+Back:(0,0) Mid:(3,1) Front:(2,2)
+Theory:1000	GA:31	Diff:969
+
+Gene: 40 	N-Change:  3 	SameN-Change:  0
+
+Gene: 41 	N-Change:  0 	SameN-Change:  0
+Back:(0,0) Mid:(0,0) Front:(2,1)
+Theory:1000	GA:4	Diff:996
+
+Gene: 42 	N-Change:  1 	SameN-Change:  1
+Back:(0,0) Mid:(1,1) Front:(2,1)
+Theory:1000	GA:250	Diff:750
+
+Gene: 43 	N-Change:  1 	SameN-Change:  0
+
+Gene: 44 	N-Change:  2 	SameN-Change:  2
+
+Gene: 45 	N-Change:  2 	SameN-Change:  1
+Back:(0,0) Mid:(2,1) Front:(2,1)
+Theory:1000	GA:125	Diff:875
+
+Gene: 46 	N-Change:  2 	SameN-Change:  0
+
+Gene: 47 	N-Change:  3 	SameN-Change:  3
+Back:(0,0) Mid:(3,3) Front:(2,1)
+Theory:1000	GA:4	Diff:996
+
+Gene: 48 	N-Change:  3 	SameN-Change:  2
+
+Gene: 49 	N-Change:  3 	SameN-Change:  1
+
+Gene: 50 	N-Change:  3 	SameN-Change:  0
+
+Gene: 51 	N-Change:  0 	SameN-Change:  0
+Back:(0,0) Mid:(0,0) Front:(2,0)
+Theory:1000	GA:4	Diff:996
+
+Gene: 52 	N-Change:  1 	SameN-Change:  1
+
+Gene: 53 	N-Change:  1 	SameN-Change:  0
+
+Gene: 54 	N-Change:  2 	SameN-Change:  2
+
+Gene: 55 	N-Change:  2 	SameN-Change:  1
+Back:(0,0) Mid:(2,1) Front:(2,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 56 	N-Change:  2 	SameN-Change:  0
+
+Gene: 57 	N-Change:  3 	SameN-Change:  3
+Back:(0,0) Mid:(3,3) Front:(2,0)
+Theory:1000	GA:250	Diff:750
+
+Gene: 58 	N-Change:  3 	SameN-Change:  2
+
+Gene: 59 	N-Change:  3 	SameN-Change:  1
+
+Gene: 60 	N-Change:  3 	SameN-Change:  0
+Back:(0,0) Mid:(3,0) Front:(2,0)
+Theory:296	GA:1000	Diff:704
+
+Gene: 61 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 62 	N-Change:  0 	SameN-Change:  0
+Back:(1,1) Mid:(1,1) Front:(0,0)
+Theory:1000	GA:2	Diff:998
+
+Gene: 63 	N-Change:  0 	SameN-Change:  -1
+Back:(1,1) Mid:(1,0) Front:(0,0)
+Theory:167	GA:1000	Diff:833
+
+Gene: 64 	N-Change:  1 	SameN-Change:  1
+
+Gene: 65 	N-Change:  1 	SameN-Change:  0
+
+Gene: 66 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 67 	N-Change:  2 	SameN-Change:  2
+Back:(1,1) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:250	Diff:750
+
+Gene: 68 	N-Change:  2 	SameN-Change:  1
+Back:(1,1) Mid:(3,2) Front:(0,0)
+Theory:1000	GA:8	Diff:992
+
+Gene: 69 	N-Change:  2 	SameN-Change:  0
+
+Gene: 70 	N-Change:  2 	SameN-Change:  -1
+
+Gene: 71 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 72 	N-Change:  0 	SameN-Change:  0
+
+Gene: 73 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 74 	N-Change:  1 	SameN-Change:  1
+
+Gene: 75 	N-Change:  1 	SameN-Change:  0
+
+Gene: 76 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 77 	N-Change:  2 	SameN-Change:  2
+
+Gene: 78 	N-Change:  2 	SameN-Change:  1
+
+Gene: 79 	N-Change:  2 	SameN-Change:  0
+
+Gene: 80 	N-Change:  2 	SameN-Change:  -1
+
+Gene: 81 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 82 	N-Change:  0 	SameN-Change:  0
+Back:(1,1) Mid:(1,1) Front:(1,0)
+Theory:1000	GA:31	Diff:969
+
+Gene: 83 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 84 	N-Change:  1 	SameN-Change:  1
+
+Gene: 85 	N-Change:  1 	SameN-Change:  0
+
+Gene: 86 	N-Change:  1 	SameN-Change:  -1
+Back:(1,1) Mid:(2,0) Front:(1,0)
+Theory:111	GA:1000	Diff:889
+
+Gene: 87 	N-Change:  2 	SameN-Change:  2
+Back:(1,1) Mid:(3,3) Front:(1,0)
+Theory:1000	GA:31	Diff:969
+
+Gene: 88 	N-Change:  2 	SameN-Change:  1
+Back:(1,1) Mid:(3,2) Front:(1,0)
+Theory:1000	GA:31	Diff:969
+
+Gene: 89 	N-Change:  2 	SameN-Change:  0
+
+Gene: 90 	N-Change:  2 	SameN-Change:  -1
+
+Gene: 91 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 92 	N-Change:  0 	SameN-Change:  0
+Back:(1,1) Mid:(1,1) Front:(2,2)
+Theory:1000	GA:8	Diff:992
+
+Gene: 93 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 94 	N-Change:  1 	SameN-Change:  1
+
+Gene: 95 	N-Change:  1 	SameN-Change:  0
+
+Gene: 96 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 97 	N-Change:  2 	SameN-Change:  2
+
+Gene: 98 	N-Change:  2 	SameN-Change:  1
+Back:(1,1) Mid:(3,2) Front:(2,2)
+Theory:1000	GA:63	Diff:937
+
+Gene: 99 	N-Change:  2 	SameN-Change:  0
+
+Gene: 100 	N-Change:  2 	SameN-Change:  -1
+
+Gene: 101 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 102 	N-Change:  0 	SameN-Change:  0
+Back:(1,1) Mid:(1,1) Front:(2,1)
+Theory:1000	GA:31	Diff:969
+
+Gene: 103 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 104 	N-Change:  1 	SameN-Change:  1
+
+Gene: 105 	N-Change:  1 	SameN-Change:  0
+
+Gene: 106 	N-Change:  1 	SameN-Change:  -1
+Back:(1,1) Mid:(2,0) Front:(2,1)
+Theory:111	GA:1000	Diff:889
+
+Gene: 107 	N-Change:  2 	SameN-Change:  2
+Back:(1,1) Mid:(3,3) Front:(2,1)
+Theory:1000	GA:250	Diff:750
+
+Gene: 108 	N-Change:  2 	SameN-Change:  1
+
+Gene: 109 	N-Change:  2 	SameN-Change:  0
+
+Gene: 110 	N-Change:  2 	SameN-Change:  -1
+
+Gene: 111 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 112 	N-Change:  0 	SameN-Change:  0
+Back:(1,1) Mid:(1,1) Front:(2,0)
+Theory:1000	GA:250	Diff:750
+
+Gene: 113 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 114 	N-Change:  1 	SameN-Change:  1
+
+Gene: 115 	N-Change:  1 	SameN-Change:  0
+
+Gene: 116 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 117 	N-Change:  2 	SameN-Change:  2
+Back:(1,1) Mid:(3,3) Front:(2,0)
+Theory:1000	GA:63	Diff:937
+
+Gene: 118 	N-Change:  2 	SameN-Change:  1
+
+Gene: 119 	N-Change:  2 	SameN-Change:  0
+
+Gene: 120 	N-Change:  2 	SameN-Change:  -1
+Back:(1,1) Mid:(3,0) Front:(2,0)
+Theory:74	GA:1000	Diff:926
+
+Gene: 121 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 122 	N-Change:  0 	SameN-Change:  1
+Back:(1,0) Mid:(1,1) Front:(0,0)
+Theory:1000	GA:63	Diff:937
+
+Gene: 123 	N-Change:  0 	SameN-Change:  0
+Back:(1,0) Mid:(1,0) Front:(0,0)
+Theory:167	GA:1000	Diff:833
+
+Gene: 124 	N-Change:  1 	SameN-Change:  2
+Back:(1,0) Mid:(2,2) Front:(0,0)
+Theory:1000	GA:63	Diff:937
+
+Gene: 125 	N-Change:  1 	SameN-Change:  1
+
+Gene: 126 	N-Change:  1 	SameN-Change:  0
+
+Gene: 127 	N-Change:  2 	SameN-Change:  3
+Back:(1,0) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:2	Diff:998
+
+Gene: 128 	N-Change:  2 	SameN-Change:  2
+Back:(1,0) Mid:(3,2) Front:(0,0)
+Theory:1000	GA:250	Diff:750
+
+Gene: 129 	N-Change:  2 	SameN-Change:  1
+
+Gene: 130 	N-Change:  2 	SameN-Change:  0
+
+Gene: 131 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 132 	N-Change:  0 	SameN-Change:  1
+Back:(1,0) Mid:(1,1) Front:(1,1)
+Theory:1000	GA:125	Diff:875
+
+Gene: 133 	N-Change:  0 	SameN-Change:  0
+
+Gene: 134 	N-Change:  1 	SameN-Change:  2
+
+Gene: 135 	N-Change:  1 	SameN-Change:  1
+
+Gene: 136 	N-Change:  1 	SameN-Change:  0
+
+Gene: 137 	N-Change:  2 	SameN-Change:  3
+Back:(1,0) Mid:(3,3) Front:(1,1)
+Theory:1000	GA:250	Diff:750
+
+Gene: 138 	N-Change:  2 	SameN-Change:  2
+
+Gene: 139 	N-Change:  2 	SameN-Change:  1
+
+Gene: 140 	N-Change:  2 	SameN-Change:  0
+Back:(1,0) Mid:(3,0) Front:(1,1)
+Theory:74	GA:1000	Diff:926
+
+Gene: 141 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 142 	N-Change:  0 	SameN-Change:  1
+Back:(1,0) Mid:(1,1) Front:(1,0)
+Theory:1000	GA:31	Diff:969
+
+Gene: 143 	N-Change:  0 	SameN-Change:  0
+
+Gene: 144 	N-Change:  1 	SameN-Change:  2
+
+Gene: 145 	N-Change:  1 	SameN-Change:  1
+
+Gene: 146 	N-Change:  1 	SameN-Change:  0
+
+Gene: 147 	N-Change:  2 	SameN-Change:  3
+
+Gene: 148 	N-Change:  2 	SameN-Change:  2
+
+Gene: 149 	N-Change:  2 	SameN-Change:  1
+
+Gene: 150 	N-Change:  2 	SameN-Change:  0
+Back:(1,0) Mid:(3,0) Front:(1,0)
+Theory:74	GA:1000	Diff:926
+
+Gene: 151 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 152 	N-Change:  0 	SameN-Change:  1
+Back:(1,0) Mid:(1,1) Front:(2,2)
+Theory:1000	GA:16	Diff:984
+
+Gene: 153 	N-Change:  0 	SameN-Change:  0
+
+Gene: 154 	N-Change:  1 	SameN-Change:  2
+Back:(1,0) Mid:(2,2) Front:(2,2)
+Theory:1000	GA:1	Diff:999
+
+Gene: 155 	N-Change:  1 	SameN-Change:  1
+
+Gene: 156 	N-Change:  1 	SameN-Change:  0
+
+Gene: 157 	N-Change:  2 	SameN-Change:  3
+Back:(1,0) Mid:(3,3) Front:(2,2)
+Theory:1000	GA:63	Diff:937
+
+Gene: 158 	N-Change:  2 	SameN-Change:  2
+Back:(1,0) Mid:(3,2) Front:(2,2)
+Theory:1000	GA:8	Diff:992
+
+Gene: 159 	N-Change:  2 	SameN-Change:  1
+
+Gene: 160 	N-Change:  2 	SameN-Change:  0
+
+Gene: 161 	N-Change:  -1 	SameN-Change:  0
+Back:(1,0) Mid:(0,0) Front:(2,1)
+Theory:250	GA:1000	Diff:750
+
+Gene: 162 	N-Change:  0 	SameN-Change:  1
+Back:(1,0) Mid:(1,1) Front:(2,1)
+Theory:1000	GA:8	Diff:992
+
+Gene: 163 	N-Change:  0 	SameN-Change:  0
+
+Gene: 164 	N-Change:  1 	SameN-Change:  2
+Back:(1,0) Mid:(2,2) Front:(2,1)
+Theory:1000	GA:2	Diff:998
+
+Gene: 165 	N-Change:  1 	SameN-Change:  1
+
+Gene: 166 	N-Change:  1 	SameN-Change:  0
+
+Gene: 167 	N-Change:  2 	SameN-Change:  3
+
+Gene: 168 	N-Change:  2 	SameN-Change:  2
+Back:(1,0) Mid:(3,2) Front:(2,1)
+Theory:1000	GA:4	Diff:996
+
+Gene: 169 	N-Change:  2 	SameN-Change:  1
+
+Gene: 170 	N-Change:  2 	SameN-Change:  0
+
+Gene: 171 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 172 	N-Change:  0 	SameN-Change:  1
+
+Gene: 173 	N-Change:  0 	SameN-Change:  0
+
+Gene: 174 	N-Change:  1 	SameN-Change:  2
+Back:(1,0) Mid:(2,2) Front:(2,0)
+Theory:1000	GA:2	Diff:998
+
+Gene: 175 	N-Change:  1 	SameN-Change:  1
+
+Gene: 176 	N-Change:  1 	SameN-Change:  0
+Back:(1,0) Mid:(2,0) Front:(2,0)
+Theory:111	GA:1000	Diff:889
+
+Gene: 177 	N-Change:  2 	SameN-Change:  3
+
+Gene: 178 	N-Change:  2 	SameN-Change:  2
+Back:(1,0) Mid:(3,2) Front:(2,0)
+Theory:1000	GA:16	Diff:984
+
+Gene: 179 	N-Change:  2 	SameN-Change:  1
+
+Gene: 180 	N-Change:  2 	SameN-Change:  0
+
+Gene: 181 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 182 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 183 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 184 	N-Change:  0 	SameN-Change:  0
+Back:(2,2) Mid:(2,2) Front:(0,0)
+Theory:1000	GA:2	Diff:998
+
+Gene: 185 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 186 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 187 	N-Change:  1 	SameN-Change:  1
+Back:(2,2) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:4	Diff:996
+
+Gene: 188 	N-Change:  1 	SameN-Change:  0
+
+Gene: 189 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 190 	N-Change:  1 	SameN-Change:  -2
+
+Gene: 191 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 192 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 193 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 194 	N-Change:  0 	SameN-Change:  0
+Back:(2,2) Mid:(2,2) Front:(1,1)
+Theory:1000	GA:4	Diff:996
+
+Gene: 195 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 196 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 197 	N-Change:  1 	SameN-Change:  1
+
+Gene: 198 	N-Change:  1 	SameN-Change:  0
+
+Gene: 199 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 200 	N-Change:  1 	SameN-Change:  -2
+
+Gene: 201 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 202 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 203 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 204 	N-Change:  0 	SameN-Change:  0
+Back:(2,2) Mid:(2,2) Front:(1,0)
+Theory:1000	GA:4	Diff:996
+
+Gene: 205 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 206 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 207 	N-Change:  1 	SameN-Change:  1
+Back:(2,2) Mid:(3,3) Front:(1,0)
+Theory:1000	GA:1	Diff:999
+
+Gene: 208 	N-Change:  1 	SameN-Change:  0
+
+Gene: 209 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 210 	N-Change:  1 	SameN-Change:  -2
+
+Gene: 211 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 212 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 213 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 214 	N-Change:  0 	SameN-Change:  0
+Back:(2,2) Mid:(2,2) Front:(2,2)
+Theory:1000	GA:63	Diff:937
+
+Gene: 215 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 216 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 217 	N-Change:  1 	SameN-Change:  1
+
+Gene: 218 	N-Change:  1 	SameN-Change:  0
+
+Gene: 219 	N-Change:  1 	SameN-Change:  -1
+Back:(2,2) Mid:(3,1) Front:(2,2)
+Theory:111	GA:1000	Diff:889
+
+Gene: 220 	N-Change:  1 	SameN-Change:  -2
+
+Gene: 221 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 222 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 223 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 224 	N-Change:  0 	SameN-Change:  0
+Back:(2,2) Mid:(2,2) Front:(2,1)
+Theory:1000	GA:8	Diff:992
+
+Gene: 225 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 226 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 227 	N-Change:  1 	SameN-Change:  1
+
+Gene: 228 	N-Change:  1 	SameN-Change:  0
+
+Gene: 229 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 230 	N-Change:  1 	SameN-Change:  -2
+
+Gene: 231 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 232 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 233 	N-Change:  -1 	SameN-Change:  -2
+Back:(2,2) Mid:(1,0) Front:(2,0)
+Theory:42	GA:1000	Diff:958
+
+Gene: 234 	N-Change:  0 	SameN-Change:  0
+Back:(2,2) Mid:(2,2) Front:(2,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 235 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 236 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 237 	N-Change:  1 	SameN-Change:  1
+Back:(2,2) Mid:(3,3) Front:(2,0)
+Theory:1000	GA:250	Diff:750
+
+Gene: 238 	N-Change:  1 	SameN-Change:  0
+
+Gene: 239 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 240 	N-Change:  1 	SameN-Change:  -2
+
+Gene: 241 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 242 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 243 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 244 	N-Change:  0 	SameN-Change:  1
+Back:(2,1) Mid:(2,2) Front:(0,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 245 	N-Change:  0 	SameN-Change:  0
+
+Gene: 246 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 247 	N-Change:  1 	SameN-Change:  2
+Back:(2,1) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:250	Diff:750
+
+Gene: 248 	N-Change:  1 	SameN-Change:  1
+
+Gene: 249 	N-Change:  1 	SameN-Change:  0
+
+Gene: 250 	N-Change:  1 	SameN-Change:  -1
+Back:(2,1) Mid:(3,0) Front:(0,0)
+Theory:19	GA:1000	Diff:981
+
+Gene: 251 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 252 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 253 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 254 	N-Change:  0 	SameN-Change:  1
+Back:(2,1) Mid:(2,2) Front:(1,1)
+Theory:1000	GA:63	Diff:937
+
+Gene: 255 	N-Change:  0 	SameN-Change:  0
+Back:(2,1) Mid:(2,1) Front:(1,1)
+Theory:167	GA:1000	Diff:833
+
+Gene: 256 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 257 	N-Change:  1 	SameN-Change:  2
+Back:(2,1) Mid:(3,3) Front:(1,1)
+Theory:1000	GA:1	Diff:999
+
+Gene: 258 	N-Change:  1 	SameN-Change:  1
+
+Gene: 259 	N-Change:  1 	SameN-Change:  0
+
+Gene: 260 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 261 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 262 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 263 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 264 	N-Change:  0 	SameN-Change:  1
+Back:(2,1) Mid:(2,2) Front:(1,0)
+Theory:1000	GA:31	Diff:969
+
+Gene: 265 	N-Change:  0 	SameN-Change:  0
+Back:(2,1) Mid:(2,1) Front:(1,0)
+Theory:167	GA:1000	Diff:833
+
+Gene: 266 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 267 	N-Change:  1 	SameN-Change:  2
+
+Gene: 268 	N-Change:  1 	SameN-Change:  1
+
+Gene: 269 	N-Change:  1 	SameN-Change:  0
+
+Gene: 270 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 271 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 272 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 273 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 274 	N-Change:  0 	SameN-Change:  1
+
+Gene: 275 	N-Change:  0 	SameN-Change:  0
+
+Gene: 276 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 277 	N-Change:  1 	SameN-Change:  2
+Back:(2,1) Mid:(3,3) Front:(2,2)
+Theory:1000	GA:4	Diff:996
+
+Gene: 278 	N-Change:  1 	SameN-Change:  1
+
+Gene: 279 	N-Change:  1 	SameN-Change:  0
+Back:(2,1) Mid:(3,1) Front:(2,2)
+Theory:111	GA:1000	Diff:889
+
+Gene: 280 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 281 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 282 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 283 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 284 	N-Change:  0 	SameN-Change:  1
+Back:(2,1) Mid:(2,2) Front:(2,1)
+Theory:1000	GA:8	Diff:992
+
+Gene: 285 	N-Change:  0 	SameN-Change:  0
+
+Gene: 286 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 287 	N-Change:  1 	SameN-Change:  2
+Back:(2,1) Mid:(3,3) Front:(2,1)
+Theory:1000	GA:250	Diff:750
+
+Gene: 288 	N-Change:  1 	SameN-Change:  1
+
+Gene: 289 	N-Change:  1 	SameN-Change:  0
+
+Gene: 290 	N-Change:  1 	SameN-Change:  -1
+
+Gene: 291 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 292 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 293 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 294 	N-Change:  0 	SameN-Change:  1
+
+Gene: 295 	N-Change:  0 	SameN-Change:  0
+Back:(2,1) Mid:(2,1) Front:(2,0)
+Theory:167	GA:1000	Diff:833
+
+Gene: 296 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 297 	N-Change:  1 	SameN-Change:  2
+Back:(2,1) Mid:(3,3) Front:(2,0)
+Theory:1000	GA:16	Diff:984
+
+Gene: 298 	N-Change:  1 	SameN-Change:  1
+
+Gene: 299 	N-Change:  1 	SameN-Change:  0
+
+Gene: 300 	N-Change:  1 	SameN-Change:  -1
+Back:(2,1) Mid:(3,0) Front:(2,0)
+Theory:19	GA:1000	Diff:981
+
+Gene: 301 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 302 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 303 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 304 	N-Change:  0 	SameN-Change:  2
+Back:(2,0) Mid:(2,2) Front:(0,0)
+Theory:1000	GA:63	Diff:937
+
+Gene: 305 	N-Change:  0 	SameN-Change:  1
+
+Gene: 306 	N-Change:  0 	SameN-Change:  0
+
+Gene: 307 	N-Change:  1 	SameN-Change:  3
+Back:(2,0) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:1	Diff:999
+
+Gene: 308 	N-Change:  1 	SameN-Change:  2
+
+Gene: 309 	N-Change:  1 	SameN-Change:  1
+
+Gene: 310 	N-Change:  1 	SameN-Change:  0
+
+Gene: 311 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 312 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 313 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 314 	N-Change:  0 	SameN-Change:  2
+
+Gene: 315 	N-Change:  0 	SameN-Change:  1
+Back:(2,0) Mid:(2,1) Front:(1,1)
+Theory:167	GA:1000	Diff:833
+
+Gene: 316 	N-Change:  0 	SameN-Change:  0
+Back:(2,0) Mid:(2,0) Front:(1,1)
+Theory:28	GA:1000	Diff:972
+
+Gene: 317 	N-Change:  1 	SameN-Change:  3
+
+Gene: 318 	N-Change:  1 	SameN-Change:  2
+
+Gene: 319 	N-Change:  1 	SameN-Change:  1
+Back:(2,0) Mid:(3,1) Front:(1,1)
+Theory:111	GA:1000	Diff:889
+
+Gene: 320 	N-Change:  1 	SameN-Change:  0
+
+Gene: 321 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 322 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 323 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 324 	N-Change:  0 	SameN-Change:  2
+
+Gene: 325 	N-Change:  0 	SameN-Change:  1
+
+Gene: 326 	N-Change:  0 	SameN-Change:  0
+
+Gene: 327 	N-Change:  1 	SameN-Change:  3
+Back:(2,0) Mid:(3,3) Front:(1,0)
+Theory:1000	GA:250	Diff:750
+
+Gene: 328 	N-Change:  1 	SameN-Change:  2
+
+Gene: 329 	N-Change:  1 	SameN-Change:  1
+
+Gene: 330 	N-Change:  1 	SameN-Change:  0
+
+Gene: 331 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 332 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 333 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 334 	N-Change:  0 	SameN-Change:  2
+Back:(2,0) Mid:(2,2) Front:(2,2)
+Theory:1000	GA:2	Diff:998
+
+Gene: 335 	N-Change:  0 	SameN-Change:  1
+
+Gene: 336 	N-Change:  0 	SameN-Change:  0
+
+Gene: 337 	N-Change:  1 	SameN-Change:  3
+Back:(2,0) Mid:(3,3) Front:(2,2)
+Theory:1000	GA:31	Diff:969
+
+Gene: 338 	N-Change:  1 	SameN-Change:  2
+
+Gene: 339 	N-Change:  1 	SameN-Change:  1
+
+Gene: 340 	N-Change:  1 	SameN-Change:  0
+Back:(2,0) Mid:(3,0) Front:(2,2)
+Theory:19	GA:1000	Diff:981
+
+Gene: 341 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 342 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 343 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 344 	N-Change:  0 	SameN-Change:  2
+
+Gene: 345 	N-Change:  0 	SameN-Change:  1
+Back:(2,0) Mid:(2,1) Front:(2,1)
+Theory:167	GA:1000	Diff:833
+
+Gene: 346 	N-Change:  0 	SameN-Change:  0
+Back:(2,0) Mid:(2,0) Front:(2,1)
+Theory:28	GA:1000	Diff:972
+
+Gene: 347 	N-Change:  1 	SameN-Change:  3
+
+Gene: 348 	N-Change:  1 	SameN-Change:  2
+
+Gene: 349 	N-Change:  1 	SameN-Change:  1
+Back:(2,0) Mid:(3,1) Front:(2,1)
+Theory:111	GA:1000	Diff:889
+
+Gene: 350 	N-Change:  1 	SameN-Change:  0
+
+Gene: 351 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 352 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 353 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 354 	N-Change:  0 	SameN-Change:  2
+Back:(2,0) Mid:(2,2) Front:(2,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 355 	N-Change:  0 	SameN-Change:  1
+
+Gene: 356 	N-Change:  0 	SameN-Change:  0
+
+Gene: 357 	N-Change:  1 	SameN-Change:  3
+
+Gene: 358 	N-Change:  1 	SameN-Change:  2
+
+Gene: 359 	N-Change:  1 	SameN-Change:  1
+
+Gene: 360 	N-Change:  1 	SameN-Change:  0
+
+Gene: 361 	N-Change:  -3 	SameN-Change:  -3
+
+Gene: 362 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 363 	N-Change:  -2 	SameN-Change:  -3
+
+Gene: 364 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 365 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 366 	N-Change:  -1 	SameN-Change:  -3
+
+Gene: 367 	N-Change:  0 	SameN-Change:  0
+Back:(3,3) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 368 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 369 	N-Change:  0 	SameN-Change:  -2
+Back:(3,3) Mid:(3,1) Front:(0,0)
+Theory:28	GA:1000	Diff:972
+
+Gene: 370 	N-Change:  0 	SameN-Change:  -3
+
+Gene: 371 	N-Change:  -3 	SameN-Change:  -3
+
+Gene: 372 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 373 	N-Change:  -2 	SameN-Change:  -3
+
+Gene: 374 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 375 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 376 	N-Change:  -1 	SameN-Change:  -3
+
+Gene: 377 	N-Change:  0 	SameN-Change:  0
+Back:(3,3) Mid:(3,3) Front:(1,1)
+Theory:1000	GA:250	Diff:750
+
+Gene: 378 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 379 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 380 	N-Change:  0 	SameN-Change:  -3
+
+Gene: 381 	N-Change:  -3 	SameN-Change:  -3
+
+Gene: 382 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 383 	N-Change:  -2 	SameN-Change:  -3
+
+Gene: 384 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 385 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 386 	N-Change:  -1 	SameN-Change:  -3
+
+Gene: 387 	N-Change:  0 	SameN-Change:  0
+Back:(3,3) Mid:(3,3) Front:(1,0)
+Theory:1000	GA:2	Diff:998
+
+Gene: 388 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 389 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 390 	N-Change:  0 	SameN-Change:  -3
+
+Gene: 391 	N-Change:  -3 	SameN-Change:  -3
+
+Gene: 392 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 393 	N-Change:  -2 	SameN-Change:  -3
+
+Gene: 394 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 395 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 396 	N-Change:  -1 	SameN-Change:  -3
+
+Gene: 397 	N-Change:  0 	SameN-Change:  0
+Back:(3,3) Mid:(3,3) Front:(2,2)
+Theory:1000	GA:63	Diff:937
+
+Gene: 398 	N-Change:  0 	SameN-Change:  -1
+Back:(3,3) Mid:(3,2) Front:(2,2)
+Theory:167	GA:1000	Diff:833
+
+Gene: 399 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 400 	N-Change:  0 	SameN-Change:  -3
+
+Gene: 401 	N-Change:  -3 	SameN-Change:  -3
+
+Gene: 402 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 403 	N-Change:  -2 	SameN-Change:  -3
+
+Gene: 404 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 405 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 406 	N-Change:  -1 	SameN-Change:  -3
+
+Gene: 407 	N-Change:  0 	SameN-Change:  0
+Back:(3,3) Mid:(3,3) Front:(2,1)
+Theory:1000	GA:31	Diff:969
+
+Gene: 408 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 409 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 410 	N-Change:  0 	SameN-Change:  -3
+
+Gene: 411 	N-Change:  -3 	SameN-Change:  -3
+
+Gene: 412 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 413 	N-Change:  -2 	SameN-Change:  -3
+
+Gene: 414 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 415 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 416 	N-Change:  -1 	SameN-Change:  -3
+
+Gene: 417 	N-Change:  0 	SameN-Change:  0
+Back:(3,3) Mid:(3,3) Front:(2,0)
+Theory:1000	GA:8	Diff:992
+
+Gene: 418 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 419 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 420 	N-Change:  0 	SameN-Change:  -3
+
+Gene: 421 	N-Change:  -3 	SameN-Change:  -2
+
+Gene: 422 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 423 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 424 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 425 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 426 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 427 	N-Change:  0 	SameN-Change:  1
+Back:(3,2) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:4	Diff:996
+
+Gene: 428 	N-Change:  0 	SameN-Change:  0
+
+Gene: 429 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 430 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 431 	N-Change:  -3 	SameN-Change:  -2
+
+Gene: 432 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 433 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 434 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 435 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 436 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 437 	N-Change:  0 	SameN-Change:  1
+Back:(3,2) Mid:(3,3) Front:(1,1)
+Theory:1000	GA:2	Diff:998
+
+Gene: 438 	N-Change:  0 	SameN-Change:  0
+
+Gene: 439 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 440 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 441 	N-Change:  -3 	SameN-Change:  -2
+
+Gene: 442 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 443 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 444 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 445 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 446 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 447 	N-Change:  0 	SameN-Change:  1
+Back:(3,2) Mid:(3,3) Front:(1,0)
+Theory:1000	GA:16	Diff:984
+
+Gene: 448 	N-Change:  0 	SameN-Change:  0
+
+Gene: 449 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 450 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 451 	N-Change:  -3 	SameN-Change:  -2
+
+Gene: 452 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 453 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 454 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 455 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 456 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 457 	N-Change:  0 	SameN-Change:  1
+
+Gene: 458 	N-Change:  0 	SameN-Change:  0
+
+Gene: 459 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 460 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 461 	N-Change:  -3 	SameN-Change:  -2
+
+Gene: 462 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 463 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 464 	N-Change:  -1 	SameN-Change:  0
+Back:(3,2) Mid:(2,2) Front:(2,1)
+Theory:250	GA:1000	Diff:750
+
+Gene: 465 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 466 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 467 	N-Change:  0 	SameN-Change:  1
+Back:(3,2) Mid:(3,3) Front:(2,1)
+Theory:1000	GA:63	Diff:937
+
+Gene: 468 	N-Change:  0 	SameN-Change:  0
+Back:(3,2) Mid:(3,2) Front:(2,1)
+Theory:167	GA:1000	Diff:833
+
+Gene: 469 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 470 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 471 	N-Change:  -3 	SameN-Change:  -2
+
+Gene: 472 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 473 	N-Change:  -2 	SameN-Change:  -2
+
+Gene: 474 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 475 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 476 	N-Change:  -1 	SameN-Change:  -2
+
+Gene: 477 	N-Change:  0 	SameN-Change:  1
+Back:(3,2) Mid:(3,3) Front:(2,0)
+Theory:1000	GA:63	Diff:937
+
+Gene: 478 	N-Change:  0 	SameN-Change:  0
+
+Gene: 479 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 480 	N-Change:  0 	SameN-Change:  -2
+
+Gene: 481 	N-Change:  -3 	SameN-Change:  -1
+
+Gene: 482 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 483 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 484 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 485 	N-Change:  -1 	SameN-Change:  0
+Back:(3,1) Mid:(2,1) Front:(0,0)
+Theory:42	GA:1000	Diff:958
+
+Gene: 486 	N-Change:  -1 	SameN-Change:  -1
+Back:(3,1) Mid:(2,0) Front:(0,0)
+Theory:7	GA:1000	Diff:993
+
+Gene: 487 	N-Change:  0 	SameN-Change:  2
+Back:(3,1) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:31	Diff:969
+
+Gene: 488 	N-Change:  0 	SameN-Change:  1
+
+Gene: 489 	N-Change:  0 	SameN-Change:  0
+
+Gene: 490 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 491 	N-Change:  -3 	SameN-Change:  -1
+
+Gene: 492 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 493 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 494 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 495 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 496 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 497 	N-Change:  0 	SameN-Change:  2
+Back:(3,1) Mid:(3,3) Front:(1,1)
+Theory:1000	GA:4	Diff:996
+
+Gene: 498 	N-Change:  0 	SameN-Change:  1
+
+Gene: 499 	N-Change:  0 	SameN-Change:  0
+
+Gene: 500 	N-Change:  0 	SameN-Change:  -1
+Back:(3,1) Mid:(3,0) Front:(1,1)
+Theory:5	GA:1000	Diff:995
+
+Gene: 501 	N-Change:  -3 	SameN-Change:  -1
+
+Gene: 502 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 503 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 504 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 505 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 506 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 507 	N-Change:  0 	SameN-Change:  2
+
+Gene: 508 	N-Change:  0 	SameN-Change:  1
+
+Gene: 509 	N-Change:  0 	SameN-Change:  0
+
+Gene: 510 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 511 	N-Change:  -3 	SameN-Change:  -1
+
+Gene: 512 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 513 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 514 	N-Change:  -1 	SameN-Change:  1
+Back:(3,1) Mid:(2,2) Front:(2,2)
+Theory:250	GA:1000	Diff:750
+
+Gene: 515 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 516 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 517 	N-Change:  0 	SameN-Change:  2
+
+Gene: 518 	N-Change:  0 	SameN-Change:  1
+
+Gene: 519 	N-Change:  0 	SameN-Change:  0
+
+Gene: 520 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 521 	N-Change:  -3 	SameN-Change:  -1
+
+Gene: 522 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 523 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 524 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 525 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 526 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 527 	N-Change:  0 	SameN-Change:  2
+
+Gene: 528 	N-Change:  0 	SameN-Change:  1
+Back:(3,1) Mid:(3,2) Front:(2,1)
+Theory:167	GA:1000	Diff:833
+
+Gene: 529 	N-Change:  0 	SameN-Change:  0
+
+Gene: 530 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 531 	N-Change:  -3 	SameN-Change:  -1
+
+Gene: 532 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 533 	N-Change:  -2 	SameN-Change:  -1
+
+Gene: 534 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 535 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 536 	N-Change:  -1 	SameN-Change:  -1
+
+Gene: 537 	N-Change:  0 	SameN-Change:  2
+
+Gene: 538 	N-Change:  0 	SameN-Change:  1
+
+Gene: 539 	N-Change:  0 	SameN-Change:  0
+
+Gene: 540 	N-Change:  0 	SameN-Change:  -1
+
+Gene: 541 	N-Change:  -3 	SameN-Change:  0
+
+Gene: 542 	N-Change:  -2 	SameN-Change:  1
+
+Gene: 543 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 544 	N-Change:  -1 	SameN-Change:  2
+
+Gene: 545 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 546 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 547 	N-Change:  0 	SameN-Change:  3
+Back:(3,0) Mid:(3,3) Front:(0,0)
+Theory:1000	GA:1	Diff:999
+
+Gene: 548 	N-Change:  0 	SameN-Change:  2
+
+Gene: 549 	N-Change:  0 	SameN-Change:  1
+
+Gene: 550 	N-Change:  0 	SameN-Change:  0
+
+Gene: 551 	N-Change:  -3 	SameN-Change:  0
+
+Gene: 552 	N-Change:  -2 	SameN-Change:  1
+
+Gene: 553 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 554 	N-Change:  -1 	SameN-Change:  2
+
+Gene: 555 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 556 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 557 	N-Change:  0 	SameN-Change:  3
+Back:(3,0) Mid:(3,3) Front:(1,1)
+Theory:1000	GA:63	Diff:937
+
+Gene: 558 	N-Change:  0 	SameN-Change:  2
+Back:(3,0) Mid:(3,2) Front:(1,1)
+Theory:167	GA:1000	Diff:833
+
+Gene: 559 	N-Change:  0 	SameN-Change:  1
+
+Gene: 560 	N-Change:  0 	SameN-Change:  0
+
+Gene: 561 	N-Change:  -3 	SameN-Change:  0
+
+Gene: 562 	N-Change:  -2 	SameN-Change:  1
+
+Gene: 563 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 564 	N-Change:  -1 	SameN-Change:  2
+Back:(3,0) Mid:(2,2) Front:(1,0)
+Theory:250	GA:1000	Diff:750
+
+Gene: 565 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 566 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 567 	N-Change:  0 	SameN-Change:  3
+
+Gene: 568 	N-Change:  0 	SameN-Change:  2
+
+Gene: 569 	N-Change:  0 	SameN-Change:  1
+
+Gene: 570 	N-Change:  0 	SameN-Change:  0
+Back:(3,0) Mid:(3,0) Front:(1,0)
+Theory:5	GA:1000	Diff:995
+
+Gene: 571 	N-Change:  -3 	SameN-Change:  0
+
+Gene: 572 	N-Change:  -2 	SameN-Change:  1
+
+Gene: 573 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 574 	N-Change:  -1 	SameN-Change:  2
+
+Gene: 575 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 576 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 577 	N-Change:  0 	SameN-Change:  3
+Back:(3,0) Mid:(3,3) Front:(2,2)
+Theory:1000	GA:2	Diff:998
+
+Gene: 578 	N-Change:  0 	SameN-Change:  2
+Back:(3,0) Mid:(3,2) Front:(2,2)
+Theory:167	GA:1000	Diff:833
+
+Gene: 579 	N-Change:  0 	SameN-Change:  1
+
+Gene: 580 	N-Change:  0 	SameN-Change:  0
+
+Gene: 581 	N-Change:  -3 	SameN-Change:  0
+
+Gene: 582 	N-Change:  -2 	SameN-Change:  1
+
+Gene: 583 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 584 	N-Change:  -1 	SameN-Change:  2
+
+Gene: 585 	N-Change:  -1 	SameN-Change:  1
+
+Gene: 586 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 587 	N-Change:  0 	SameN-Change:  3
+
+Gene: 588 	N-Change:  0 	SameN-Change:  2
+Back:(3,0) Mid:(3,2) Front:(2,1)
+Theory:167	GA:1000	Diff:833
+
+Gene: 589 	N-Change:  0 	SameN-Change:  1
+
+Gene: 590 	N-Change:  0 	SameN-Change:  0
+
+Gene: 591 	N-Change:  -3 	SameN-Change:  0
+
+Gene: 592 	N-Change:  -2 	SameN-Change:  1
+
+Gene: 593 	N-Change:  -2 	SameN-Change:  0
+
+Gene: 594 	N-Change:  -1 	SameN-Change:  2
+
+Gene: 595 	N-Change:  -1 	SameN-Change:  1
+Back:(3,0) Mid:(2,1) Front:(2,0)
+Theory:42	GA:1000	Diff:958
+
+Gene: 596 	N-Change:  -1 	SameN-Change:  0
+
+Gene: 597 	N-Change:  0 	SameN-Change:  3
+Back:(3,0) Mid:(3,3) Front:(2,0)
+Theory:1000	GA:125	Diff:875
+
+Gene: 598 	N-Change:  0 	SameN-Change:  2
+Back:(3,0) Mid:(3,2) Front:(2,0)
+Theory:167	GA:1000	Diff:833
+
+Gene: 599 	N-Change:  0 	SameN-Change:  1
+
+Gene: 600 	N-Change:  0 	SameN-Change:  0
+
+
+Neigbor Change -> Probs GA: {'0': [500, 500, 16, 63, 4, 4, 2, 1000, 500, 31, 31, 31, 8, 2, 31, 2, 250, 4, 63, 1000, 125, 8, 31, 63, 16, 8, 8, 500, 1000, 8, 2, 125, 16, 4, 2, 16, 4, 125, 31, 63, 4, 1, 8, 63, 16, 125, 1, 250, 125, 31, 2, 63, 1000, 250, 31, 1000, 500, 500, 16, 16, 8, 31, 500, 500, 1000, 250, 63, 31, 16, 1000, 1000, 1000, 1000, 2, 2, 2, 125, 500, 1000, 1000, 1000, 125, 63, 125, 125, 250, 1000, 8, 250, 63, 1, 8, 2, 500, 500, 1, 63, 1000, 500, 1, 31, 31, 250, 1, 8, 2, 16, 63, 4, 2, 125, 500, 2, 125, 31, 16, 16, 16, 250, 16, 1000, 125, 4, 1, 63, 1000, 31, 4, 63, 4, 16, 8, 31, 250, 63, 8, 4, 500, 250, 1000, 1000, 500, 63, 2, 1000, 16, 16, 31, 1000, 1000, 500, 16, 1000, 125, 31, 1, 1, 63, 63, 2, 63, 1000, 1, 1, 500, 250, 2, 1000, 2, 1000, 4, 63, 1000, 1000, 63, 125, 125, 1000, 250, 63], '1': [1000, 500, 125, 2, 31, 500, 63, 4, 250, 500, 500, 63, 1000, 4, 4, 1000, 1000, 63, 1000, 500, 1000, 1000, 4, 4, 1000, 1, 1000, 500, 1000, 16, 63, 250, 250, 1000, 1000, 2, 1000, 1000, 500, 1, 63, 500, 2, 4, 500, 2, 1000, 1000, 4, 500, 4, 500, 1000, 500, 4, 250, 1, 250, 500, 8, 1000, 500, 1000, 250, 1000, 16, 2, 2, 250, 4, 2, 2, 250, 250, 125, 1000, 1, 500, 31, 4, 500, 63, 125, 1, 4, 8, 1000, 63, 250, 500, 500, 8, 16, 125, 16, 1000, 1, 16, 63, 1, 1000, 1, 1000, 125, 250, 125, 31, 250, 31, 1000, 4, 1000, 1000, 1000, 1000, 125, 1000, 500, 250, 16], '2': [500, 8, 16, 1000, 1000, 1000, 125, 500, 1000, 500, 4, 500, 1000, 125, 1000, 1000, 125, 500, 250, 8, 16, 8, 1000, 500, 16, 63, 31, 31, 1000, 63, 1000, 63, 1000, 8, 250, 1000, 1000, 4, 63, 500, 250, 1000, 2, 250, 1, 1, 250, 1000, 4, 1000, 500, 1000, 1000, 1000, 63, 8, 250, 63, 1000, 4, 1000, 1, 500, 16, 250, 250], '3': [2, 125, 1, 500, 1, 1000, 2, 2, 1000, 1000, 1000, 1000, 1000, 1000, 31, 63, 4, 500, 1000, 31, 250, 1000, 1000, 1000], '-1': [4, 2, 31, 8, 2, 16, 8, 31, 8, 500, 1000, 8, 16, 250, 16, 4, 2, 4, 125, 500, 63, 4, 16, 1000, 8, 63, 2, 31, 2, 1, 8, 2, 63, 31, 1, 63, 16, 8, 16, 16, 31, 8, 16, 63, 500, 63, 8, 16, 63, 8, 63, 250, 63, 250, 500, 2, 8, 31, 8, 31, 63, 125, 31, 125, 4, 1, 125, 4, 125, 500, 63, 250, 8, 125, 2, 500, 8, 2, 1000, 2, 4, 4, 31, 31, 8, 1000, 1000, 500, 63, 8, 31, 4, 8, 1000, 8, 125, 2, 31, 31, 125, 8, 2, 4, 500, 500, 2, 125, 8, 1000, 4, 63, 8, 2, 250, 500, 125, 250, 8, 1000, 4], '-2': [1, 1, 2, 31, 31, 63, 8, 4, 4, 8, 4, 31, 8, 1, 16, 31, 4, 8, 8, 8, 8, 2, 1, 4, 31, 250, 125, 250, 500, 16, 8, 1, 4, 4, 8, 63, 125, 31, 8, 4, 4, 16, 4, 125, 63, 1, 31, 31, 250, 8, 8, 1, 250, 63, 63, 1, 4, 4, 63, 1, 4, 16, 1, 250, 63, 8], '-3': [1, 1, 1, 16, 4, 1, 1, 2, 1, 31, 4, 31, 8, 1, 8, 4, 4, 8, 1, 4, 1, 4, 8, 8]}
+
+Neigbor Change -> Probs Theory: {'0': [1000, 1000, 1000, 1000, 1000, 1000, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5, 1000, 167, 28, 5], '1': [1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19, 1000, 667, 111, 19], '2': [1000, 1000, 444, 1000, 1000, 444, 1000, 1000, 444, 1000, 1000, 444, 1000, 1000, 444, 1000, 1000, 444, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74, 1000, 1000, 444, 74], '3': [1000, 1000, 1000, 296, 1000, 1000, 1000, 296, 1000, 1000, 1000, 296, 1000, 1000, 1000, 296, 1000, 1000, 1000, 296, 1000, 1000, 1000, 296], '-1': [250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7, 250, 42, 7], '-2': [63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10, 63, 10], '-3': [16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16]}
+
+Same Neigbor Change -> Probs GA: {'0': [500, 500, 16, 500, 500, 2, 1000, 2, 16, 500, 1000, 1000, 63, 4, 500, 63, 4, 500, 1000, 31, 4, 63, 500, 1000, 2, 4, 16, 500, 1000, 16, 31, 500, 1000, 8, 4, 1000, 31, 1, 1000, 250, 1000, 250, 8, 1000, 250, 1, 31, 8, 2, 1000, 8, 63, 500, 1000, 500, 8, 500, 63, 1000, 500, 500, 1, 8, 8, 1000, 250, 2, 500, 4, 500, 4, 250, 63, 500, 8, 16, 125, 4, 8, 31, 125, 2, 1000, 31, 2, 1000, 125, 8, 16, 1000, 63, 31, 500, 1, 1000, 16, 8, 8, 16, 1, 1, 16, 1000, 125, 16, 8, 2, 250, 31, 63, 500, 1000, 4, 63, 1000, 125, 8, 16, 125, 16, 125, 250, 2, 63, 31, 8, 125, 2, 500, 125, 8, 16, 500, 125, 1000, 1000, 4, 4, 4, 1000, 63, 63, 63, 250, 31, 4, 63, 250, 8, 16, 8, 31, 500, 250, 8, 31, 1, 1, 500, 2, 4, 4, 8, 1, 1, 1, 63, 1000, 4, 16, 250, 63, 8, 250, 250, 125, 8, 8, 4, 63], '1': [1000, 8, 1, 125, 1000, 2, 31, 500, 1000, 63, 4, 31, 250, 125, 1000, 500, 125, 1000, 1000, 8, 1000, 500, 1000, 31, 1000, 63, 1000, 1000, 500, 500, 63, 250, 1, 125, 1000, 4, 31, 1000, 1000, 16, 63, 250, 8, 4, 1000, 1000, 1000, 250, 4, 1000, 1, 1000, 1000, 250, 125, 250, 63, 500, 31, 63, 500, 8, 8, 500, 500, 125, 16, 31, 63, 16, 1000, 1000, 31, 2, 31, 16, 125, 4, 500, 1000, 1000, 8, 63, 250, 4, 2, 16, 1000, 63, 63, 8, 250, 500, 500, 31, 500, 1000, 16, 2, 1000, 125, 125, 63, 500, 63, 4, 125, 1, 63, 4, 2, 4, 2, 4, 1, 125, 63, 63, 1000, 250], '2': [500, 125, 1000, 1000, 125, 1000, 500, 1000, 1000, 500, 1000, 1000, 250, 1000, 31, 1000, 250, 63, 63, 250, 1000, 1000, 1000, 1000, 1, 8, 2, 4, 2, 16, 250, 1, 500, 4, 250, 16, 63, 16, 1000, 1, 1000, 125, 2, 1000, 1000, 1000, 125, 500, 31, 4, 1000, 1000, 1000, 1000, 4, 63, 2, 1000, 1000, 250, 8, 1000, 500, 1000, 8, 1000], '3': [2, 1, 1000, 1000, 4, 250, 2, 250, 500, 63, 1000, 500, 1, 1000, 250, 31, 1000, 1000, 1, 63, 500, 2, 1000, 125], '-1': [4, 1000, 4, 8, 2, 31, 63, 63, 31, 31, 1000, 63, 8, 2, 4, 8, 2, 2, 1000, 4, 16, 4, 16, 1000, 16, 125, 4, 16, 2, 4, 2, 125, 500, 125, 4, 1000, 63, 63, 2, 16, 1, 2, 8, 63, 2, 1000, 4, 31, 250, 4, 4, 1, 500, 1, 8, 2, 16, 63, 4, 31, 500, 8, 31, 63, 250, 1000, 63, 250, 250, 63, 500, 500, 31, 1000, 63, 31, 125, 2, 8, 4, 125, 4, 63, 31, 8, 125, 250, 125, 8, 4, 8, 2, 31, 4, 31, 16, 8, 125, 1000, 8, 1, 1, 8, 1000, 8, 31, 8, 2, 4, 8, 125, 31, 4, 1, 31, 16, 8, 63, 2, 1], '-2': [1, 250, 16, 500, 1, 4, 16, 250, 2, 4, 31, 8, 31, 500, 1, 250, 31, 4, 16, 2, 63, 1000, 250, 2, 8, 8, 1000, 8, 63, 1, 1, 2, 500, 31, 8, 500, 125, 125, 250, 500, 4, 16, 1, 1, 125, 500, 2, 4, 250, 16, 1, 63, 2, 16, 31, 31, 2, 1, 4, 4, 4, 4, 31, 16, 31, 8], '-3': [1, 8, 63, 8, 1, 2, 250, 8, 1, 4, 8, 1, 16, 250, 31, 1, 4, 250, 31, 1, 1, 16, 1, 63]}
+
+Same Neigbor Change -> Probs Theory: {'0': [1000, 667, 444, 296, 1000, 667, 444, 296, 1000, 667, 444, 296, 1000, 667, 444, 296, 1000, 667, 444, 296, 1000, 667, 444, 296, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 1000, 1000, 1000, 1000, 1000, 1000, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5], '1': [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 1000, 667, 444, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 1000, 1000, 1000, 1000, 1000, 1000, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28], '2': [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 667, 1000, 1000, 1000, 1000, 1000, 1000, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167], '3': [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], '-1': [250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 74, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 250, 167, 111, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167, 250, 167, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5], '-2': [63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 19, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 63, 42, 28, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5], '-3': [16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5, 16, 10, 7, 5]}
