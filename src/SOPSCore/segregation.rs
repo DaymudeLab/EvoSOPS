@@ -138,7 +138,7 @@ impl SOPSegEnvironment {
                 participants.push(Particle {
                     x: i as u8,
                     y: j as u8,
-                    color: current_color
+                    state: current_color
                 });
                 grid[i][j] = current_color;
                 current_color_cnt +=1;
@@ -231,6 +231,7 @@ impl SOPSegEnvironment {
         let particle = &self.participants[particle_idx];
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
+        // TODO: remove these checks since move is already check for possibility
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
             // not need to move/swap if the particle is swapping with a particle of same color or is going out of bounds
             if self.grid[new_i][new_j] == SOPSegEnvironment::BOUNDARY || self.grid[new_i][new_j] == self.grid[particle.x as usize][particle.y as usize] {
@@ -239,7 +240,7 @@ impl SOPSegEnvironment {
                 // simple move in empty location
                 // println!("Particle at {},{},c{} moves to {},{}", particle.x, particle.y, particle.color, new_i, new_j);
                 self.grid[particle.x as usize][particle.y as usize] = SOPSegEnvironment::EMPTY;
-                self.grid[new_i][new_j] = particle.color;
+                self.grid[new_i][new_j] = particle.state;
                 let mut particle_mut = &mut self.participants[particle_idx];
                 particle_mut.x = new_i as u8;
                 particle_mut.y = new_j as u8;
@@ -250,7 +251,7 @@ impl SOPSegEnvironment {
                 // println!("Particle at {},{},c{} swaps with {},{},c{}", particle.x, particle.y, particle.color, new_i, new_j, self.grid[new_i][new_j]);
                 let swap_idx = self.participants.iter().position(|par| par.x as usize == new_i && par.y as usize == new_j).unwrap();
                 self.grid[particle.x as usize][particle.y as usize] = self.grid[new_i][new_j];
-                self.grid[new_i][new_j] = particle.color;
+                self.grid[new_i][new_j] = particle.state;
                 let temp_x = particle.x;
                 let temp_y = particle.y;
                 let mut particle_mut = &mut self.participants[particle_idx];
@@ -302,7 +303,7 @@ impl SOPSegEnvironment {
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] != SOPSegEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSegEnvironment::BOUNDARY  {
                     back_cnt += 1;
-                    if particle.color == self.grid[new_i][new_j] {
+                    if particle.state == self.grid[new_i][new_j] {
                         back_same_clr_cnt += 1;
                     }
                 }
@@ -326,14 +327,14 @@ impl SOPSegEnvironment {
                     match position_type {
                         SOPSegEnvironment::FRONT => {
                             front_cnt += 1;
-                            if particle.color == self.grid[new_i][new_j] {
+                            if particle.state == self.grid[new_i][new_j] {
                                 front_same_clr_cnt += 1;
                             }
                         }
                         SOPSegEnvironment::MID => {
                             mid_cnt += 1;
                             back_cnt -= 1;
-                            if particle.color == self.grid[new_i][new_j] {
+                            if particle.state == self.grid[new_i][new_j] {
                                 mid_same_clr_cnt += 1;
                                 back_same_clr_cnt -= 1;
                             }
@@ -506,7 +507,7 @@ impl SOPSegEnvironment {
         let mut clr_edges = [0_u32; 3];
         let edges = self.participants.iter().fold(0, |sum: u32, particle| {
             let neigbor_edges = self.get_neighbors_cnt(particle.x, particle.y, 0);
-            clr_edges[(particle.color-1) as usize] += neigbor_edges.1 as u32;
+            clr_edges[(particle.state-1) as usize] += neigbor_edges.1 as u32;
             sum + neigbor_edges.0 as u32
         });
         // println!("Total edges: {}", (edges as f32) / 2.0);

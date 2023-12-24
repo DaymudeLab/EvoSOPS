@@ -1,4 +1,5 @@
 pub mod segregation;
+pub mod coating;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;
@@ -10,7 +11,7 @@ use std::collections::HashMap;
 struct Particle {
     x: u8,
     y: u8,
-    color: u8
+    state: u8
 }
 
 /*
@@ -98,8 +99,7 @@ impl SOPSEnvironment {
      * Initialize a SOPS grid and place particles based on particle layer and arena layer count
      * Parameters Particle layers and Arena layers refer to the complete hexagonal lattice layers
      * of the SOPS grid and this also defines the total density of particles in the arena.
-     * Calculates Max edge count possible for all the particles irrespective of the color
-     * Calculates Max edge count possible for all the particles of the same color
+     * Calculates Max edge count possible for all the particles irrespective of the state
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
     pub fn init_sops_env(genome: &[[[u8; 4]; 3]; 4], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8) -> Self {
@@ -128,7 +128,7 @@ impl SOPSEnvironment {
                 participants.push(Particle {
                     x: i as u8,
                     y: j as u8,
-                    color: 0
+                    state: 0
                 });
                 grid[i][j] = SOPSEnvironment::PARTICLE;
             }

@@ -1,5 +1,6 @@
 pub mod base_ga;
 pub mod seg_ga;
+pub mod coat_ga;
 
 /*
  * Main file all the basic classes needed for GA to work
@@ -22,6 +23,15 @@ struct SegGenome {
     string: [[[u8; 10]; 6]; 10],
     fitness: f64,
 }
+
+/*
+  * Coating Genome structure
+  */
+  #[derive(Debug, Copy, Clone)]
+  struct CoatGenome {
+      string: [[[u8; 11]; 7]; 11],
+      fitness: f64,
+  }
 
 #[derive(Debug, Copy, Clone)]
 enum DiversThresh {
