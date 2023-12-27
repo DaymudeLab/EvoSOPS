@@ -379,7 +379,7 @@ impl SOPSegEnvironment {
     }
 
     /*
-     * Func to check if the proposed move is possible or not for a particle
+     * Func to get adjacent particle's index in participants vector
      *  */
      fn get_adjacent_particle(&self, particle_idx: usize, direction: (i32, i32)) -> usize {
         let particle = &self.participants[particle_idx];
