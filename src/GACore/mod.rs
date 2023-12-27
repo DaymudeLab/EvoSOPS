@@ -1,5 +1,6 @@
 pub mod base_ga;
 pub mod seg_ga;
+pub mod loco_ga;
 
 /*
  * Main file all the basic classes needed for GA to work
@@ -22,6 +23,15 @@ struct SegGenome {
     string: [[[u8; 10]; 6]; 10],
     fitness: f64,
 }
+
+/*
+  * Locomotion Genome structure
+  */
+  #[derive(Debug, Copy, Clone)]
+  struct LocoGenome {
+      string: [[[[[u8; 2]; 2]; 10]; 6]; 10],
+      fitness: f64,
+  }
 
 #[derive(Debug, Copy, Clone)]
 enum DiversThresh {

@@ -7,6 +7,9 @@ use GACore::seg_ga::SegGA;
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::segregation::SOPSegEnvironment;
 
+use GACore::loco_ga::LocoGA;
+use crate::SOPSCore::locomotion::SOPSLocoEnvironment;
+
 use rayon::prelude::*;
 use gag::Redirect;
 use std::path::PathBuf;
@@ -79,6 +82,8 @@ enum Behavior {
     Agg,
     /// Separation
     Sep,
+    /// Locomotion
+    Loco,
 }
 
 #[derive(ValueEnum, Debug, Clone)] // ArgEnum here
@@ -152,6 +157,12 @@ fn main() {
                 Behavior::Sep => {
                     println!("\nStarting Separation GA Experiment...\n");
                     let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
+                    ga_sops.run_through();
+
+                },
+                Behavior::Loco => {
+                    println!("\nStarting Locomotion GA Experiment...\n");
+                    let mut ga_sops = LocoGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
                     ga_sops.run_through();
 
                 },
@@ -294,6 +305,58 @@ fn main() {
     
                             println!("Total Fitness: {}", &fitness_tot);
                         },
+                        Behavior::Loco => {
+                            println!("\nStarting Separation Single Genome Trial...\n");
+                            // Construct the genome in required dimension
+                            let mut genome: [[[[[u8; 2]; 2]; 10]; 6]; 10] = [[[[[0_u8; 2]; 2]; 10]; 6]; 10];
+                            let mut idx = 0;
+                            for n in 0_u8..10 {
+                                for j in 0_u8..6 {
+                                    for i in 0_u8..10 {
+                                        for h in 0_u8..2 {
+                                            for g in 0_u8..2{
+                                                genome[n as usize][j as usize][i as usize][h as usize][g as usize] = all_entries[idx];
+                                                idx += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            // Run the trials in parallel
+                            let trials = args.seeds.len();
+                            let seeds = args.seeds.clone();
+
+                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                                .into_iter()
+                                .zip(seeds)
+                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+                                .collect();
+
+                            let fitness_tot: f32 = trials_vec.clone()
+                            .into_par_iter()
+                            .map(|trial| {
+                                /*
+                                 * Single Evaluation run of the Genome
+                                 */
+                                let mut sops_trial = SOPSLocoEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
+                                sops_trial.print_grid();
+                                let fitness: f32 = sops_trial.evaluate_fitness();
+                                println!("Starting Fitness: {}", fitness);
+                                let now = Instant::now();
+                                let t_fitness: f32 = sops_trial.simulate(true);
+                                let elapsed = now.elapsed().as_secs();
+                                sops_trial.print_grid();
+                                println!("Fitness: {}", &t_fitness);
+                                println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                t_fitness
+                            })
+                            .sum();
+    
+                            println!("Total Fitness: {}", &fitness_tot);
+                        },
                     }
                 },
                 Experiment::TH => {
@@ -323,6 +386,27 @@ fn main() {
                                             genome[n as usize][j as usize][i as usize] = all_entries[idx];
                                             idx += 1;
                                         // }
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            // Need to create a new class that takes the Genome's float values and operates on them
+                            todo!()
+                        },
+                        Behavior::Loco => {
+                            let mut genome: [[[[[f32; 6]; 7]; 7]; 2]; 2] = [[[[[0.0; 6]; 7]; 7]; 2]; 2];
+                            let mut idx = 0;
+                            for n in 0_u8..7 {
+                                for j in 0_u8..7 {
+                                    for i in 0_u8..6 {
+                                        for h in 0_u8..2 {
+                                            for g in 0_u8..2 {
+                                                genome[n as usize][j as usize][i as usize][h as usize][g as usize] = all_entries[idx];
+                                                idx += 1;
+                                            }
+                                        }
                                     }
                                 }
                             }

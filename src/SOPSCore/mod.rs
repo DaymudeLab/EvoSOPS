@@ -1,4 +1,5 @@
 pub mod segregation;
+pub mod locomotion;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;
