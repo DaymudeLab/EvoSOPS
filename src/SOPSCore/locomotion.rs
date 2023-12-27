@@ -103,8 +103,8 @@ impl SOPSLocoEnvironment {
         // stores coordinates of particle sensing light
         let mut light: Vec<(u8, u8)> = vec![(0,0); (arena_layers+1) as usize]; 
 
-        //let orientation = rand::thread_rng().gen_range(1..4);
-        let orientation = 3;
+        let orientation = rand::thread_rng().gen_range(1..4);
+        //let orientation = 3;
 
         // reflects side light emenates from
         let mut axis_direction = (0, 0); 
