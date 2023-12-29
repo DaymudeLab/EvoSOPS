@@ -308,7 +308,7 @@ fn main() {
                         Behavior::Loco => {
                             println!("\nStarting Separation Single Genome Trial...\n");
                             // Construct the genome in required dimension
-                            let mut genome: [[[[[u8; 2]; 2]; 10]; 6]; 10] = [[[[[0_u8; 2]; 2]; 10]; 6]; 10];
+                            let mut genome: [[[[[u8; 10]; 6]; 10]; 2]; 2] = [[[[[0_u8; 10]; 6]; 10]; 2]; 2];
                             let mut idx = 0;
                             for n in 0_u8..10 {
                                 for j in 0_u8..6 {

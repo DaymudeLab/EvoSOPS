@@ -20,7 +20,7 @@ pub struct LocoGA {
     population: Vec<LocoGenome>,
     mut_rate: f64,
     granularity: u8,
-    genome_cache: HashMap<[[[[[u8; 2]; 2]; 10]; 6]; 10], f64>,
+    genome_cache: HashMap<[[[[[u8; 10]; 6]; 10]; 2]; 2], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>,
@@ -93,13 +93,13 @@ impl LocoGA {
 
         for _ in 0..population_size {
             //init genome
-            let mut genome: [[[[[u8; 2]; 2]; 10]; 6]; 10] = [[[[[0_u8; 2]; 2]; 10]; 6]; 10];
+            let mut genome: [[[[[u8; 10]; 6]; 10]; 2]; 2] = [[[[[0_u8; 10]; 6]; 10]; 2]; 2];
             
-            for n in 0_u8..10 {
-                for j in 0_u8..6 {
+            for n in 0_u8..2 {
+                for j in 0_u8..2 {
                     for i in 0_u8..10 {
-                        for h in 0_u8..2 {
-                            for g in 0_u8..2 {
+                        for h in 0_u8..6 {
+                            for g in 0_u8..10 {
                                 genome[n as usize][j as usize][i as usize][h as usize][g as usize] = LocoGA::rng().sample(LocoGA::genome_init_rng(granularity))
                             }
                         }
@@ -112,7 +112,7 @@ impl LocoGA {
             });
         }
 
-        let genome_cache: HashMap<[[[[[u8; 2]; 2]; 10]; 6]; 10], f64> = HashMap::new();
+        let genome_cache: HashMap<[[[[[u8; 10]; 6]; 10]; 2]; 2], f64> = HashMap::new();
 
         LocoGA {
             max_gen,
@@ -132,13 +132,13 @@ impl LocoGA {
     }
 
     // mutate genome based on set mutation rate for every gene of the genome
-    fn mutate_genome(&self, genome: &[[[[[u8; 2]; 2]; 10]; 6]; 10]) -> [[[[[u8; 2]; 2]; 10]; 6]; 10] {
+    fn mutate_genome(&self, genome: &[[[[[u8; 10]; 6]; 10]; 2]; 2]) -> [[[[[u8; 10]; 6]; 10]; 2]; 2] {
         let mut new_genome = genome.clone();
-        for n in 0..10 {
-            for i in 0..6 {
+        for n in 0..2 {
+            for i in 0..2 {
                 for j in 0..10 {
-                    for k in 0..2 {
-                        for l in 0..2 {
+                    for k in 0..6 {
+                        for l in 0..10 {
                             let smpl = LocoGA::mut_frng().u64(1_u64..=10000);
                             if smpl as f64 <= (self.mut_rate * 10000.0) {
                                 // a random + or - mutation operation on each gene
@@ -185,19 +185,19 @@ impl LocoGA {
     /*
      * Implements a simple two-point crossover operator with crossover point choosen at random in genome vector
      *  */
-     fn generate_offspring(&self, parent1: &[[[[[u8; 2]; 2]; 10]; 6]; 10], parent2: &[[[[[u8; 2]; 2]; 10]; 6]; 10]) -> [[[[[u8; 2]; 2]; 10]; 6]; 10] {
-        let mut new_genome: [[[[[u8; 2]; 2]; 10]; 6]; 10] = [[[[[0_u8; 2]; 2]; 10]; 6]; 10];
+     fn generate_offspring(&self, parent1: &[[[[[u8; 10]; 6]; 10]; 2]; 2], parent2: &[[[[[u8; 10]; 6]; 10]; 2]; 2]) -> [[[[[u8; 10]; 6]; 10]; 2]; 2] {
+        let mut new_genome: [[[[[u8; 10]; 6]; 10]; 2]; 2] = [[[[[0_u8; 10]; 6]; 10]; 2]; 2];
         let cross_pnt_1 = LocoGA::rng().sample(&LocoGA::cross_pnt());
         let cross_pnt_2 = LocoGA::rng().sample(&LocoGA::cross_pnt());
         let lower_cross_pnt = if cross_pnt_1 <= cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
         let higher_cross_pnt = if cross_pnt_1 > cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
 
         let mut cnt = 0;
-        for n in 0..10 {
-            for i in 0..6 {
+        for n in 0..2 {
+            for i in 0..2 {
                 for j in 0..10 {
-                    for k in 0..2 {
-                        for l in 0..2 {
+                    for k in 0..6 {
+                        for l in 0..10 {
                             if cnt < lower_cross_pnt {
                                 new_genome[n][i][j][k][l] = parent1[n][i][j][k][l];
                             } else if cnt > lower_cross_pnt && cnt < higher_cross_pnt {
@@ -284,8 +284,8 @@ impl LocoGA {
      *  */
      fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<LocoGenome> = vec![];
-        let mut selected_g: Vec<[[[[[u8; 2]; 2]; 10]; 6]; 10]> = vec![];
-        let mut crossed_g: Vec<[[[[[u8; 2]; 2]; 10]; 6]; 10]> = vec![];
+        let mut selected_g: Vec<[[[[[u8; 10]; 6]; 10]; 2]; 2]> = vec![];
+        let mut crossed_g: Vec<[[[[[u8; 10]; 6]; 10]; 2]; 2]> = vec![];
         let population_size = self.population.len() as u16;
         //sort the genomes in population by fitness value
         // self.population.sort_unstable_by(|genome_a, genome_b| {
@@ -457,15 +457,19 @@ impl LocoGA {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
                 let mut dis_sum: u16 = 0;
-                for n in 0..10 {
-                    for i in 0..6 {
+                for n in 0..2 {
+                    for i in 0..2 {
                         for j in 0..10 {
-                            let dis = (genome1.string[n][i][j][0][0]).abs_diff(genome2.string[n][i][j][0][0]);
-                            dis_sum += dis as u16;
-                            // let genome1_prob = genome1.string[n][i][j] as f32 / (self.granularity as f32);
-                            // let genome2_prob = genome2.string[n][i][j] as f32 / (self.granularity as f32);
-                            // let dis = (genome1_prob - genome2_prob).abs();
-                            // dis_sum += dis.powf(2.0); // why square ??
+                            for k in 0..6 {
+                                for l in 0..10 {
+                                    let dis = (genome1.string[n][i][j][k][l]).abs_diff(genome2.string[n][i][j][k][l]);
+                                    dis_sum += dis as u16;
+                                    // let genome1_prob = genome1.string[n][i][j] as f32 / (self.granularity as f32);
+                                    // let genome2_prob = genome2.string[n][i][j] as f32 / (self.granularity as f32);
+                                    // let dis = (genome1_prob - genome2_prob).abs();
+                                    // dis_sum += dis.powf(2.0); // why square ??
+                                }
+                            }
                         }
                     }
                 }
