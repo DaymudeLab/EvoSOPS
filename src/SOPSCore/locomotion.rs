@@ -101,31 +101,67 @@ impl SOPSLocoEnvironment {
 
 
         // stores coordinates of particle sensing light
-        let mut light: Vec<(u8, u8)> = vec![(0,0); (arena_layers + 1) as usize]; 
+        let mut light: Vec<(u8, u8)> = vec![(0,0); (arena_layers * 2 + 1) as usize]; 
 
         let orientation = rand::thread_rng().gen_range(1..3);
         //let orientation = 3;
 
-        // reflects direction of side light emenates from
-        let mut axis_direction = (0, 0); 
-
+        // orientation 1: light going from upper left to bottom right
+        // orientation 2: light going from upper right to bottom left
+        // orientation 3: light going straight across from right to left
+        
         if orientation == 1{
-            light[0] = (arena_layers as u8, 0);
-            axis_direction = (1, 1);
+            light[0] = (0, 0);
         }
         else if orientation == 2 {
-            light[0] = (0, arena_layers as u8);
-            axis_direction = (1, 1);
+            light[0] = (0, 0);
         }
         else if orientation == 3 {
-            light[0] = (0, 0);
-            axis_direction = (0, 1);
+            light[0] = (0, arena_layers as u8);
         }
 
-        // set to values along axis direction
-        for i in 1..arena_layers {
-            light[i as usize].0 = light[(i-1) as usize].0 + axis_direction.0;
-            light[i as usize].1 = light[(i-1) as usize].1 + axis_direction.1;
+        // initialize values as far away from light
+        if orientation == 1 || orientation == 2 {
+            let mut i = 1;
+            while i <= arena_layers*2 {
+                light[i as usize].0 = light[(i-1) as usize].0 + 1;
+                light[i as usize].1 = light[(i-1) as usize].1 + 1;
+
+                i += 1;
+
+                light[i as usize].0 = (light[(i-1) as usize].0 as i8 + 0) as u8;
+                light[i as usize].1 = (light[(i-1) as usize].1 as i8 - 1) as u8;
+
+                i += 1;
+            }
+        }
+        else if orientation == 2 {
+            let mut i = 1;
+            while i <= arena_layers*2 {
+                light[i as usize].0 = light[(i-1) as usize].0 + 1;
+                light[i as usize].1 = light[(i-1) as usize].1 + 1;
+
+                i += 1;
+
+                light[i as usize].0 = (light[(i-1) as usize].0 as i8 - 1) as u8;
+                light[i as usize].1 = (light[(i-1) as usize].1 as i8 + 0) as u8;
+
+                i += 1;
+            }
+        }
+        else if orientation == 3 {
+            let mut i = 1;
+            while i <= arena_layers*2 {
+                light[i as usize].0 = light[(i-1) as usize].0 + 1;
+                light[i as usize].1 = light[(i-1) as usize].1 + 0;
+
+                i += 1;
+
+                light[i as usize].0 = light[(i-1) as usize].0 + 0;
+                light[i as usize].1 = light[(i-1) as usize].1 + 1;
+
+                i += 1;
+            }
         }
         
         
@@ -158,24 +194,29 @@ impl SOPSLocoEnvironment {
 
                 // initialize values for light
                 if orientation == 1 {
-                    if i as u8 >= arena_layers as u8 {
-                        if j as u8 >= light[i - arena_layers as usize].1 {
-                            light[i - arena_layers as usize] = (i as u8, j as u8);
+                    if 2*i >= j {
+                        if 2*arena_layers as u8 >= (2*i - j) as u8 {
+                            if j as u8 >= light[(2*i - j) as usize].1 {
+                                light[(2*i - j) as usize] = (i as u8, j as u8);
+                            }
                         }
                     }
-        
                 }
                 else if orientation == 2 {
-                    if j as u8 >= arena_layers as u8 {
-                        if i as u8 >= light[j - arena_layers as usize].0 {
-                            light[j - arena_layers as usize] = (i as u8, j as u8);
+                    if 2*j >= i{
+                        if 2*arena_layers as u8 >= (2*j - i) as u8 {
+                            if i as u8 >= light[(2*j - i) as usize].0 {
+                                light[(2*j - i) as usize] = (i as u8, j as u8);
+                            }
                         }
                     }
                 }
                 else if orientation == 3 {
-                    if i <= j {
-                        if j as u8 >= light[j - i].1 {
-                            light[j - i] = (i as u8, j as u8);
+                    if i+j >= arena_layers as usize {
+                        if i+j < (2*arena_layers + arena_layers) as usize {
+                            if i as u8 >= light[i+j - arena_layers as usize].0 {
+                                light[i+j - arena_layers as usize] = (i as u8, j as u8);
+                            }
                         }
                     }
                 }
@@ -227,25 +268,30 @@ impl SOPSLocoEnvironment {
      */
     fn sensing_light(&self, x: u8, y: u8) -> u8 {
         if self.orientation == 1 {
-            if x >= self.arena_layers as u8 {
-                if y >= self.light[(x - self.arena_layers as u8) as usize].1 {
-                    return 1;
+            if 2*x >= y {
+                if 2*self.arena_layers as u8 >= (2*x - y) as u8 {
+                    if y >= self.light[(2*x - y) as usize].1 {
+                        return 1;
+                    }
                 }
             }
-
         }
         else if self.orientation == 2 {
-            if y >= self.arena_layers as u8 {
-                if x >= self.light[(y - self.arena_layers as u8) as usize].0 {
-                    return 1;
+            if 2*y >= x {
+                if 2*self.arena_layers as u8 >= (2*y - x) as u8 {
+                    if x >= self.light[(2*y - x) as usize].0 {
+                        return 1;
+                    }
                 }
             }
 
         }
         else if self.orientation == 3 {
-            if x <= y {
-                if y >= self.light[(y - x) as usize].1 {
-                    return 1;
+            if x+y >= self.arena_layers as u8 {
+                if x+y <= (2*self.arena_layers + self.arena_layers) as u8 {
+                    if y >= self.light[(x + y - self.arena_layers as u8) as usize].1 {
+                        return 1;
+                    }
                 }
             }
         }
@@ -313,113 +359,153 @@ impl SOPSLocoEnvironment {
         let mut sensing_light = 0;
         let mut future_sensing_light = 0;
         if self.orientation == 1 {
-            if particle.x >= self.arena_layers as u8 {
-                if particle.y >= self.light[(particle.x - self.arena_layers as u8) as usize].1 {
-                    sensing_light = 1;
+            if 2*particle.x >= particle.y {
+                if 2*self.arena_layers as u8 >= (2*particle.x - particle.y) as u8 {
+                    if particle.y >= self.light[(2*particle.x - particle.y) as usize].1 {
+                        sensing_light = 1;
+                    }
                 }
             }
-            if new_i as u8 >= self.arena_layers as u8 {
-                if new_j as u8 >= self.light[(new_i as u8 - self.arena_layers as u8) as usize].1 {
-                    future_sensing_light = 1;
+            if 2*new_i >= new_j {
+                if 2*self.arena_layers as u8 >= (2*new_i - new_j) as u8 {
+                    if new_j as u8 >= self.light[(2*new_i - new_j) as usize].1 {
+                        future_sensing_light = 1;
+                    }
                 }
             }
-
         }
         else if self.orientation == 2 {
-            if particle.y >= self.arena_layers as u8 {
-                if particle.x >= self.light[(particle.y - self.arena_layers as u8) as usize].0 {
-                    sensing_light = 1;
+            if 2*particle.y >= particle.x {
+                if 2*self.arena_layers as u8 >= (2*particle.y - particle.x) as u8 {
+                    if particle.x >= self.light[(2 * particle.y - particle.x) as usize].0 {
+                        sensing_light = 1;
+                    }
                 }
             }
-            if new_j as u8 >= self.arena_layers as u8 {
-                if new_i as u8 >= self.light[(new_j as u8 - self.arena_layers as u8) as usize].0 {
-                    future_sensing_light = 1;
+            if 2*new_j >= new_i {
+                if 2*self.arena_layers as u8 >= (2*new_j - new_i) as u8 {
+                    if new_i as u8 >= self.light[(2 * new_j - new_i) as usize].0 {
+                        future_sensing_light = 1;
+                    }
                 }
             }
-
         }
         else if self.orientation == 3 {
-            if particle.x <= particle.y {
-                if particle.y >= self.light[(particle.y - particle.x) as usize].1 {
-                    sensing_light = 1;
+            if particle.x + particle.y >= self.arena_layers as u8 {
+                if particle.x + particle.y <= (2*self.arena_layers + self.arena_layers) as u8 {
+                    if particle.x >= self.light[(particle.x + particle.y - self.arena_layers as u8) as usize].0 {
+                        sensing_light = 1;
+                    }
                 }
             }
-            if new_i <= new_j {
-                if new_j as u8 >= self.light[(new_j - new_i) as usize].1 {
-                    future_sensing_light = 1;
+            if new_i + new_j >= self.arena_layers as usize {
+                if new_i + new_j <= (2*self.arena_layers + self.arena_layers) as usize {
+                    if new_i as u8 >= self.light[(new_i + new_j - self.arena_layers as usize) as usize].0 {
+                        future_sensing_light = 1;
+                    }
                 }
             }
         }
 
         //self.update_light(particle.x, particle.y, new_i as u8, new_j as u8);
         if self.orientation == 1 && sensing_light == 1 {
-            // same beam
-            if particle.x == new_i as u8{
-                self.light[particle.x as usize - self.arena_layers as usize] = (new_i as u8, new_j as u8);
+            if 2*new_i >= new_j {
+                // same beam
+                if 2*particle.x - particle.y == (2*new_i - new_j) as u8{
+                    self.light[(2*particle.y - particle.x) as usize] = (new_i as u8, new_j as u8);
+                }
+                else {
+                    // update closest particle sensing light
+                    let mut x = particle.x;
+                    let mut y = particle.y as i8;
+                    while y >= 0 {
+                        if self.grid[x as usize][y as usize] == SOPSLocoEnvironment::PARTICLE {
+                            self.light[(2*particle.x - particle.y) as usize] = (x, y as u8);
+                            break;
+                        }
+                        x -= 1;
+                        y -= 2;
+                    }
+                    // adjust future light value
+                    if future_sensing_light == 1 {
+                        self.light[2*new_i - new_j] = (new_i as u8, new_j as u8);
+                    }
+                }
             }
             else {
                 // update closest particle sensing light
-                for j in particle.y..0 {
-                    if self.grid[particle.x as usize - self.arena_layers as usize][j as usize] == SOPSLocoEnvironment::PARTICLE {
-                        self.light[particle.x as usize - self.arena_layers as usize].1 = j;
+                let mut x = particle.x;
+                let mut y = particle.y as i8;
+                while y >= 0 {
+                    if self.grid[x as usize][y as usize] == SOPSLocoEnvironment::PARTICLE {
+                        self.light[(2*particle.x - particle.y) as usize] = (x, y as u8);
                         break;
                     }
-                }
-                // adjust future light value
-                if future_sensing_light == 1 {
-                    self.light[new_i - self.arena_layers as usize] = (new_i as u8, new_j as u8);
+                    x -= 1;
+                    y -= 2;
                 }
             }
         }
         else if self.orientation == 2 && sensing_light == 1 {
-            // same beam
-            if particle.y == new_j as u8{
-                self.light[particle.y as usize - self.arena_layers as usize] = (new_i as u8, new_j as u8);
-            }
-            else {
-                // update closest particle sensing light
-                for i in particle.x..0 {
-                    if self.grid[i as usize][particle.y as usize - self.arena_layers as usize] == SOPSLocoEnvironment::PARTICLE {
-                        self.light[particle.y as usize - self.arena_layers as usize].0 = i;
-                        break;
-                    }
-                }
-                // adjust future light value
-                if future_sensing_light == 1 {
-                    self.light[new_j - self.arena_layers as usize] = (new_i as u8, new_j as u8);
-                }
-            }
-        }
-        else if self.orientation == 3 && sensing_light == 1 {
-            // future location in light's path
-            if (new_i <= new_j){
+            if 2*new_j >= new_i {
                 // same beam
-                if (particle.y - particle.x) as u8 == (new_j - new_i) as u8{
-                    self.light[(particle.y - particle.x) as usize] = (new_i as u8, new_j as u8);
+                if 2*particle.y - particle.x == (2*new_j - new_i) as u8 {
+                    self.light[(2*particle.y - particle.x)as usize] = (new_i as u8, new_j as u8);
                 }
                 else {
                     // update closest particle sensing light
-                    for i in 0..particle.x {
-                        if self.grid[(particle.x - i) as usize][(particle.y - i) as usize] == SOPSLocoEnvironment::PARTICLE {
-                            self.light[(particle.y - particle.x) as usize] = (particle.x - i, particle.y - i);
+                    let mut x = particle.x as i8;
+                    let mut y = particle.y;
+                    while x >= 0 {
+                        if self.grid[x as usize][y as usize] == SOPSLocoEnvironment::PARTICLE {
+                            self.light[(2*particle.y - particle.x) as usize] = (x as u8, y);
                             break;
                         }
+                        x -= 2;
+                        y -= 1;
                     }
-
                     // adjust future light value
                     if future_sensing_light == 1 {
-                        self.light[(new_j - new_i) as usize] = (new_i as u8, new_j as u8);
+                        self.light[2*new_j - new_i] = (new_i as u8, new_j as u8);
                     }
                 }
             }
             else {
-                // particle moving out of light's path
+                 // update closest particle sensing light
+                 let mut x = particle.x as i8;
+                 let mut y = particle.y;
+                 while x >= 0 {
+                     if self.grid[x as usize][y as usize] == SOPSLocoEnvironment::PARTICLE {
+                         self.light[(2*particle.y - particle.x) as usize] = (x as u8, y);
+                         break;
+                     }
+                     x -= 2;
+                     y -= 1;
+                 }
+            }
+                
+        }
+        else if self.orientation == 3 && sensing_light == 1 {
+            // same beam
+            if (particle.x + particle.y) as u8 == (new_i + new_j) as u8{
+                self.light[(particle.x + particle.y - self.arena_layers as u8) as usize] = (new_i as u8, new_j as u8);
+            }
+            else {
                 // update closest particle sensing light
-                for i in 0..particle.x {
-                    if self.grid[(particle.x - i) as usize][(particle.y - i) as usize] == SOPSLocoEnvironment::PARTICLE {
-                        self.light[(particle.y - particle.x) as usize] = (particle.x - i, particle.y - i);
+                let mut x = particle.x as i8;
+                let mut y = particle.y;
+                while x >= 0 {
+                    if self.grid[x as usize][y as usize] == SOPSLocoEnvironment::PARTICLE {
+                        self.light[(particle.x + particle.y - self.arena_layers as u8) as usize] = (x as u8, y);
                         break;
                     }
+                    x -= 1;
+                    y += 1;
+                }
+
+                // adjust future light value
+                if future_sensing_light == 1 {
+                    self.light[new_i + new_j - self.arena_layers as usize] = (new_i as u8, new_j as u8);
                 }
             }
         }
@@ -469,19 +555,25 @@ impl SOPSLocoEnvironment {
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] != SOPSLocoEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSLocoEnvironment::BOUNDARY  {
                     back_cnt += 1;
-                    if self.orientation == 1 && new_i as u16 >= self.arena_layers {
-                        if new_j == self.light[new_i - self.arena_layers as usize].1 as usize {
-                            back_light_cnt += 1;
+                    if self.orientation == 1 && 2*new_i >= new_j {
+                        if 2*self.arena_layers as u8 >= (2*new_i - new_j) as u8 {
+                            if new_j == self.light[2*new_i - new_j].1 as usize {
+                                back_light_cnt += 1;
+                            }
                         }
                     }
-                    else if self.orientation == 2 && new_j as u16 >= self.arena_layers {
-                        if new_i == self.light[new_j - self.arena_layers as usize].0 as usize {
-                            back_light_cnt += 1;
+                    else if self.orientation == 2 && 2*new_j >= new_i {
+                        if 2*self.arena_layers as u8 >= (2*new_j - new_i) as u8 {
+                            if new_i == self.light[2*new_j - new_i].0 as usize {
+                                back_light_cnt += 1;
+                            }
                         }
                     }
-                    else if self.orientation == 3 && new_i <= new_j {
-                        if (new_i as u8, new_j as u8) == self.light[(new_j - new_i) as usize] {
-                            back_light_cnt += 1;
+                    else if self.orientation == 3 && new_i + new_j >= self.arena_layers as usize {
+                        if new_i + new_j <= (2*self.arena_layers + self.arena_layers) as usize {
+                            if new_i == self.light[new_i + new_j - self.arena_layers as usize].0 as usize {
+                                back_light_cnt += 1;
+                            }
                         }
                     }
                 }
@@ -503,41 +595,53 @@ impl SOPSLocoEnvironment {
                     match position_type {
                         SOPSLocoEnvironment::FRONT => {
                             front_cnt += 1;
-                            if self.orientation == 1 && new_i as u16 >= self.arena_layers {
-                                if new_j == self.light[new_i - self.arena_layers as usize].1 as usize {
-                                    front_light_cnt += 1;
+                            if self.orientation == 1 && 2*new_i >= new_j {
+                                if 2*self.arena_layers as u8 >= (2*new_i - new_j) as u8 {
+                                    if new_j == self.light[2*new_i - new_j].1 as usize {
+                                        front_light_cnt += 1;
+                                    }
                                 }
                             }
-                            else if self.orientation == 2 && new_j as u16 >= self.arena_layers {
-                                if new_i == self.light[new_j - self.arena_layers as usize].0 as usize {
-                                    front_light_cnt += 1;
+                            else if self.orientation == 2 && 2*new_j >= new_i {
+                                if 2*self.arena_layers as u8 >= (2*new_j - new_i) as u8 {
+                                    if new_i == self.light[2*new_j - new_i].0 as usize {
+                                        front_light_cnt += 1;
+                                    }
                                 }
                             }
-                            else if self.orientation == 3 && new_i <= new_j {
-                                if (new_i as u8, new_j as u8) == self.light[(new_j - new_i) as usize] {
-                                    front_light_cnt += 1;
+                            else if self.orientation == 3 && new_i + new_j >= self.arena_layers as usize {
+                                if new_i + new_j <= (2*self.arena_layers + self.arena_layers) as usize {
+                                    if new_i == self.light[new_i + new_j - self.arena_layers as usize].0 as usize {
+                                        front_light_cnt += 1;
+                                    }
                                 }
                             }
                         }
                         SOPSLocoEnvironment::MID => {
                             mid_cnt += 1;
                             back_cnt -= 1;
-                            if self.orientation == 1 && new_i as u16 >= self.arena_layers {
-                                if new_j == self.light[new_i - self.arena_layers as usize].1 as usize {
-                                    mid_light_cnt += 1;
-                                    back_light_cnt -= 1;
+                            if self.orientation == 1 && 2*new_i >= new_j {
+                                if 2*self.arena_layers as u8 >= (2*new_i - new_j) as u8 {
+                                    if new_j == self.light[2*new_i - new_j].1 as usize {
+                                        mid_light_cnt += 1;
+                                        back_light_cnt -= 1;
+                                    }
                                 }
                             }
-                            else if self.orientation == 2 && new_j as u16 >= self.arena_layers {
-                                if new_i == self.light[new_j - self.arena_layers as usize].0 as usize {
-                                    mid_light_cnt += 1;
-                                    back_light_cnt -= 1;
+                            else if self.orientation == 2 && 2*new_j >= new_i {
+                                if 2*self.arena_layers as u8 >= (2*new_j - new_i) as u8 {
+                                    if new_i == self.light[2*new_j - new_i].0 as usize {
+                                        mid_light_cnt += 1;
+                                        back_light_cnt -= 1;
+                                    }
                                 }
                             }
-                            else if self.orientation == 3 && new_i <= new_j {
-                                if (new_i as u8, new_j as u8) == self.light[(new_j - new_i) as usize] {
-                                    mid_light_cnt += 1;
-                                    back_light_cnt -= 1;
+                            else if self.orientation == 3 && new_i + new_j >= self.arena_layers as usize {
+                                if new_i + new_j <= (2*self.arena_layers + self.arena_layers) as usize {
+                                    if new_i == self.light[new_i + new_j - self.arena_layers as usize].0 as usize {
+                                        mid_light_cnt += 1;
+                                        back_light_cnt -= 1;
+                                    }
                                 }
                             }
                         }
@@ -639,7 +743,7 @@ impl SOPSLocoEnvironment {
         }
         else if self.orientation == 3 {
             distance = self.participants.iter().fold(0, |sum: u32, particle| {
-                sum + particle.y as u32
+                sum + (particle.x as i8 - particle.y as i8 + self.arena_layers as i8) as u32
             });
         }
 
