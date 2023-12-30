@@ -191,7 +191,6 @@ fn main() {
             match &other_experiment {
                 Experiment::GM => {
                     let all_entries: Vec<u8> = striped_content.split(',').filter_map(|x| x.parse::<u8>().ok()).collect();
-        
                     match &args.behavior {
                         Behavior::Agg => {
                             println!("\nStarting Aggregation Single Genome Trial...\n");
@@ -310,11 +309,11 @@ fn main() {
                             // Construct the genome in required dimension
                             let mut genome: [[[[[u8; 10]; 6]; 10]; 2]; 2] = [[[[[0_u8; 10]; 6]; 10]; 2]; 2];
                             let mut idx = 0;
-                            for n in 0_u8..10 {
-                                for j in 0_u8..6 {
+                            for n in 0_u8..2 {
+                                for j in 0_u8..2 {
                                     for i in 0_u8..10 {
-                                        for h in 0_u8..2 {
-                                            for g in 0_u8..2{
+                                        for h in 0_u8..6 {
+                                            for g in 0_u8..10{
                                                 genome[n as usize][j as usize][i as usize][h as usize][g as usize] = all_entries[idx];
                                                 idx += 1;
                                             }
