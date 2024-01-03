@@ -1,5 +1,6 @@
 pub mod base_ga;
 pub mod seg_ga;
+pub mod brid_ga;
 
 /*
  * Main file all the basic classes needed for GA to work

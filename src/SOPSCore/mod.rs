@@ -37,7 +37,6 @@ pub struct SOPSEnvironment {
 
 
 impl SOPSEnvironment {
-
     const EMPTY: u8 = 0;
     const PARTICLE: u8 = 1;
     const BOUNDARY: u8 = 2;
@@ -101,6 +100,7 @@ impl SOPSEnvironment {
         let k = 3*particle_layers;
         let agg_edge_cnt: u64 = (k*(k+1)).into();
         let mut grid_rng = SOPSEnvironment::seed_rng(seed);
+
         //init grid bounds
         for i in 0..arena_layers {
             let mut j = 1;
