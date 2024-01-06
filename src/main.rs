@@ -351,23 +351,6 @@ fn main() {
                             todo!()
                         },
                         Behavior::Brid => {
-                            // TODO
-                            let mut genome: [[[f32; 6]; 7]; 7] = [[[0.0; 6]; 7]; 7];
-                            let mut idx = 0;
-                            for n in 0_u8..7 {
-                                for j in 0_u8..7 {
-                                    for i in 0_u8..6 {
-                                        // if i+j <= n {
-                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
-                                            idx += 1;
-                                        // }
-                                    }
-                                }
-                            }
-
-                            println!("Read Genome:\n{:?}", genome);
-
-                            // Need to create a new class that takes the Genome's float values and operates on them
                             todo!()
                         },
                     }
