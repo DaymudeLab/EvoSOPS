@@ -1,6 +1,7 @@
-use super::Particle;
+use super::{Particle, SOPSEnvironment};
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
+use std::collections::HashMap;
 
 
 /*
@@ -179,38 +180,151 @@ impl SOPSBridEnviroment {
 
     /**
      * Description:
-     *  TODO
+     *  Calculates the amount of neighbor in the particles extended neighborhood.
      * Parameters:
-     *  TODO
+     *  particle_idx: Index of particle in self.partipants
+     *  direction: (i32, i32) tuple representing the direciton of the particle.
      * Return:
-     *  TODO
+     *  A (u8, u8, u8) tuple representing the amount of neighbors in the back, middle, and front.
+     */
+     fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8) {
+       let mut back_cnt = 0;
+       let mut mid_cnt = 0;
+       let mut front_cnt = 0;
+       let particle = &self.participants[particle_idx];
+       let move_i = (particle.x as i32 + direction.0) as usize;
+       let move_j = (particle.y as i32 + direction.1) as usize;
+       let mut seen_neighbor_cache:HashMap<[usize; 2], bool> = HashMap::new();
+
+       // Neighborhood for original position
+       for idx in 0..6 {
+            let new_i = (particle.x as i32 + SOPSBridEnviroment::directions()[idx].0) as usize;
+            let new_j = (particle.y as i32 + SOPSBridEnviroment::directions()[idx].1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+                seen_neighbor_cache.insert([new_i, new_j], true);
+                if self.grid[new_i][new_j] == SOPSBridEnviroment::PARTICLE_LAND || self.grid[new_i][new_j] == SOPSBridEnviroment::PARTICLE_OFFLAND {
+                    back_cnt += 1;
+                } 
+            }
+       }
+
+       //Nieghborhood for new position
+       for idx in 0..6 {
+            let new_i = (move_i as i32 + SOPSBridEnviroment::directions()[idx].0) as usize;
+            let new_j = (move_j as i32 + SOPSBridEnviroment::directions()[idx].1) as usize;
+
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+                let mut position_type = SOPSBridEnviroment::FRONT;
+                match seen_neighbor_cache.get(&[new_i, new_j]) {
+                    Some(_exists) => {
+                        position_type = SOPSBridEnviroment::MID;
+                    }
+                    None => {},
+                }
+
+                if self.grid[new_i][new_j] == SOPSBridEnviroment::PARTICLE_LAND || self.grid[new_i][new_j] == SOPSBridEnviroment::PARTICLE_OFFLAND {
+                    match position_type {
+                        SOPSBridEnviroment::FRONT => {
+                            front_cnt += 1;
+                        }
+                        SOPSBridEnviroment::MID => {
+                            mid_cnt += 1;
+                            back_cnt -= 1;
+                        }
+                         _=> todo!()
+                    }
+                }
+            }
+       }
+
+       return (back_cnt.clamp(0,3), mid_cnt.clamp(0,2), front_cnt.clamp(0,3));
+    }
+
+
+    /**
+     * Description:
+     *  Determines if move is possible.
+     * Parameters:
+     *  particle_idx: Index of particle in self.particpants.
+     *  direction: (i32, i32) tuple of the direction of move.
+     * Return:
+     *  A boolean value representing if the move is possible.
      */
     fn particle_move_possible(&self, particle_idx: usize, direction: (i32, i32)) -> bool {
-        todo!();
+        let particle = &self.participants[particle_idx];
+        let new_i = (particle.x as i32 + direction.0) as usize;
+        let new_j = (particle.y as i32 + direction.1) as usize;
+
+        if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if self.grid[new_i][new_j] == SOPSBridEnviroment::PARTICLE_LAND || self.grid[new_i][new_j] == SOPSBridEnviroment::PARTICLE_OFFLAND {
+                return false;
+            } else {
+                //Particle can move.
+                return true;
+            }
+        } else {
+            return false;
+        }
     }
 
     /**
      * Description:
-     *  TODO
+     *  Changes the particle on the SOPS grid by moving a particle in a given direction
      * Parameters:
-     *  TODO
+     *  particle_idx: The index of the particle in self.participants.
+     *  direction: (i32, i32) tuple representing the direciton of the move.
      * Return:
-     *  TODO
+     *  A boolean value representing whether the move was made.
      */
     fn move_particle_to(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
-        todo!();
+        let mut particle = &mut self.participants[particle_idx];
+
+        let new_i = (particle.x as i32 + direction.0) as usize;
+        let new_j = (particle.y as i32 + direction.1) as usize;
+
+        if self.grid[particle.x as usize][particle.y as usize] == SOPSBridEnviroment::PARTICLE_LAND {
+            self.grid[particle.x as usize][particle.y as usize] = SOPSBridEnviroment::EMPTY_LAND;
+        } else {
+            self.grid[particle.x as usize][particle.y as usize] = SOPSBridEnviroment::EMPTY_OFFLAND;
+        }
+
+        if self.grid[new_i][new_j] == SOPSBridEnviroment::EMPTY_LAND {
+            self.grid[new_i][new_j] = SOPSBridEnviroment::PARTICLE_LAND;
+            particle.color = 0;
+        } else {
+            self.grid[new_i][new_j] = SOPSBridEnviroment::PARTICLE_OFFLAND;
+            particle.color = 1;
+        }
+
+        particle.x = new_i as u8;
+        particle.y = new_j as u8;
+
+        return true;
     }
 
     /**
      * Description:
-     *  TODO
+     *  Move 'n' particles in random directions in the SOPS grid.
      * Parameters:
-     *  TODO
-     * Return:
-     *  TODO
+     *  cnt: A usize value representing the amount of particles to randomly move.
      */
-    fn move_particle(&mut self, cnt: usize) {
-        todo!();
+    fn move_particles(&mut self, _cnt: usize) {
+        //See SOPSCORE::mod.rs for parallel execution commentry.
+        // for _ in 0..cnt {
+            let par_idx = SOPSBridEnviroment::rng().sample(&self.unfrm_par());
+            let move_dir = SOPSBridEnviroment::directions()[SOPSBridEnviroment::rng().sample(&SOPSBridEnviroment::unfrm_dir())];
+                
+            if self.particle_move_possible(par_idx, move_dir) {
+                let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+
+                let move_prb: f64 =
+                    self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
+
+                if SOPSBridEnviroment::move_frng().u64(1_u64..=10000) <= (move_prb * 10000.0) as u64 {
+                    self.move_particle_to(par_idx, move_dir);
+                }
+            }
+        // }
     }
 
     /**
@@ -473,10 +587,10 @@ impl SOPSBridEnviroment {
         }
 
         if max_tension == 0 {
-            return 0.0;
+            return 1.0;
         }
 
-        return 1.0 - (1.0 / max_tension as f32);
+        return 1.0 / max_tension as f32;
     }
 
     /**
@@ -501,33 +615,40 @@ impl SOPSBridEnviroment {
 
     /**
      * Description:
-     *  TODO
-     * Parameters:
-     *  TODO
+     *  Runs the entirety of the simulation. 
      * Return:
-     *  TODO
+     *  Returns the fitness value of the final step.
      */
-    pub fn simulate(&mut self, take_snaps: bool) -> u32 {
-        todo!();
+    pub fn simulate(&mut self, take_snaps: bool) -> f32 {
+        for step in 0..self.sim_duration {
+            self.move_particles(1 as usize);
+            if take_snaps && (step == (self.participants.len() as u64) || step == (self.participants.len() as u64).pow(2)) {
+                self.print_grid();
+                println!("Fitness: {}", self.evaluate_fitness() / self.get_max_fitness());
+            }
+        }
+
+        self.fitness_val  = self.evaluate_fitness();
+        return self.fitness_val;
     }
 
     /*
     * Description:
-    *   TODO
+    *   Gets the maximum fitness value possible.
     * Return:
-    *   TODO
+    *   A f32 value representing the maximum fitness value. Range: [0,1]
     */
-    pub fn get_max_fitness(&self) -> u64 {
-        todo!();
+    pub fn get_max_fitness(&self) -> f32 {
+        return 1.0;
     }
 
     /*
     * Description:
-    *   TODO
+    *   Gets the amount of participants within the expirament.
     * Return:
-    *   TODO
+    *   A usize value representing the amount of participants.
     */
     pub fn get_participant_cnt(&self) -> usize {
-        todo!();
+        return self.participants.len();
     }
 }

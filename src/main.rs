@@ -310,7 +310,59 @@ fn main() {
                         },
                         Behavior::Brid => {
                             println!("\nStarting Bridging Single Genome Trial...\n");
-                            todo!();
+                            
+                            let mut genome: [[[u8; 4]; 3]; 4] = [[[0; 4]; 3]; 4];
+                            let mut idx = 0;
+                            println!("All entries: ");
+                            for i in &all_entries {
+                                println!(" {} ", i);
+                            }
+
+                            for n in 0_u8..4 {
+                                for j in 0_u8..3 {
+                                    for i in 0_u8..4 {
+                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                        idx += 1;
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            let trials = args.seeds.len();
+                            let seeds = args.seeds.clone();
+
+                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                                .into_iter()
+                                .zip(seeds)
+                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+                                .collect();
+
+                            let fitness_tot: f64 = trials_vec.clone()
+                            .into_par_iter()
+                            .map(|trial| {
+                                /*
+                                     * Single Evaluation run of the Genome
+                                     */
+                                    let mut sops_trial = SOPSBridEnviroment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
+                                    sops_trial.print_grid();
+                                    let edge_cnt: f32 = sops_trial.evaluate_fitness();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    println!("Max Fitness: {}", sops_trial.get_max_fitness());
+                                    println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+                                    let now = Instant::now();
+                                    let edge_cnt: f32 = sops_trial.simulate(true);
+                                    let elapsed = now.elapsed().as_secs();
+                                    sops_trial.print_grid();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    let t_fitness = edge_cnt as f64/ sops_trial.get_max_fitness() as f64;
+                                    println!("Fitness: {}", &t_fitness);
+                                    println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                    t_fitness
+                            })
+                            .sum();
+
+                            println!("Total Fitness: {}", &fitness_tot);
                         },
                     }
                 },
