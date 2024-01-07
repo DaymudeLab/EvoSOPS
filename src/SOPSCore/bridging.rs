@@ -342,22 +342,141 @@ impl SOPSBridEnviroment {
 
     /**
      * Description: 
-     *  TODO
+     *  Determines ratio of onland to total particles. Favors more particles onland.
      * Return:
-     *  TODO
+     *  A f32 value representing the ratio of onland to total particles.
      */
     fn bridge_resource(&self) -> f32 {
-        todo!();
+        let mut total_on_land_particles:u32 = 0;
+        let mut total_particles:u32 = 0;
+        
+        for particle in self.participants.iter() {
+            total_particles += 1;
+
+            if particle.color == 0 {
+                total_on_land_particles += 1;
+            }
+        }
+
+        return total_on_land_particles as f32 / total_particles as f32;
+    }
+
+    /**
+     * Description:
+     *  Finds distance to nearest land particle. Distances are cached in distance_matrix.
+     * Return:
+     *  A u32 representing the distance to land. (0 if on land and +1 for every spot in between).
+     */
+    fn to_land_distance(&self, particle: &(u8, u8), distance_matrix: &mut Vec<Vec<i32>>) -> u32 {
+        let x: usize = particle.0 as usize;
+        let y: usize = particle.1 as usize;
+        
+        //Checks if particle has distance
+        if distance_matrix[x][y] >= 0 {
+            return distance_matrix[x][y] as u32;
+        }
+
+        //Check neighborhood
+        //i and j range is +1
+        let mut min_distance: u32 = u32::MAX;
+        for i in 0..2 {
+            let checking_x: i32 = x as i32 + i - 1;
+            if checking_x >= 0 {
+                for j in 0..2 {
+                    let checking_y: i32 = y as i32 + j - 1;
+                    if checking_y >= 0 {
+                        //Skips current particle
+                        if i != 1 && j != 1 {
+                            //Checks if distance exists
+                            let distance: u32 = if distance_matrix[checking_x as usize][checking_y as usize] >= 0 {
+                                //Uses cached value
+                                distance_matrix[checking_x as usize][checking_y as usize] as u32 + 1
+                            } else if self.grid[checking_x as usize][checking_y as usize] == SOPSBridEnviroment::PARTICLE_LAND || self.grid[checking_x as usize][checking_y as usize] == SOPSBridEnviroment::PARTICLE_OFFLAND {
+                                //Checks if particle at checking point
+                                self.to_land_distance(&(checking_x as u8, checking_y as u8), distance_matrix) + 1
+                            } else {
+                                //If checking point is non-particle, skip
+                                continue
+                            };
+
+                            if distance < min_distance {
+                                min_distance = distance;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        distance_matrix[x][y] = min_distance as i32;
+        return min_distance;
     }
 
     /**
      * Description: 
-     *  TODO
+     *  Determines bridge strength by finding max tension among the particle within the bridge.
      * Return:
-     *  TODO
+     *  A f32 value in [0,1] representing the strength of the current bridge. The value 1 is a maximum strength bridge.
      */
     fn bridge_strength(&self) -> f32 {
-        todo!();
+        let mut distance_matrix = vec![vec![-1; self.grid.len()]; self.grid.len()];
+
+        let mut offland_particles: Vec<&Particle> = vec![];
+
+        //Sets tension_rating for onland and determines offland particles
+        for particle in self.participants.iter() {
+            let x: usize = particle.x as usize;
+            let y: usize = particle.y as usize;
+
+            if self.grid[x][y] == SOPSBridEnviroment::PARTICLE_LAND {
+                distance_matrix[particle.x as usize][particle.y as usize] = 0;
+            } else if self.grid[x][y] == SOPSBridEnviroment::PARTICLE_OFFLAND {
+                offland_particles.push(particle);
+            }
+        }
+
+        let gravity_constant:u8 = 9;
+        let mut max_tension: u32 = 0;
+
+        //Find offland_particle with max tension
+        for particle in offland_particles.iter() {
+            let x: usize = particle.x as usize;
+            let y: usize = particle.y as usize;
+
+            let distance: u32 = if distance_matrix[x][y] > 0 {
+                distance_matrix[x][y] as u32
+            } else {
+                self.to_land_distance(&(particle.x, particle.y), &mut distance_matrix) as u32
+            };
+
+            let mut neighbors: u8 = 0;
+            for i in 0..2 {
+                let checking_x: i32 = x as i32 + i - 1;
+                if checking_x >= 0 {
+                    for j in 0..2 {
+                        let checking_y: i32 = y as i32 + j - 1;
+                        if checking_y >= 0 {
+                            if self.grid[checking_x as usize][checking_y as usize] == SOPSBridEnviroment::PARTICLE_LAND || self.grid[checking_x as usize][checking_y as usize] == SOPSBridEnviroment::PARTICLE_OFFLAND {
+                                neighbors += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            let tension: i32 = distance as i32 + gravity_constant as i32 - neighbors as i32;
+            assert!(tension >= 0, "Tension is below 0: {}. Raise gravity constant from {}.", tension, gravity_constant);
+
+            if tension as u32 > max_tension {
+                max_tension = tension as u32;
+            }
+        }
+
+        if max_tension == 0 {
+            return 0.0;
+        }
+
+        return 1.0 - (1.0 / max_tension as f32);
     }
 
     /**
@@ -369,7 +488,7 @@ impl SOPSBridEnviroment {
      */
     pub fn evaluate_fitness(&self) -> f32 {
         //Calculates distance
-        let distance_ratio: f32 = self.bridge_distance() as f32/self.bridge_optimal_distance() as f32;
+        let distance_ratio: f32 = self.bridge_distance() as f32 / self.bridge_optimal_distance() as f32;
         if distance_ratio == 0.0 {
             return 0.0;
         }
