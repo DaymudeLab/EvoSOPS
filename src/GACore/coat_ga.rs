@@ -27,7 +27,8 @@ pub struct CoatGA {
     div_state: DiversThresh,
     max_div: u32,
     w1: f32,
-    w2: f32
+    w2: f32,
+    random_seed: u32
 }
 
 impl CoatGA {
@@ -84,7 +85,8 @@ impl CoatGA {
         sizes: Vec<(u16, u16, u16)>,
         trial_seeds: Vec<u64>,
         w1: f32,
-        w2: f32
+        w2: f32,
+        random_seed: u32,
     ) -> Self {
 
         println!("Weights: {} x Total Edges + {} x Avg. Same Clr Edges", w1, w2);
@@ -122,7 +124,8 @@ impl CoatGA {
             div_state: DiversThresh::INIT,
             max_div: ((granularity-1) as u32)*(CoatGA::GENOME_LEN as u32),
             w1,
-            w2
+            w2,
+            random_seed
         }
     }
 

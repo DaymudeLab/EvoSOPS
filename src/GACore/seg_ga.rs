@@ -6,6 +6,8 @@ use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::io::Write;
+use std::fs::File;
 use std::time::Instant;
 use std::usize;
 
@@ -27,7 +29,8 @@ pub struct SegGA {
     div_state: DiversThresh,
     max_div: u32,
     w1: f32,
-    w2: f32
+    w2: f32,
+    random_seed: u32
 }
 
 impl SegGA {
@@ -84,7 +87,8 @@ impl SegGA {
         sizes: Vec<(u16, u16)>,
         trial_seeds: Vec<u64>,
         w1: f32,
-        w2: f32
+        w2: f32,
+        random_seed: u32,
     ) -> Self {
 
         println!("Weights: {} x Total Edges + {} x Avg. Same Clr Edges", w1, w2);
@@ -122,7 +126,8 @@ impl SegGA {
             div_state: DiversThresh::INIT,
             max_div: ((granularity-1) as u32)*(SegGA::GENOME_LEN as u32),
             w1,
-            w2
+            w2,
+            random_seed
         }
     }
 
@@ -282,6 +287,24 @@ impl SegGA {
         let best_genome = self.population.iter().max_by(|&g1, &g2| g1.fitness.partial_cmp(&g2.fitness).unwrap()).unwrap();
         println!("Best Genome -> {best_genome:.5?}");
 
+        // Write all the genomic data to a file
+        {
+            let mut buff: Vec<u8> = Vec::new();
+            for genome in &self.population {
+                for n in 0..10 {
+                    for i in 0..6 {
+                        for j in 0..10 {
+                            buff.push(genome.string[n][i][j]);
+                        }
+                    }
+                }
+                buff.extend(genome.fitness.to_be_bytes());
+            }
+
+            let mut file = File::options().create(true).append(true).open(format!("./output/genomic_data_Sep_{}.log", self.random_seed)).expect("Failed to create genomic data file!");
+            file.write_all(&buff).expect("Failed to append to the genomic data file!");
+        }
+        
         // for idx in 1..self.population.len() {
         //     println!("{y:.5?}", y = self.population[idx].fitness);
         // }

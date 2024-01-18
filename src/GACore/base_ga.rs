@@ -6,6 +6,8 @@ use rayon::prelude::*;
 use std::collections::HashMap;
 use std::time::Instant;
 use std::usize;
+use std::io::Write;
+use std::fs::File;
 
 /*
  * Main GA class for Separation behavior (use as a model to structure and write other GA extensions for other GA's)
@@ -23,6 +25,7 @@ pub struct GeneticAlgo {
     sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>,
     max_div: u32,
+    random_seed: u32
 }
 
 impl GeneticAlgo {
@@ -74,7 +77,8 @@ impl GeneticAlgo {
         granularity: u8,
         perform_cross: bool,
         sizes: Vec<(u16, u16)>,
-        trial_seeds: Vec<u64>
+        trial_seeds: Vec<u64>,
+        random_seed: u32
     ) -> Self {
         let mut starting_pop: Vec<Genome> = vec![];
 
@@ -106,7 +110,7 @@ impl GeneticAlgo {
             perform_cross,
             sizes,
             trial_seeds,
-
+            random_seed,
             max_div: ((granularity-1) as u32)*(GeneticAlgo::GENOME_LEN as u32),
         }
     }
@@ -267,6 +271,24 @@ impl GeneticAlgo {
         // for idx in 1..self.population.len() {
         //     println!("{y:.5?}", y = self.population[idx].fitness);
         // }
+
+        // Write all the genomic data to a file
+        {
+            let mut buff: Vec<u8> = Vec::new();
+            for genome in &self.population {
+                for n in 0..4 {
+                    for i in 0..3 {
+                        for j in 0..4 {
+                            buff.push(genome.string[n][i][j]);
+                        }
+                    }
+                }
+                buff.extend(genome.fitness.to_be_bytes());
+            }
+
+            let mut file = File::options().create(true).append(true).open(format!("./output/genomic_data_Agg_{}.log", self.random_seed)).expect("Failed to create genomic data file!");
+            file.write_all(&buff).expect("Failed to append to the genomic data file!");
+        }
         
         //perform tournament selection
         for _ in 0..(population_size) {

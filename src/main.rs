@@ -100,7 +100,8 @@ fn main() {
     /*
      * Pipe the output to the file with Experiment Parameters as its name
      */
-    let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity);
+    let random_trial_seed = fastrand::u32(..);
+    let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity, random_trial_seed);
     println!("Running the experiment... \nPlease check: {:?} file in ./output folder", &file_name);
     
     let log = OpenOptions::new()
@@ -150,18 +151,18 @@ fn main() {
             match &args.behavior {
                 Behavior::Agg => {
                     println!("\nStarting Aggregation GA Experiment...\n");
-                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, crossover, particle_sizes, args.seeds);
+                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, crossover, particle_sizes, args.seeds, random_trial_seed);
                     ga_sops.run_through();
                 },
                 Behavior::Sep => {
                     println!("\nStarting Separation GA Experiment...\n");
-                    let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
+                    let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35, random_trial_seed);
                     ga_sops.run_through();
                 },
                 Behavior::Coat => {
                     println!("\nStarting Coating GA Experiment...\n");
                     let particle_sizes: Vec<(u16,u16,u16)> = size_strings.map(|c| (c[0],c[1],c[2])).collect::<Vec<(u16,u16,u16)>>();
-                    let mut ga_sops = CoatGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
+                    let mut ga_sops = CoatGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35, random_trial_seed);
                     ga_sops.run_through();
                 },
             }
