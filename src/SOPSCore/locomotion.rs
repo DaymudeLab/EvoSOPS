@@ -104,8 +104,10 @@ impl SOPSLocoEnvironment {
         // stores coordinates of particle sensing light
         let mut light: Vec<(u8, u8)> = vec![(0,0); (arena_layers * 2 + 1) as usize]; 
 
-        let orientation = rand::thread_rng().gen_range(1..3);
+        let orientation = rand::thread_rng().gen_range(1..4);
         //let orientation = 3;
+
+        println!("orientation is {}", orientation);
 
         // when (0, 0) is bottom point of hexagon
         // orientation 1: light going from upper left to bottom right
