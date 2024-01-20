@@ -16,7 +16,7 @@ use std::collections::VecDeque;
 pub struct SOPSCoatEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [[[u8; 11]; 7]; 11],
+    phenotype: [[[u8; 10]; 6]; 10],
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -27,8 +27,7 @@ pub struct SOPSCoatEnvironment {
     max_inner: u16,
     max_outer: u16,
     lookup_dim_idx: HashMap<(u8, u8, u8), u8>,
-    connected_par_loc: HashMap<(u8, u8), bool>,
-    obj_cen_loc: [usize; 2],
+    // obj_cen_loc: [usize; 2],
     w1: f32,
     w2: f32,
 }
@@ -110,7 +109,110 @@ impl SOPSCoatEnvironment {
      * Also accept the weights for Agg and Sep components
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
-    pub fn init_sops_env(genome: &[[[u8; 11]; 7]; 11], arena_layers: u16, object_layers: u16, coat_layers: u16, seed: u64, granularity: u8, w1: f32, w2: f32) -> Self {
+     // handcrafted
+     /*
+    pub fn init_sops_env(genome: &[[[u8; 10]; 6]; 10], arena_layers: u16, object_layers: u16, coat_layers: u16, seed: u64, granularity: u8, w1: f32, w2: f32) -> Self {
+        let grid_size = (arena_layers*2 + 1) as usize;
+        let mut grid = vec![vec![0; grid_size]; grid_size];
+        let mut participants: Vec<Particle> = vec![];
+
+        let coat_locs: [(u8, u8); 72] = [(11, 8), (11, 9), (11, 10), (11, 11), (12, 11), (12, 12), (12, 13), (13, 11), (13, 12), (13, 13), (13, 14), (13, 15), (14, 13), (14, 14), (14, 15), (14, 16), (14, 17), (14, 18), (15, 13), (15, 14), (15, 15), (15, 16), (15, 17), (15, 18), (16, 11), (16, 12), (16, 13), (16, 14), (16, 15), (17, 11), (17, 12), (17, 13), (18, 8), (18, 9), (18, 10), (18, 11), (25, 22), (25, 23), (25, 24), (25, 25), (26, 25), (26, 26), (26, 27), (27, 25), (27, 26), (27, 27), (27, 28), (27, 29), (28, 27), (28, 28), (28, 29), (28, 30), (28, 31), (28, 32), (29, 27), (29, 28), (29, 29), (29, 30), (29, 31), (29, 32), (30, 25), (30, 26), (30, 27), (30, 28), (30, 29), (31, 25), (31, 26), (31, 27), (32, 22), (32, 23), (32, 24), (32, 25)];
+
+        let inner_locs: [(u8, u8); 90] = [(10, 7), (10, 8), (10, 9), (10, 10), (10, 11), (11, 7), (11, 12), (11, 13), (12, 8), (12, 9), (12, 10), (12, 14), (12, 15), (13, 10), (13, 16), (13, 17), (13, 18), (14, 11), (14, 12), (14, 19), (15, 10), (15, 11), (15, 12), (15, 19), (16, 10), (16, 16), (16, 17), (16, 18), (16, 19), (17, 7), (17, 8), (17, 9), (17, 10), (17, 14), (17, 15), (17, 16), (18, 7), (18, 12), (18, 13), (18, 14), (19, 8), (19, 9), (19, 10), (19, 11), (19, 12), (24, 21), (24, 22), (24, 23), (24, 24), (24, 25), (25, 21), (25, 26), (25, 27), (26, 22), (26, 23), (26, 24), (26, 28), (26, 29), (27, 24), (27, 30), (27, 31), (27, 32), (28, 25), (28, 26), (28, 33), (29, 24), (29, 25), (29, 26), (29, 33), (30, 24), (30, 30), (30, 31), (30, 32), (30, 33), (31, 21), (31, 22), (31, 23), (31, 24), (31, 28), (31, 29), (31, 30), (32, 21), (32, 26), (32, 27), (32, 28), (33, 22), (33, 23), (33, 24), (33, 25), (33, 26)];
+
+        let outer_locs: [(u8, u8); 94] = [(9, 6), (9, 7), (9, 8), (9, 9), (9, 10), (9, 11), (10, 6), (10, 12), (10, 13), (11, 6), (11, 14), (11, 15), (12, 7), (12, 16), (12, 17), (12, 18), (13, 8), (13, 9), (13, 19), (14, 10), (14, 20), (15, 9), (15, 20), (16, 6), (16, 7), (16, 8), (16, 9), (16, 20), (17, 6), (17, 17), (17, 18), (17, 19), (17, 20), (18, 6), (18, 15), (18, 16), (18, 17), (19, 7), (19, 13), (19, 14), (19, 15), (20, 8), (20, 9), (20, 10), (20, 11), (20, 12), (20, 13), (23, 20), (23, 21), (23, 22), (23, 23), (23, 24), (23, 25), (24, 20), (24, 26), (24, 27), (25, 20), (25, 28), (25, 29), (26, 21), (26, 30), (26, 31), (26, 32), (27, 22), (27, 23), (27, 33), (28, 24), (28, 34), (29, 23), (29, 34), (30, 20), (30, 21), (30, 22), (30, 23), (30, 34), (31, 20), (31, 31), (31, 32), (31, 33), (31, 34), (32, 20), (32, 29), (32, 30), (32, 31), (33, 21), (33, 27), (33, 28), (33, 29), (34, 22), (34, 23), (34, 24), (34, 25), (34, 26), (34, 27)];
+
+        
+        let num_particles = inner_locs.len() as u16 + outer_locs.len() as u16;
+
+        let num_inner_pos = inner_locs.len() as u16;
+        let num_outer_pos = num_particles - num_inner_pos;
+
+        let mut grid_rng = SOPSCoatEnvironment::seed_rng(seed);
+
+        //init grid bounds
+        for i in 0..arena_layers {
+            let mut j = 1;
+            while i+arena_layers+j < (grid_size as u16) {
+                grid[i as usize][(i+arena_layers+j) as usize] = SOPSCoatEnvironment::BOUNDARY;
+                grid[(i+arena_layers+j) as usize][i as usize] = SOPSCoatEnvironment::BOUNDARY;
+                j +=1;
+            }
+        }
+        
+        for i in 0..grid_size {
+            for j in 0..grid_size {
+                if coat_locs.iter().any(|&x| x.0 == (i as u8) && x.1== (j as u8)) {
+                    grid[i][j] = SOPSCoatEnvironment::OBJECT;
+                }
+                else if inner_locs.iter().any(|&x| x.0 == (i as u8) && x.1== (j as u8)) {
+                    grid[i][j] = SOPSCoatEnvironment::INCOAT;
+                }
+                else if outer_locs.iter().any(|&x| x.0 == (i as u8) && x.1== (j as u8)) {
+                    grid[i][j] = SOPSCoatEnvironment::COAT;
+                }
+            }
+        }
+
+        //init grid and particles
+        while participants.len() < num_particles.into() {
+            let i = grid_rng.sample(&SOPSCoatEnvironment::grid_rng(0,grid_size));
+            let j = grid_rng.sample(&SOPSCoatEnvironment::grid_rng(0,grid_size));
+            if grid[i][j] == 0 {
+                participants.push(Particle {
+                    x: i as u8,
+                    y: j as u8,
+                    state: 0
+                });
+                grid[i][j] = SOPSCoatEnvironment::PARTICLE;
+            }   
+        }
+
+        // TODO: Make this a static const variable
+        // Mapping table for various intra group(F/M/B) configurations -> index in genome's dimension
+        // intra group(F/M/B) configurations ie. particle_cnt, object_cnt, all_possible_cnt(static position cnt in F/M/B — (3/2/3))
+        let lookup_dim_idx: HashMap<(u8, u8, u8), u8> = ([
+            ((0,0,2), 0), // (0,0,2)
+            ((0,1,2), 1), //  
+            ((0,2,2), 2), // 
+            ((1,1,2), 3), // 
+            ((1,0,2), 4), // 
+            ((2,0,2), 5), // 
+
+            ((0,0,3), 0), // (0,0,3)
+            ((0,1,3), 1), // 
+            ((0,2,3), 2), // 
+            ((0,3,3), 3), // 
+            ((2,1,3), 4), // 
+            ((1,1,3), 5), // 
+            ((1,2,3), 6), // 
+            ((1,0,3), 7), // 
+            ((2,0,3), 8), // 
+            ((3,0,3), 9), // 
+        ]).into();
+
+        SOPSCoatEnvironment {
+            grid,
+            participants,
+            phenotype: *genome,
+            sim_duration: (num_particles as u64).pow(3),
+            fitness_val: 0.0,
+            size: grid_size,
+            arena_layers,
+            object_layers,
+            coat_layers,
+            max_inner: num_inner_pos,
+            max_outer: num_outer_pos,
+            granularity,
+            lookup_dim_idx,
+            w1,
+            w2,
+            // obj_cen_loc: [(obj_loc[0]+total_coat as usize), (obj_loc[1]+total_coat as usize)],
+        }
+    }
+     */
+
+    pub fn init_sops_env(genome: &[[[u8; 10]; 6]; 10], arena_layers: u16, object_layers: u16, coat_layers: u16, seed: u64, granularity: u8, w1: f32, w2: f32) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
@@ -201,24 +303,25 @@ impl SOPSCoatEnvironment {
 
         // TODO: Make this a static const variable
         // Mapping table for various intra group(F/M/B) configurations -> index in genome's dimension
-        // intra group(F/M/B) configurations ie. all_cnt, same_clr_cnt, all_possible_cnt(static position cnt in F/M/B — (3/2/3))
+        // intra group(F/M/B) configurations ie. particle_cnt, object_cnt, all_possible_cnt(static position cnt in F/M/B — (3/2/3))
         let lookup_dim_idx: HashMap<(u8, u8, u8), u8> = ([
-            ((0,0,2), 0),
-            ((1,1,2), 1), //
-            ((1,0,2), 2), 
-            ((2,2,2), 3), //
-            ((2,1,2), 4), //
-            ((2,0,2), 5),
-            ((0,0,3), 0),
-            ((1,1,3), 1), //
-            ((1,0,3), 2),
-            ((2,2,3), 3), //
-            ((2,1,3), 4), //
-            ((2,0,3), 5),
-            ((3,3,3), 6), //
-            ((3,2,3), 7), //
-            ((3,1,3), 8), //
-            ((3,0,3), 9),
+            ((0,0,2), 0), // (0,0,2)
+            ((0,1,2), 1), //  
+            ((0,2,2), 2), // 
+            ((1,1,2), 3), // 
+            ((1,0,2), 4), // 
+            ((2,0,2), 5), // 
+
+            ((0,0,3), 0), // (0,0,3)
+            ((0,1,3), 1), // 
+            ((0,2,3), 2), // 
+            ((0,3,3), 3), // 
+            ((2,1,3), 4), // 
+            ((1,1,3), 5), // 
+            ((1,2,3), 6), // 
+            ((1,0,3), 7), // 
+            ((2,0,3), 8), // 
+            ((3,0,3), 9), // 
         ]).into();
 
         SOPSCoatEnvironment {
@@ -237,11 +340,10 @@ impl SOPSCoatEnvironment {
             lookup_dim_idx,
             w1,
             w2,
-            connected_par_loc: HashMap::new(),
-            obj_cen_loc: [(obj_loc[0]+total_coat as usize), (obj_loc[1]+total_coat as usize)],
+            // obj_cen_loc: [(obj_loc[0]+total_coat as usize), (obj_loc[1]+total_coat as usize)],
         }
     }
-
+    
     pub fn print_grid(&self) {
         println!("SOPS grid");
         // const EMPTY: u8 = 0;
@@ -262,10 +364,11 @@ impl SOPSCoatEnvironment {
                 else if self.grid[i][j] == SOPSCoatEnvironment::PARTICLE
                     || (self.grid[i][j] - SOPSCoatEnvironment::COAT) == SOPSCoatEnvironment::PARTICLE
                     || (self.grid[i][j] - SOPSCoatEnvironment::INCOAT) == SOPSCoatEnvironment::PARTICLE {
-                    match self.connected_par_loc.get(&(i as u8, j as u8)) {
-                        Some(_exists) => { print!(" 9 "); }
-                        None => { print!(" 1 "); },
-                    }
+                    // match self.connected_par_loc.get(&(i as u8, j as u8)) {
+                    //     Some(_exists) => { print!(" 9 "); }
+                    //     None => { print!(" 1 "); },
+                    // }
+                    print!(" 1 ");
                 }
                 else {
                     print!(" {} ", self.grid[i][j]);
@@ -278,16 +381,13 @@ impl SOPSCoatEnvironment {
     /*
      * Func to make changes to SOPS grid by moving a particle in a given direction <- most basic operation
      *  */
-    fn move_particle_to(&mut self, particle_idx: usize, direction: (i32, i32), front_cnt: u8, mid_cnt: u8) -> bool {
+    fn move_particle_to(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
         let particle = &self.participants[particle_idx];
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
         
         self.grid[particle.x as usize][particle.y as usize] -= SOPSCoatEnvironment::PARTICLE;
         
-        // check if the front or mid has any connected particles or object itself to determine moving particle's state
-        // let be_connected = vec![1,3,4,6,7,8,10].iter().any(|&x| front_cnt == x) || vec![1,3,4,6].iter().any(|&x| mid_cnt == x);
-
         self.grid[new_i][new_j] += SOPSCoatEnvironment::PARTICLE;
 
         let mut particle_mut = &mut self.participants[particle_idx];
@@ -314,14 +414,11 @@ impl SOPSCoatEnvironment {
      *  */
     fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8) {
         let mut back_cnt: u8 = 0;
-        let mut back_cnct_cnt: u8 = 0;
-        let mut back_obj_seen: bool = false;
+        let mut back_obj_cnt: u8 = 0;
         let mut mid_cnt: u8 = 0;
-        let mut mid_cnct_cnt: u8 = 0;
-        let mut mid_obj_seen: bool = false;
+        let mut mid_obj_cnt: u8 = 0;
         let mut front_cnt: u8 = 0;
-        let mut front_cnct_cnt: u8 = 0;
-        let mut front_obj_seen: bool = false;
+        let mut front_obj_cnt: u8 = 0;
         let particle = &self.participants[particle_idx];
         let move_i = (particle.x as i32 + direction.0) as usize;
         let move_j = (particle.y as i32 + direction.1) as usize;
@@ -334,16 +431,10 @@ impl SOPSCoatEnvironment {
                 // print!("{}",idx);
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] == SOPSCoatEnvironment::OBJECT {
-                    back_obj_seen = true;
+                    back_obj_cnt += 1;
                 }
                 else if self.grid[new_i][new_j] == SOPSCoatEnvironment::PARTICLE || (self.grid[new_i][new_j] - SOPSCoatEnvironment::INCOAT) == SOPSCoatEnvironment::PARTICLE || (self.grid[new_i][new_j] - SOPSCoatEnvironment::COAT) == SOPSCoatEnvironment::PARTICLE {
-                    match self.connected_par_loc.get(&(new_i as u8, new_j as u8)) {
-                        Some(_exists) => {
-                            back_cnt += 1;
-                            back_cnct_cnt += 1;
-                        }
-                        None => { back_cnt += 1; },
-                    }
+                    back_cnt += 1;
                 }
             }
         }
@@ -364,56 +455,36 @@ impl SOPSCoatEnvironment {
                 if self.grid[new_i][new_j] == SOPSCoatEnvironment::OBJECT {
                     match position_type {
                         SOPSCoatEnvironment::FRONT => {
-                            front_obj_seen = true;
+                            front_obj_cnt += 1;
                         }
                         SOPSCoatEnvironment::MID => {
-                            mid_obj_seen = true;
-                            back_obj_seen = false;
+                            mid_obj_cnt += 1;
+                            back_obj_cnt -= 1;
                         }
                         _ => todo!()
                     }
                 }
                 else if self.grid[new_i][new_j] == SOPSCoatEnvironment::PARTICLE || (self.grid[new_i][new_j] - SOPSCoatEnvironment::INCOAT) == SOPSCoatEnvironment::PARTICLE || (self.grid[new_i][new_j] - SOPSCoatEnvironment::COAT) == SOPSCoatEnvironment::PARTICLE {
-                    // check if the particle exists in connected particle list
-                    match self.connected_par_loc.get(&(new_i as u8, new_j as u8)) {
-                        Some(_exists) => {
-                            match position_type {
-                                SOPSCoatEnvironment::FRONT => {
-                                    front_cnt += 1;
-                                    front_cnct_cnt += 1;
-                                }
-                                SOPSCoatEnvironment::MID => {
-                                    mid_cnt += 1;
-                                    back_cnt -= 1;
-                                    mid_cnct_cnt += 1;
-                                    back_cnct_cnt -= 1;
-                                }
-                                _ => todo!()
-                            }
+                    match position_type {
+                        SOPSCoatEnvironment::FRONT => {
+                            front_cnt += 1;
                         }
-                        None => { 
-                            match position_type {
-                                SOPSCoatEnvironment::FRONT => {
-                                    front_cnt += 1;
-                                }
-                                SOPSCoatEnvironment::MID => {
-                                    mid_cnt += 1;
-                                    back_cnt -= 1;
-                                }
-                                _ => todo!()
-                            }
-                        },
+                        SOPSCoatEnvironment::MID => {
+                            mid_cnt += 1;
+                            back_cnt -= 1;
+                        }
+                        _ => todo!()
                     }
                 }
             }
         }
         // print!("\t");
-        let back_idx: u8 = if back_obj_seen { 10 } else { self.get_dim_idx(back_cnt, back_cnct_cnt, 3) };
-        let mid_idx: u8 = if mid_obj_seen { 6 } else { self.get_dim_idx(mid_cnt, mid_cnct_cnt, 2) };
-        let front_idx: u8 = if front_obj_seen { 10 } else { self.get_dim_idx(front_cnt, front_cnct_cnt, 3) };
+        let back_idx: u8 = self.get_dim_idx(back_cnt, back_obj_cnt, 3);
+        let mid_idx: u8 = self.get_dim_idx(mid_cnt, mid_obj_cnt, 2);
+        let front_idx: u8 = self.get_dim_idx(front_cnt, front_obj_cnt, 3);
         // println!("N:{}/{}/{}\tNs:{}/{}/{}",back_cnt, mid_cnt, front_cnt, back_cnct_cnt, mid_cnct_cnt, front_cnct_cnt);
         // TODO: Remove this hardcoding of the values. Should come from genome's dimenions
-        (back_idx.clamp(0, 10), mid_idx.clamp(0, 6), front_idx.clamp(0, 10))
+        (back_idx.clamp(0, 9), mid_idx.clamp(0, 5), front_idx.clamp(0, 9))
     }
 
     /*
@@ -434,47 +505,6 @@ impl SOPSCoatEnvironment {
         } else {
             return false;
         }
-    }
-
-    /*
-     * Uses BFS from the center of the object to find all connected particles
-     */
-
-    fn update_neighborhood(&mut self) {
-        let mut visited: HashMap<[usize; 2], bool> = HashMap::new();
-        let mut buffer: VecDeque<[usize; 2]> = VecDeque::new();
-        let mut connected: HashMap<(u8, u8), bool> = HashMap::new();
-
-        buffer.push_back(self.obj_cen_loc);
-
-        while let Some(curr_loc) = buffer.pop_front() {
-            for idx in 0..6 {
-                let new_i = (curr_loc[0] as i32 + SOPSCoatEnvironment::directions()[idx].0) as usize;
-                let new_j = (curr_loc[1] as i32 + SOPSCoatEnvironment::directions()[idx].1) as usize;
-                if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
-                    match visited.get(&[new_i, new_j]) {
-                        Some(_exists) => {}
-                        None => {
-                            if self.grid[new_i][new_j] == SOPSCoatEnvironment::OBJECT {
-                                buffer.push_back([new_i, new_j]);
-                                visited.insert([new_i, new_j], true);
-                            }
-                            if self.grid[new_i][new_j] == SOPSCoatEnvironment::PARTICLE
-                                || (self.grid[new_i][new_j] - SOPSCoatEnvironment::COAT) == SOPSCoatEnvironment::PARTICLE
-                                || (self.grid[new_i][new_j] - SOPSCoatEnvironment::INCOAT) == SOPSCoatEnvironment::PARTICLE {
-                                    buffer.push_back([new_i, new_j]);
-                                    visited.insert([new_i, new_j], true);
-                                    connected.insert((new_i as u8, new_j as u8), true);
-                                }
-                        },
-                    }
-                }
-            }
-        }
-        // for (key, _value) in &connected {
-        //     println!("{:?} ", key);
-        // }
-        self.connected_par_loc = connected;
     }
 
     /*
@@ -501,11 +531,9 @@ impl SOPSCoatEnvironment {
                 let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
                 if SOPSCoatEnvironment::move_frng().u16(1_u16..=1000) <= SOPSCoatEnvironment::gene_probability()[move_prb as usize]
                 {
-                    self.move_particle_to(par_idx, move_dir, front_cnt, mid_cnt);
-                    self.update_neighborhood();
+                    self.move_particle_to(par_idx, move_dir);
                 }
             }
-
     }
 
     /*

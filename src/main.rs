@@ -307,11 +307,11 @@ fn main() {
                         Behavior::Coat => {
                             println!("\nStarting Coating Single Genome Trial...\n");
                             // Construct the genome in required dimension
-                            let mut genome: [[[u8; 11]; 7]; 11] = [[[0; 11]; 7]; 11];
+                            let mut genome: [[[u8; 10]; 6]; 10] = [[[0; 10]; 6]; 10];
                             let mut idx = 0;
-                            for n in 0_u8..11 {
-                                for j in 0_u8..7 {
-                                    for i in 0_u8..11 {
+                            for n in 0_u8..10 {
+                                for j in 0_u8..6 {
+                                    for i in 0_u8..10 {
                                         genome[n as usize][j as usize][i as usize] = all_entries[idx];
                                         idx += 1;
                                     }

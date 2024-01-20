@@ -29,7 +29,7 @@ struct SegGenome {
   */
   #[derive(Debug, Copy, Clone)]
   struct CoatGenome {
-      string: [[[u8; 11]; 7]; 11],
+      string: [[[u8; 10]; 6]; 10],
       fitness: f64,
   }
 

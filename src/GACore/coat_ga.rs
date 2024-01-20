@@ -8,6 +8,8 @@ use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::time::Instant;
 use std::usize;
+use std::io::Write;
+use std::fs::File;
 
 /*
  * Main GA class for Separation behavior
@@ -20,7 +22,7 @@ pub struct CoatGA {
     population: Vec<CoatGenome>,
     mut_rate: f64,
     granularity: u8,
-    genome_cache: HashMap<[[[u8; 11]; 7]; 11], f64>,
+    genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16, u16)>,
     trial_seeds: Vec<u64>,
@@ -33,7 +35,7 @@ pub struct CoatGA {
 
 impl CoatGA {
 
-    const GENOME_LEN: u16 = 11 * 7 * 11;
+    const GENOME_LEN: u16 = 10 * 6 * 10;
     const BUFFER_LEN: usize = 10;
     const UPPER_T: f32 = 0.3;
     const LOWER_T: f32 = 0.08;
@@ -95,7 +97,7 @@ impl CoatGA {
 
         for _ in 0..population_size {
             //init genome
-            let mut genome: [[[u8; 11]; 7]; 11] = [[[0_u8; 11]; 7]; 11];
+            let mut genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
             for n in 0_u8..10 {
                 for j in 0_u8..6 {
                     for i in 0_u8..10 {
@@ -109,7 +111,7 @@ impl CoatGA {
             });
         }
 
-        let genome_cache: HashMap<[[[u8; 11]; 7]; 11], f64> = HashMap::new();
+        let genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64> = HashMap::new();
 
         CoatGA {
             max_gen,
@@ -130,7 +132,7 @@ impl CoatGA {
     }
 
     // mutate genome based on set mutation rate for every gene of the genome
-    fn mutate_genome(&self, genome: &[[[u8; 11]; 7]; 11]) -> [[[u8; 11]; 7]; 11] {
+    fn mutate_genome(&self, genome: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
         let mut new_genome = genome.clone();
         for n in 0..10 {
             for i in 0..6 {
@@ -179,8 +181,8 @@ impl CoatGA {
     /*
      * Implements a simple two-point crossover operator with crossover point choosen at random in genome vector
      *  */
-    fn generate_offspring(&self, parent1: &[[[u8; 11]; 7]; 11], parent2: &[[[u8; 11]; 7]; 11]) -> [[[u8; 11]; 7]; 11] {
-        let mut new_genome: [[[u8; 11]; 7]; 11] = [[[0_u8; 11]; 7]; 11];
+    fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
+        let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
         let cross_pnt_1 = CoatGA::rng().sample(&CoatGA::cross_pnt());
         let cross_pnt_2 = CoatGA::rng().sample(&CoatGA::cross_pnt());
         let lower_cross_pnt = if cross_pnt_1 <= cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
@@ -273,8 +275,8 @@ impl CoatGA {
      *  */
      fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<CoatGenome> = vec![];
-        let mut selected_g: Vec<[[[u8; 11]; 7]; 11]> = vec![];
-        let mut crossed_g: Vec<[[[u8; 11]; 7]; 11]> = vec![];
+        let mut selected_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
+        let mut crossed_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
         let population_size = self.population.len() as u16;
         //sort the genomes in population by fitness value
         // self.population.sort_unstable_by(|genome_a, genome_b| {
@@ -288,6 +290,24 @@ impl CoatGA {
         // for idx in 1..self.population.len() {
         //     println!("{y:.5?}", y = self.population[idx].fitness);
         // }
+
+        // Write all the genomic data to a file
+        {
+            let mut buff: Vec<u8> = Vec::new();
+            for genome in &self.population {
+                for n in 0..10 {
+                    for i in 0..6 {
+                        for j in 0..10 {
+                            buff.push(genome.string[n][i][j]);
+                        }
+                    }
+                }
+                buff.extend(genome.fitness.to_be_bytes());
+            }
+
+            let mut file = File::options().create(true).append(true).open(format!("./output/genomic_data_Coat_{}.log", self.random_seed)).expect("Failed to create genomic data file!");
+            file.write_all(&buff).expect("Failed to append to the genomic data file!");
+        }
         
         //perform tournament selection
         for _ in 0..(population_size) {
