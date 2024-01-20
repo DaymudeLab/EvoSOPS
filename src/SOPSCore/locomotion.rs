@@ -107,8 +107,6 @@ impl SOPSLocoEnvironment {
         let orientation = rand::thread_rng().gen_range(1..4);
         //let orientation = 3;
 
-        println!("orientation is {}", orientation);
-
         // when (0, 0) is bottom point of hexagon
         // orientation 1: light going from upper left to bottom right
         // orientation 2: light going from upper right to bottom left
