@@ -1,9 +1,9 @@
-use super::Particle;
+use super::{Particle, SOPSEnvironment};
 
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::thread::current;
-use std::usize;
+use std::{usize, future};
 use std::collections::HashMap;
 
 
@@ -80,6 +80,11 @@ impl SOPSLocoEnvironment {
         vec![(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1)] 
     }
 
+    #[inline]
+    fn gene_probability() -> Vec<u16> {
+        vec![1000, 500, 250, 125, 63, 31, 16, 8, 4, 2, 1]
+    }
+
     fn unfrm_par(&self) -> Uniform<usize> {
         Uniform::new(0, self.participants.len())
     }
@@ -106,6 +111,8 @@ impl SOPSLocoEnvironment {
 
         let orientation = rand::thread_rng().gen_range(1..4);
         //let orientation = 3;
+        
+        //println!("orientation is {}", orientation);
 
         // when (0, 0) is bottom point of hexagon
         // orientation 1: light going from upper left to bottom right
@@ -278,7 +285,7 @@ impl SOPSLocoEnvironment {
         }
         else if self.orientation == 3 {
             if x+y >= self.arena_layers as u8 {
-                if x+y <= (2*self.arena_layers + self.arena_layers) as u8 {
+                if x+y <= (3*self.arena_layers) as u8 {
                     if y >= self.light[(x + y - self.arena_layers as u8) as usize].1 {
                         return 1;
                     }
@@ -382,14 +389,14 @@ impl SOPSLocoEnvironment {
         }
         else if self.orientation == 3 {
             if particle.x + particle.y >= self.arena_layers as u8 {
-                if particle.x + particle.y <= (2*self.arena_layers + self.arena_layers) as u8 {
+                if particle.x + particle.y <= (3*self.arena_layers) as u8 {
                     if particle.x >= self.light[(particle.x + particle.y - self.arena_layers as u8) as usize].0 {
                         sensing_light = 1;
                     }
                 }
             }
             if new_i + new_j >= self.arena_layers as usize {
-                if new_i + new_j <= (2*self.arena_layers + self.arena_layers) as usize {
+                if new_i + new_j <= (3*self.arena_layers) as usize {
                     if new_i as u8 >= self.light[(new_i + new_j - self.arena_layers as usize) as usize].0 {
                         future_sensing_light = 1;
                     }
@@ -397,7 +404,7 @@ impl SOPSLocoEnvironment {
             }
         }
 
-        //self.update_light(particle.x, particle.y, new_i as u8, new_j as u8);
+        //update light
         if self.orientation == 1 && sensing_light == 1 {
             if 2*new_i >= new_j {
                 // same beam
@@ -434,6 +441,13 @@ impl SOPSLocoEnvironment {
                     x -= 1;
                     y -= 2;
                 }
+            }
+        }
+        else if self.orientation == 1 && future_sensing_light == 1 {
+            // moving from no light to light
+            // adjust future light value
+            if future_sensing_light == 1 {
+                self.light[2*new_i - new_j] = (new_i as u8, new_j as u8);
             }
         }
         else if self.orientation == 2 && sensing_light == 1 {
@@ -475,6 +489,13 @@ impl SOPSLocoEnvironment {
             }
                 
         }
+        else if self.orientation == 2 && future_sensing_light == 1 {
+            // moving from no light to light
+            // adjust future light value
+            if future_sensing_light == 1 {
+                self.light[2*new_j - new_i] = (new_i as u8, new_j as u8);
+            }
+        }
         else if self.orientation == 3 && sensing_light == 1 {
             // same beam
             if (particle.x + particle.y) as u8 == (new_i + new_j) as u8{
@@ -497,6 +518,13 @@ impl SOPSLocoEnvironment {
                 if future_sensing_light == 1 {
                     self.light[new_i + new_j - self.arena_layers as usize] = (new_i as u8, new_j as u8);
                 }
+            }
+        }
+        else if self.orientation == 3 && future_sensing_light == 1 {
+            // moving from no light to light
+            // adjust future light value
+            if future_sensing_light == 1 {
+                self.light[new_i + new_j - self.arena_layers as usize] = (new_i as u8, new_j as u8);
             }
         }
 
@@ -538,7 +566,7 @@ impl SOPSLocoEnvironment {
         for idx in 0..6 {
             let new_i = (particle.x as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
             let new_j = (particle.y as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == move_i) & (new_j == move_j)) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != move_i) & (new_j != move_j) {
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] == SOPSLocoEnvironment::PARTICLE {
                     back_cnt += 1;
@@ -549,7 +577,7 @@ impl SOPSLocoEnvironment {
         for idx in 0..6 {
             let new_i = (move_i as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !(new_i != particle.x.into()) & (new_j != particle.y.into()) {
                 let mut position_type = SOPSLocoEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
@@ -618,20 +646,21 @@ impl SOPSLocoEnvironment {
 
         //  for _ in 0..cnt {
             // Choose a random particle for movement
-            let par_idx = SOPSLocoEnvironment::rng().sample(&self.unfrm_par());
+            //let par_idx = SOPSLocoEnvironment::rng().sample(&self.unfrm_par());
+            let par_idx = SOPSLocoEnvironment::move_frng().usize(..self.participants.len());
             // Choose a direction at random (out of the 6)
+            //let move_dir = SOPSLocoEnvironment::directions()
+            //            [SOPSLocoEnvironment::rng().sample(&SOPSLocoEnvironment::unfrm_dir())];
             let move_dir = SOPSLocoEnvironment::directions()
-                        [SOPSLocoEnvironment::rng().sample(&SOPSLocoEnvironment::unfrm_dir())];
-            
+                        [SOPSLocoEnvironment::move_frng().usize(..SOPSLocoEnvironment::directions().len())];
+
             if self.particle_move_possible(par_idx, move_dir) {
                 // Get the neighborhood configuration
                 let (light_idx, back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
                 // Move basis probability given by the genome for moving for given configuration
                 // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
-                let move_prb: f64 =
-                    self.phenotype[light_idx as usize][back_cnt as usize][mid_cnt as usize][front_cnt as usize] as f64 / (self.granularity as f64);
-                if SOPSLocoEnvironment::move_frng().u64(1_u64..=10000)
-                    <= (move_prb * 10000.0) as u64
+                let move_prb = self.phenotype[light_idx as usize][back_cnt as usize][mid_cnt as usize][front_cnt as usize];
+                if SOPSLocoEnvironment::move_frng().u16(1_u16..=1000) <= SOPSLocoEnvironment::gene_probability()[move_prb as usize]
                 {
                     self.move_particle_to(par_idx, move_dir);
                 }
@@ -668,6 +697,12 @@ impl SOPSLocoEnvironment {
 
         let c1 = (edges / 2) as f32 / self.max_fitness_c1; //aggregation
         let c2 = (distance / self.get_participant_cnt() as u32) as f32 / self.max_fitness_c2; //avg distance
+        
+        //println!();
+        //println!("agg: {} / {} = {}", edges/2, self.max_fitness_c1, c1);
+        //println!("distance: {} / {} = {}", distance/self.get_participant_cnt() as u32, self.max_fitness_c2, c2);
+        //println!("fitness: {} * agg + {} * distance = {}", self.w1, self.w2, self.w1*c1+self.w2*c2);
+        //println!();
         
         self.w1 * c1 + self.w2 * c2
 

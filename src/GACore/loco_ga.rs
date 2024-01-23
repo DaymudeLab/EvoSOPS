@@ -44,7 +44,7 @@ impl LocoGA {
 
     #[inline]
     fn genome_init_rng(granularity: u8) -> Uniform<u8> {
-        Uniform::new_inclusive(1, granularity)
+        Uniform::new_inclusive(0, granularity)
     }
 
     #[inline]
@@ -150,7 +150,7 @@ impl LocoGA {
                             } else {
                                 genome[i][j][k][l] - 1
                             })
-                            .clamp(1, self.granularity.into());
+                            .clamp(0, self.granularity.into());
                         }
                     }
                 }
@@ -295,9 +295,9 @@ impl LocoGA {
         let best_genome = self.population.iter().max_by(|&g1, &g2| g1.fitness.partial_cmp(&g2.fitness).unwrap()).unwrap();
         println!("Best Genome -> {best_genome:.5?}");
 
-        for idx in 1..self.population.len() {
-            println!("{y:.5?}", y = self.population[idx].fitness);
-        }
+        //for idx in 1..self.population.len() {
+        //    println!("{y:.5?}", y = self.population[idx].fitness);
+        //}
         
         //perform tournament selection
         for _ in 0..(population_size) {
@@ -526,7 +526,7 @@ impl LocoGA {
                 }
             }
             let elapsed = now.elapsed().as_secs();
-            println!("Elapsed Time: {:.2?}s", elapsed);
+            println!("Generation Elapsed Time: {:.2?}s", elapsed);
         }
         /*
          * Snippet to evaluate the final best genome evolved at the end of GA execution
