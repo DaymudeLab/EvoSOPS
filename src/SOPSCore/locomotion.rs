@@ -286,7 +286,7 @@ impl SOPSLocoEnvironment {
         else if self.orientation == 3 {
             if x+y >= self.arena_layers as u8 {
                 if x+y <= (3*self.arena_layers) as u8 {
-                    if y >= self.light[(x + y - self.arena_layers as u8) as usize].1 {
+                    if x >= self.light[(x + y - self.arena_layers as u8) as usize].0 {
                         return 1;
                     }
                 }
@@ -577,7 +577,7 @@ impl SOPSLocoEnvironment {
         for idx in 0..6 {
             let new_i = (move_i as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !(new_i != particle.x.into()) & (new_j != particle.y.into()) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != particle.x.into()) & (new_j != particle.y.into()) {
                 let mut position_type = SOPSLocoEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
