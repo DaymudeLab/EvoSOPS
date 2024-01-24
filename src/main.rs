@@ -101,7 +101,8 @@ fn main() {
     /*
      * Pipe the output to the file with Experiment Parameters as its name
      */
-    let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity);
+    let random_trial_seed = fastrand::u32(..);
+    let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity, random_trial_seed);
     println!("Running the experiment... \nPlease check: {:?} file in ./output folder", &file_name);
     
     let log = OpenOptions::new()
@@ -162,7 +163,7 @@ fn main() {
                 },
                 Behavior::Loco => {
                     println!("\nStarting Locomotion GA Experiment...\n");
-                    let mut ga_sops = LocoGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
+                    let mut ga_sops = LocoGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.5, 0.5, random_trial_seed);
                     ga_sops.run_through();
 
                 },
@@ -341,7 +342,7 @@ fn main() {
                                 /*
                                  * Single Evaluation run of the Genome
                                  */
-                                let mut sops_trial = SOPSLocoEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
+                                let mut sops_trial = SOPSLocoEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.5, 0.5);
                                 sops_trial.print_grid();
                                 let fitness: f32 = sops_trial.evaluate_fitness();
                                 println!("Starting Fitness: {}", fitness);
