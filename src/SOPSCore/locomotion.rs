@@ -555,9 +555,9 @@ impl SOPSLocoEnvironment {
      * Func to calculate a particle's extended neighbor count, does NOT include if neighbors sensing light
      *  */
      fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8, u8) {
-        let mut back_cnt: u8 = 0;
-        let mut mid_cnt: u8 = 0;
-        let mut front_cnt: u8 = 0;
+        let mut back_cnt = 0;
+        let mut mid_cnt = 0;
+        let mut front_cnt = 0;
         let particle = &self.participants[particle_idx];
         let move_i = (particle.x as i32 + direction.0) as usize;
         let move_j = (particle.y as i32 + direction.1) as usize;
@@ -566,7 +566,7 @@ impl SOPSLocoEnvironment {
         for idx in 0..6 {
             let new_i = (particle.x as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
             let new_j = (particle.y as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != move_i) & (new_j != move_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == move_i) & (new_j == move_j)) {
                 seen_neighbor_cache.insert([new_i, new_j], true);
                 if self.grid[new_i][new_j] == SOPSLocoEnvironment::PARTICLE {
                     back_cnt += 1;
@@ -577,7 +577,7 @@ impl SOPSLocoEnvironment {
         for idx in 0..6 {
             let new_i = (move_i as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & (new_i != particle.x.into()) & (new_j != particle.y.into()) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
                 let mut position_type = SOPSLocoEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
