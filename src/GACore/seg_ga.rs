@@ -370,13 +370,22 @@ impl SegGA {
         println!("Mutation Rate:{}", self.mut_rate);
         println!("Diversity State:{:?}", self.div_state);
 
-        let trials_vec: Vec<((u16,u16),u64)> = self
-            .sizes.clone()
-            .into_iter()
-            .zip(seeds)
-            .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-            .collect();
+        // let trials_vec: Vec<((u16,u16),u64)> = self
+        //     .sizes.clone()
+        //     .into_iter()
+        //     .zip(seeds)
+        //     .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+        //     .collect();
 
+        let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
+
+        self.sizes.iter().for_each(|size| {
+            self.trial_seeds.iter().for_each(|seed| {
+                trials_vec.push(((size.0,size.1),*seed));
+            });
+        });
+
+        // trials_vec.iter().for_each(|t| println!("{:?}", t));
         // TODO: run each genome in a separate compute node
         // TODO: use RefCell or lazy static to make the whole check and update into a single loop.
         // let mut genome_fitnesses = vec![-1.0; self.population.len()];
