@@ -163,7 +163,7 @@ fn main() {
                 },
                 Behavior::Loco => {
                     println!("\nStarting Locomotion GA Experiment...\n");
-                    let mut ga_sops = LocoGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.5, 0.5, random_trial_seed);
+                    let mut ga_sops = LocoGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.75, 0.25, random_trial_seed);
                     ga_sops.run_through();
 
                 },
@@ -309,7 +309,7 @@ fn main() {
                         Behavior::Loco => {
                             println!("\nStarting Locomotion Single Genome Trial...\n");
                             // Construct the genome in required dimension
-                            let mut genome: [[[[u8; 4]; 3]; 4]; 3] = [[[[0_u8; 4]; 3]; 4]; 3];
+                            /*let mut genome: [[[[u8; 4]; 3]; 4]; 3] = [[[[0_u8; 4]; 3]; 4]; 3];
                             let mut idx = 0;
                             
                             for j in 0_u8..3 {
@@ -321,7 +321,19 @@ fn main() {
                                         }
                                     }
                                 }
-                            }
+                            }*/
+
+                            let mut genome: [[[u8; 4]; 3]; 4] = [[[0_u8; 4]; 3]; 4];
+                            let mut idx = 0;
+                            
+                                for i in 0_u8..4 {
+                                    for h in 0_u8..3 {
+                                        for g in 0_u8..4{
+                                            genome[i as usize][h as usize][g as usize] = all_entries[idx];
+                                            idx += 1;
+                                        }
+                                    }
+                                }
                             
 
                             println!("Read Genome:\n{:?}", genome);
@@ -330,11 +342,19 @@ fn main() {
                             let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
-                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
-                                .into_iter()
-                                .zip(seeds)
-                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-                                .collect();
+                            //let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                            //    .into_iter()
+                            //    .zip(seeds)
+                            //    .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+                            //    .collect();
+
+                            let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
+
+                            particle_sizes.iter().for_each(|size| {
+                                seeds.iter().for_each(|seed| {
+                                    trials_vec.push(((size.0,size.1),*seed));
+                                });
+                            });
 
                             let fitness_tot: f32 = trials_vec.clone()
                             .into_par_iter()
@@ -342,7 +362,7 @@ fn main() {
                                 /*
                                  * Single Evaluation run of the Genome
                                  */
-                                let mut sops_trial = SOPSLocoEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.5, 0.5);
+                                let mut sops_trial = SOPSLocoEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.75, 0.25);
                                 sops_trial.print_grid();
                                 let fitness: f32 = sops_trial.evaluate_fitness();
                                 println!("Starting Fitness: {}", fitness);

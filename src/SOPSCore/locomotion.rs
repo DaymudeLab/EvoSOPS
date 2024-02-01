@@ -18,7 +18,8 @@ pub struct SOPSLocoEnvironment {
     participants: Vec<Particle>,
     light: Vec<(u8,u8)>,
     orientation: u8,
-    phenotype: [[[[u8; 4]; 3]; 4]; 3],
+    //phenotype: [[[[u8; 4]; 3]; 4]; 3],
+    phenotype: [[[u8; 4]; 3]; 4],
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -85,6 +86,11 @@ impl SOPSLocoEnvironment {
         vec![1000, 500, 250, 125, 63, 31, 16, 8, 4, 2, 1]
     }
 
+    #[inline]
+    fn theory_gene_probability() -> Vec<u16> {
+        vec![1000, 250, 62, 15]
+    }
+
     fn unfrm_par(&self) -> Uniform<usize> {
         Uniform::new(0, self.participants.len())
     }
@@ -98,7 +104,7 @@ impl SOPSLocoEnvironment {
      * Also accept the weights for Agg and Light components
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
-    pub fn init_sops_env(genome: &[[[[u8; 4]; 3 ]; 4]; 3], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8, w1: f32, w2: f32) -> Self {
+    pub fn init_sops_env(/*genome: &[[[[u8; 4]; 3 ]; 4]; 3]*/genome: &[[[u8; 4]; 3 ]; 4], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8, w1: f32, w2: f32) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
 
         let mut grid = vec![vec![0; grid_size]; grid_size];
@@ -177,6 +183,7 @@ impl SOPSLocoEnvironment {
         // No. of edges in the aggregated config with one less particle than aggregation behavior
         let agg_edge_cnt: f32 = (3*(3*particle_layers.pow(2)+particle_layers-1)).into();
         let agg_avg_distance: f32 = (grid_size as f32 - ((-1 as f32 + f32::sqrt(1 as f32 + 4 as f32 * (num_particles as f32 - 1 as f32)/3 as f32))/2 as f32)).into();
+        //let agg_avg_distance: f32 = ((-1 as f32 + f32::sqrt(1 as f32 + 4 as f32 * (num_particles as f32 - 1 as f32)/3 as f32))/2 as f32).into();
         
         let mut grid_rng = SOPSLocoEnvironment::seed_rng(seed);
         //init grid bounds
@@ -191,7 +198,7 @@ impl SOPSLocoEnvironment {
         
         //init grid and particles
         while participants.len() < num_particles.into() {
-            let i = grid_rng.sample(&SOPSLocoEnvironment::grid_rng(0,grid_size));
+        /*  let i = grid_rng.sample(&SOPSLocoEnvironment::grid_rng(0,grid_size));
             let j = grid_rng.sample(&SOPSLocoEnvironment::grid_rng(0,grid_size));
             if grid[i][j] == 0 {
                 participants.push(Particle {
@@ -229,7 +236,110 @@ impl SOPSLocoEnvironment {
                         }
                     }
                 }
-            }   
+            }  */
+            
+            if participants.len() == 0 {
+                let i = grid_rng.sample(&SOPSLocoEnvironment::grid_rng(0,grid_size));
+                let j = grid_rng.sample(&SOPSLocoEnvironment::grid_rng(0,grid_size));
+                if grid[i][j] == 0 {
+                    participants.push(Particle {
+                        x: i as u8,
+                        y: j as u8,
+                        color: 0
+                    });
+                    grid[i][j] = SOPSLocoEnvironment::PARTICLE;
+
+                    // initialize values for light
+                    if orientation == 1 {
+                        if 2*i >= j {
+                            if 2*arena_layers as u8 >= (2*i - j) as u8 {
+                                if j as u8 >= light[(2*i - j) as usize].1 {
+                                    light[(2*i - j) as usize] = (i as u8, j as u8);
+                                }
+                            }
+                        }
+                    }
+                    else if orientation == 2 {
+                        if 2*j >= i{
+                            if 2*arena_layers as u8 >= (2*j - i) as u8 {
+                                if i as u8 >= light[(2*j - i) as usize].0 {
+                                    light[(2*j - i) as usize] = (i as u8, j as u8);
+                                }
+                            }
+                        }
+                    }
+                    else if orientation == 3 {
+                        if i+j >= arena_layers as usize {
+                            if i+j < (2*arena_layers + arena_layers) as usize {
+                                if i as u8 >= light[i+j - arena_layers as usize].0 {
+                                    light[i+j - arena_layers as usize] = (i as u8, j as u8);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                // check if prev par has any space
+                let par_idx = SOPSLocoEnvironment::move_frng().usize(..participants.len());
+                let particle = &participants[par_idx];
+                let mut place = vec![];
+                for idx in 0..6 {
+                    let new_i = (particle.x as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+                    let new_j = (particle.y as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+                    if (0..grid.len()).contains(&new_i) && (0..grid.len()).contains(&new_j) {
+                        if grid[new_i][new_j] == 0 {
+                            place.push((new_i, new_j))
+                        }
+                    }
+                }
+                // 
+                if place.len() > 2 {
+                    let move_dir = place
+                        [SOPSLocoEnvironment::move_frng().usize(..place.len())];
+                    let i = move_dir.0;
+                    let j = move_dir.1;
+                    if (0..(grid.len())).contains(&i) && (0..(grid.len())).contains(&j) {
+                        if grid[i][j] == 0 {
+                            participants.push(Particle {
+                                x: i as u8,
+                                y: j as u8,
+                                color: 0
+                            });
+                            grid[i][j] = SOPSLocoEnvironment::PARTICLE;
+
+                            // initialize values for light
+                            if orientation == 1 {
+                                if 2*i >= j {
+                                    if 2*arena_layers as u8 >= (2*i - j) as u8 {
+                                        if j as u8 >= light[(2*i - j) as usize].1 {
+                                            light[(2*i - j) as usize] = (i as u8, j as u8);
+                                        }
+                                    }
+                                }
+                            }
+                            else if orientation == 2 {
+                                if 2*j >= i{
+                                    if 2*arena_layers as u8 >= (2*j - i) as u8 {
+                                        if i as u8 >= light[(2*j - i) as usize].0 {
+                                            light[(2*j - i) as usize] = (i as u8, j as u8);
+                                        }
+                                    }
+                                }
+                            }
+                            else if orientation == 3 {
+                                if i+j >= arena_layers as usize {
+                                    if i+j < (2*arena_layers + arena_layers) as usize {
+                                        if i as u8 >= light[i+j - arena_layers as usize].0 {
+                                            light[i+j - arena_layers as usize] = (i as u8, j as u8);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }              
         }
         
         // TODO: Make this a static const variable
@@ -318,7 +428,7 @@ impl SOPSLocoEnvironment {
     }*/
 
     pub fn print_grid(&self) {
-        println!("Locomotion grid");
+        println!("SOPS grid");
         for i in 0..self.grid.len() {
             for j in 0..self.grid[0].len() {
                 print!(" {} ", self.grid[i][j]);
@@ -603,7 +713,8 @@ impl SOPSLocoEnvironment {
         let future_light: u8 = self.sensing_light(move_i as u8, move_j as u8);
         let light_idx: u8 = self.get_dim_idx(current_light, future_light);
         // TODO: Remove this hardcoding of the values. Should come from genome's dimenions
-        (light_idx.clamp(0,2), back_cnt.clamp(0, 3), mid_cnt.clamp(0, 2), front_cnt.clamp(0, 3))
+        //(light_idx.clamp(0,2), back_cnt.clamp(0, 3), mid_cnt.clamp(0, 2), front_cnt.clamp(0, 3))
+        (current_light.clamp(0,1), back_cnt.clamp(0, 3), mid_cnt.clamp(0, 2), front_cnt.clamp(0, 3))
     }
 
     /* Copied from mod.rs
@@ -639,6 +750,316 @@ impl SOPSLocoEnvironment {
     }
 
     /*
+     * Func to calculate a particle's connectivity
+     *  */
+     fn check_connectivity(&self, particle_idx: usize, direction: (i32, i32)) -> bool {
+        let mut back_cnt: u8 = 0;
+        let mut mid_cnt: u8 = 0;
+        let mut front_cnt: u8 = 0;
+        let particle = &self.participants[particle_idx];
+        let move_i = (particle.x as i32 + direction.0) as usize;
+        let move_j = (particle.y as i32 + direction.1) as usize;
+        let mut seen_neighbor_cache: HashMap<[usize; 2], bool> = HashMap::new();
+        let mut back_neighbor_cache: HashMap<[usize; 2], bool> = HashMap::new();
+        let mut front_neighbor_cache: HashMap<[usize; 2], bool> = HashMap::new();
+        let mut mid_neighbor_cache: HashMap<[usize; 2], bool> = HashMap::new();
+        // Neighborhood for original position
+        for idx in 0..6 {
+            let new_i = (particle.x as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+            let new_j = (particle.y as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == move_i) & (new_j == move_j)) {
+                // print!("{}",idx);
+                seen_neighbor_cache.insert([new_i, new_j], true);
+                // all_neighbor_cache.insert([new_i, new_j], true);
+                if self.grid[new_i][new_j] != SOPSLocoEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSLocoEnvironment::BOUNDARY  {
+                    back_cnt += 1;
+                    back_neighbor_cache.insert([new_i, new_j], true);
+                    //if particle.state == self.grid[new_i][new_j] {
+                        // back_same_clr_cnt += 1;
+                    //}
+                }
+            }
+        }
+        // print!("\t");
+        // Neighborhood for new position
+        for idx in 0..6 {
+            let new_i = (move_i as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+            let new_j = (move_j as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
+                // print!("{}",idx);
+                let mut position_type = SOPSLocoEnvironment::FRONT;
+                match seen_neighbor_cache.get(&[new_i, new_j]) {
+                    Some(_exists) => {
+                        position_type = SOPSLocoEnvironment::MID;
+                    }
+                    None => {
+                    },
+                }
+                if self.grid[new_i][new_j] != SOPSLocoEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSLocoEnvironment::BOUNDARY {
+                    match position_type {
+                        SOPSLocoEnvironment::FRONT => {
+                            front_neighbor_cache.insert([new_i, new_j], true);
+                            front_cnt += 1;
+                            //if particle.state == self.grid[new_i][new_j] {
+                                // front_same_clr_cnt += 1;
+                            //}
+                        }
+                        SOPSLocoEnvironment::MID => {
+                            mid_cnt += 1;
+                            back_cnt -= 1;
+                            mid_neighbor_cache.insert([new_i, new_j], true);
+                            back_neighbor_cache.remove(&[new_i, new_j]);
+                            //if particle.state == self.grid[new_i][new_j] {
+                                // mid_same_clr_cnt += 1;
+                                // back_same_clr_cnt -= 1;
+                            //}
+                        }
+                        _ => todo!()
+                    }
+                }
+            }
+        }
+
+        if mid_neighbor_cache.keys().len() as u8 != mid_cnt {
+            println!("Error Mid")   
+        }
+
+        if back_neighbor_cache.keys().len() as u8 != back_cnt {
+            println!("Error back")   
+        }
+
+        if front_neighbor_cache.keys().len() as u8 != front_cnt {
+            println!("Error front")   
+        }
+
+        if mid_cnt > 0 {
+            // five neighbor check
+            if (mid_cnt == 2) && (back_cnt == 3) {
+                return false;
+            }
+
+            // /*
+            // check if back and front are connected to mid
+                // seen_neighbor_cache == back cache
+                let mut mid_touch = false;
+                for loc in back_neighbor_cache.keys() {
+                    // for every particle in back
+                    let mut neighbor_touch = false;
+                    for idx in 0..6 {
+                        let new_i = (loc[0] as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+                        let new_j = (loc[1] as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+                        if (0..self.grid.len()).contains(&new_i) && (0..self.grid.len()).contains(&new_j) && !((new_i == particle.x.into()) && (new_j == particle.y.into())) {
+                            // print!("{}",idx);
+                            match back_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    neighbor_touch = true;
+                                }
+                                None => {},
+                            }
+                            match mid_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    mid_touch = true;
+                                    neighbor_touch = true
+                                }
+                                None => {},
+                            }
+                        }
+                    }
+                    // if a particle has no neighbors
+                    if neighbor_touch == false {
+                        return false;
+                    }
+                }
+                // if none of back touch mid
+                if mid_touch == false {
+                    return false;
+                }
+
+                // same for front
+                let mut mid_touch_front = false;
+                for loc in front_neighbor_cache.keys() {
+                    // for every particle in back
+                    let mut neighbor_touch = false;
+                    for idx in 0..6 {
+                        let new_i = (loc[0] as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+                        let new_j = (loc[1] as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+                        if (0..self.grid.len()).contains(&new_i) && (0..self.grid.len()).contains(&new_j) && !((new_i == particle.x.into()) && (new_j == particle.y.into())) {
+                            // print!("{}",idx);
+                            match front_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    neighbor_touch = true;
+                                }
+                                None => {},
+                            }
+                            match mid_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    mid_touch_front = true;
+                                    neighbor_touch = true
+                                }
+                                None => {},
+                            }
+                        }
+                    }
+                    // if a particle has no neighbors
+                    if neighbor_touch == false {
+                        return false;
+                    }
+                }
+                // if none of back touch mid
+                if mid_touch_front == false {
+                    return false;
+                }
+            //  */
+            /*
+            // Property 1:
+            if back_cnt == 1 {
+                let flip_direction = (direction.0 * -1, direction.1 * -1);
+                let new_i = (particle.x as i32 + flip_direction.0) as usize;
+                let new_j = (particle.y as i32 + flip_direction.1) as usize;
+                if (0..self.grid.len()).contains(&new_i) && (0..self.grid.len()).contains(&new_j) {
+                    if self.grid[new_i][new_j] != SOPSLocoEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSLocoEnvironment::BOUNDARY  {
+                        return false;
+                    }
+                }
+            }
+            if front_cnt == 1 {
+                let new_i = (move_i as i32 + direction.0) as usize;
+                let new_j = (move_j as i32 + direction.1) as usize;
+                if (0..self.grid.len()).contains(&new_i) && (0..self.grid.len()).contains(&new_j) {
+                    if self.grid[new_i][new_j] != SOPSLocoEnvironment::EMPTY && self.grid[new_i][new_j] != SOPSLocoEnvironment::BOUNDARY  {
+                        return false;
+                    }
+                }
+            }
+            if mid_cnt == 1 {
+                // check if back and front are connected to mid
+                let mut mid_touch = false;
+                for loc in back_neighbor_cache.keys() {
+                    // for every particle in back
+                    let mut neighbor_touch = false;
+                    for idx in 0..6 {
+                        let new_i = (loc[0] as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+                        let new_j = (loc[1] as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+                        if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
+                            // print!("{}",idx);
+                            match back_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    neighbor_touch = true;
+                                }
+                                None => {},
+                            }
+                            match mid_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    mid_touch = true;
+                                    neighbor_touch = true
+                                }
+                                None => {},
+                            }
+                        }
+                    }
+                    // if a particle has no neighbors
+                    if !neighbor_touch {
+                        return false;
+                    }
+                }
+                // if none of back touch mid
+                if !mid_touch {
+                    return false;
+                }
+                // same for front
+                let mut mid_touch_front = false;
+                for loc in front_neighbor_cache.keys() {
+                    // for every particle in back
+                    let mut neighbor_touch = false;
+                    for idx in 0..6 {
+                        let new_i = (loc[0] as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+                        let new_j = (loc[1] as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+                        if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
+                            // print!("{}",idx);
+                            match front_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    neighbor_touch = true;
+                                }
+                                None => {},
+                            }
+                            match mid_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    mid_touch_front = true;
+                                    neighbor_touch = true
+                                }
+                                None => {},
+                            }
+                        }
+                    }
+                    // if a particle has no neighbors
+                    if !neighbor_touch {
+                        return false;
+                    }
+                }
+                // if none of back touch mid
+                if !mid_touch_front {
+                    return false;
+                }
+            }
+            */
+            return true;
+        }
+        else if (mid_cnt == 0) && (back_cnt > 0) && (front_cnt > 0) {
+            // Property 2
+            if back_cnt == 2 {
+                for loc in back_neighbor_cache.keys() {
+                    // for every particle in back
+                    let mut neighbor_touch = false;
+                    for idx in 0..6 {
+                        let new_i = (loc[0] as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+                        let new_j = (loc[1] as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+                        if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
+                            // print!("{}",idx);
+                            match back_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    neighbor_touch = true;
+                                }
+                                None => {},
+                            }
+                        }
+                    }
+                    // if a particle has no neighbors
+                    if neighbor_touch == false {
+                        return false;
+                    }
+                }
+            }
+            if front_cnt == 2 {
+                for loc in front_neighbor_cache.keys() {
+                    // for every particle in back
+                    let mut neighbor_touch = false;
+                    for idx in 0..6 {
+                        let new_i = (loc[0] as i32 + SOPSLocoEnvironment::directions()[idx].0) as usize;
+                        let new_j = (loc[1] as i32 + SOPSLocoEnvironment::directions()[idx].1) as usize;
+                        if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
+                            // print!("{}",idx);
+                            match front_neighbor_cache.get(&[new_i, new_j]) {
+                                Some(_exists) => {
+                                    neighbor_touch = true;
+                                }
+                                None => {},
+                            }
+                        }
+                    }
+                    // if a particle has no neighbors
+                    if neighbor_touch == false {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+    /*
      * Func to move 'n' particles in random directions in the SOPS grid
      *  */
     fn move_particles(&mut self, cnt: usize) {
@@ -655,14 +1076,36 @@ impl SOPSLocoEnvironment {
                         [SOPSLocoEnvironment::move_frng().usize(..SOPSLocoEnvironment::directions().len())];
 
             if self.particle_move_possible(par_idx, move_dir) {
-                // Get the neighborhood configuration
-                let (light_idx, back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
-                // Move basis probability given by the genome for moving for given configuration
-                // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
-                let move_prb = self.phenotype[light_idx as usize][back_cnt as usize][mid_cnt as usize][front_cnt as usize];
-                if SOPSLocoEnvironment::move_frng().u16(1_u16..=1000) <= SOPSLocoEnvironment::gene_probability()[move_prb as usize]
-                {
-                    self.move_particle_to(par_idx, move_dir);
+                if self.check_connectivity(par_idx, move_dir) {
+                    // Get the neighborhood configuration
+                    let (light_idx, back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+                    // adjusted light_idx to be sensing current light for theory
+
+                    // Move basis probability given by the genome for moving for given configuration
+                    // TODO: Change this simply using a (0, granularity) for RNG and compare values basis that
+                    //let move_prb = self.phenotype[light_idx as usize][back_cnt as usize][mid_cnt as usize][front_cnt as usize] / 4;
+                    //let particle = &self.participants[particle_idx];
+                    if light_idx == 1 {
+                        let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize] / 4;
+                        if SOPSLocoEnvironment::move_frng().u16(1_u16..=1000) <= SOPSLocoEnvironment::theory_gene_probability()[move_prb as usize]
+                        {
+                            self.move_particle_to(par_idx, move_dir);
+                        }
+                    }
+                    else {
+                        let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
+                        if SOPSLocoEnvironment::move_frng().u16(1_u16..=1000) <= SOPSLocoEnvironment::theory_gene_probability()[move_prb as usize]
+                        {
+                            self.move_particle_to(par_idx, move_dir);
+                        }
+                    }
+
+
+                    //let move_prb = self.phenotype[light_idx as usize][back_cnt as usize][mid_cnt as usize][front_cnt as usize];
+                    //if SOPSLocoEnvironment::move_frng().u16(1_u16..=1000) <= SOPSLocoEnvironment::theory_gene_probability()[move_prb as usize]
+                    //{
+                    //    self.move_particle_to(par_idx, move_dir);
+                    //}
                 }
             }
                 
@@ -697,6 +1140,11 @@ impl SOPSLocoEnvironment {
 
         let c1 = (edges / 2) as f32 / self.max_fitness_c1; //aggregation
         let c2 = (distance / self.get_participant_cnt() as u32) as f32 / self.max_fitness_c2; //avg distance
+
+        //let distance = ((self.arena_layers*2 + 1) as f32) - ((distance / self.get_participant_cnt() as u32) as f32); //max - avg position
+        //let c2 = (1.0/distance) / (1.0/self.max_fitness_c2);
+
+        
         
         //println!();
         //println!("agg: {} / {} = {}", edges/2, self.max_fitness_c1, c1);
