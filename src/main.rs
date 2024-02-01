@@ -276,11 +276,18 @@ fn main() {
                             let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
-                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
-                                .into_iter()
-                                .zip(seeds)
-                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-                                .collect();
+                            // let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                            //     .into_iter()
+                            //     .zip(seeds)
+                            //     .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+                            //     .collect();
+                            let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
+
+                            particle_sizes.iter().for_each(|size| {
+                                seeds.iter().for_each(|seed| {
+                                    trials_vec.push(((size.0,size.1),*seed));
+                                });
+                            });
 
                             let fitness_tot: f32 = trials_vec.clone()
                             .into_par_iter()
@@ -338,16 +345,18 @@ fn main() {
                                 /*
                                  * Single Evaluation run of the Genome
                                  */
-                                let mut sops_trial = SOPSCoatEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.0.2, trial.1, args.granularity, 0.65, 0.35);
+                                let mut sops_trial = SOPSCoatEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.0.2, trial.1, args.granularity, 0.65, 0.35, None);
+                                sops_trial.save_distance_grid();
+                                // sops_trial.print_dist_grid();
                                 sops_trial.print_grid();
                                 let fitness: f32 = sops_trial.evaluate_fitness();
                                 println!("Starting Fitness: {}", fitness);
                                 let now = Instant::now();
                                 let t_fitness: f32 = sops_trial.simulate(true);
-                                let elapsed = now.elapsed().as_secs();
+                                let elapsed = now.elapsed().as_secs_f64();
                                 sops_trial.print_grid();
                                 println!("Fitness: {}", &t_fitness);
-                                println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                println!("Trial Elapsed Time: {:.4?}s", elapsed);
                                 t_fitness
                             })
                             .sum();
