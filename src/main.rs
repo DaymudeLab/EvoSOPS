@@ -162,7 +162,7 @@ fn main() {
                 },
                 Behavior::Brid => {
                     println!("\nStarting Bridging GA Experiment...\n");
-                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
+                    let mut ga_sops = BridGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
                     ga_sops.run_through();
                 },
             }
