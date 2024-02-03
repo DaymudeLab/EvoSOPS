@@ -15,6 +15,12 @@ struct Genome {
     fitness: f64,
 }
 
+#[derive(Debug, Copy, Clone)]
+struct BridGenome {
+    string: [[[u8; 9]; 5]; 9],
+    fitness: f64,
+}
+
 /*
   * Separation Genome structure
   */
