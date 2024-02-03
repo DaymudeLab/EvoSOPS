@@ -16,7 +16,7 @@ pub struct SOPSBridEnviroment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
     anchors: Vec<Particle>,
-    phenotype: [[[u8; 9]; 5]; 9],
+    phenotype: [[[u8; 10]; 6]; 10],
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -104,7 +104,7 @@ impl SOPSBridEnviroment {
      *  TODO
      */
     pub fn init_sops_env(
-        genome: &[[[u8; 9]; 5]; 9],
+        genome: &[[[u8; 10]; 6]; 10],
         arena_layers: u16,
         particle_layers: u16,
         seed: u64,

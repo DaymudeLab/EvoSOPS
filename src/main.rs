@@ -311,16 +311,16 @@ fn main() {
                         Behavior::Brid => {
                             println!("\nStarting Bridging Single Genome Trial...\n");
                             
-                            let mut genome: [[[u8; 9]; 5]; 9]  = [[[0; 9]; 5]; 9] ;
+                            let mut genome: [[[u8; 10]; 6]; 10]  = [[[0; 10]; 6]; 10] ;
                             let mut idx = 0;
                             println!("All entries: ");
                             for i in &all_entries {
                                 println!(" {} ", i);
                             }
 
-                            for n in 0_u8..9 {
-                                for j in 0_u8..5 {
-                                    for i in 0_u8..9 {
+                            for n in 0_u8..10 {
+                                for j in 0_u8..6 {
+                                    for i in 0_u8..10 {
                                         genome[n as usize][j as usize][i as usize] = all_entries[idx];
                                         idx += 1;
                                     }
