@@ -4,6 +4,7 @@ use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::cmp::Reverse;
 
 /*
  * Main Class for the Bridging Behaviour Expirament on SOPS grid.
@@ -599,19 +600,21 @@ impl SOPSBridEnviroment {
         let gravity_constant: u8 = 9;
         let mut max_tension: u32 = 0;
 
-        let mut queue = PriorityQueue::new();
+        let mut queue: PriorityQueue<(u8, u8), Reverse<i32>> = PriorityQueue::new();
         let mut closed: Vec<(u8, u8)> = vec![];
 
         for particle in border_particles {
-            queue.push((particle.x, particle.y), 0);
+            queue.push((particle.x, particle.y), Reverse(0));
         }
 
         while !queue.is_empty() {
             let particle = queue.pop().expect("Empty priority queue.");
             let x = particle.0 .0;
             let y = particle.0 .1;
+
+            distance_matrix[x as usize][y as usize] = particle.1.0 + 1;
             closed.push((x, y));
-            distance_matrix[x as usize][y as usize] = particle.1 * -1;
+
 
             //Get particle neighbors
             for i in 0..=2 {
@@ -620,15 +623,15 @@ impl SOPSBridEnviroment {
                     for j in 0..=2 {
                         let checking_y: i32 = y as i32 + j - 1;
                         if self.in_bounds(checking_y) {
-                            if self.grid[checking_x as usize][checking_y as usize]
-                                == SOPSBridEnviroment::PARTICLE_OFFLAND
-                                && !closed.contains(&(checking_x as u8, checking_y as u8))
+                            if self.grid[checking_x as usize][checking_y as usize] == SOPSBridEnviroment::PARTICLE_OFFLAND 
+                            && !closed.contains(&(checking_x as u8, checking_y as u8)) 
+                            && !queue.clone().iter().any(|(value, _)| value.0 == checking_x as u8 && value.1 == checking_y as u8)
                             {
-                                queue.push((checking_x as u8, checking_y as u8), particle.1 - 1);
+                                queue.push((checking_x as u8, checking_y as u8), Reverse(particle.1.0 + 1));
                             }
-                        }
+                        } 
                     }
-                }
+                } 
             }
         }
 
@@ -675,7 +678,9 @@ impl SOPSBridEnviroment {
             return 0.0;
         }
 
-        return 1.0 / max_tension as f32;
+        let min_tension_rating:f32 = 0.0;
+
+        return min_tension_rating.max(((-1.0 * max_tension as f32)/19.0) + (20.0 / 19.0));
     }
 
     /**
@@ -1064,7 +1069,7 @@ impl SOPSBridEnviroment {
         // println!("Gap Amount: {}", phantom_amount);
 
         let return_value = f32::max(
-            (((3.0 * distance_ratio) + (3.0 * bridge_resource) + (3.0 * bridge_strength)) / 9.0)
+            (((6.0 * distance_ratio) + (1.5 * bridge_resource) + (1.5 * bridge_strength)) / 9.0)
                 - (phantom_amount as f32 / max_phantom_amount),
             0.0,
         );
