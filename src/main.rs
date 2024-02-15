@@ -321,8 +321,10 @@ fn main() {
                             for n in 0_u8..10 {
                                 for j in 0_u8..6 {
                                     for i in 0_u8..10 {
-                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
-                                        idx += 1;
+                                        if idx < 599 {
+                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                            idx += 1;
+                                        }
                                     }
                                 }
                             }

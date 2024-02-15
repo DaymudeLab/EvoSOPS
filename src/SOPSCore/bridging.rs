@@ -161,7 +161,7 @@ impl SOPSBridEnviroment {
             grid[coordinate.0 as usize][coordinate.1 as usize] = SOPSBridEnviroment::EMPTY_LAND;
         }
 
-        let particle_coord: [(u8, u8); 51] = [(1,1),(1,2),(1,3),(1,4),(2,1),(2,5),(2,6),(3,1),(3,6),(3,7),(4,1),(4,7),(4,8),(5,1),(5,2),(5,8),(5,9),(6,2),(6,3),(6,9),(6,10),(7,3),(7,4),(7,10),(7,11),(7,17),(8,4),(8,5),(8,11),(8,12),(8,16),(9,5),(9,6),(9,12),(9,13),(9,15),(10,6),(10,7),(10,13),(10,14),(11,7),(11,8),(12,7),(12,8),(12,9),(13,9),(13,10),(14,9),(15,9),(16,8),(17,7)];
+        let particle_coord: [(u8, u8); 82] = [(0,0),(0,1),(0,2),(0,3),(0,4),(1,0),(1,1),(1,2),(1,3),(1,4),(1,5),(2,0),(2,1),(2,5),(2,6),(2,7),(3,0),(3,1),(3,6),(3,7),(3,8),(4,0),(4,1),(4,7),(4,8),(4,9),(5,1),(5,2),(5,8),(5,9),(5,10),(6,2),(6,3),(6,9),(6,10),(6,11),(6,17),(7,3),(7,4),(7,10),(7,11),(7,12),(7,15),(7,16),(7,17),(8,4),(8,5),(8,11),(8,12),(8,13),(8,14),(8,15),(8,16),(9,5),(9,6),(9,12),(9,13),(9,14),(9,15),(10,6),(10,7),(10,13),(10,14),(11,7),(11,8),(12,7),(12,8),(12,9),(13,8),(13,9),(13,10),(14,8),(14,9),(14,10),(15,7),(15,8),(15,9),(16,6),(16,7),(16,8),(17,6),(17,7)];
         for coord in particle_coord {
             grid[coord.0 as usize][coord.1 as usize] = SOPSBridEnviroment::PARTICLE_LAND;
 
@@ -944,20 +944,12 @@ impl SOPSBridEnviroment {
             }
 
             let mut current_particle: (u8, u8) = *closet_particles.1;
-            while !(current_particle.0 == closet_particles.0 .0
-                && current_particle.1 == closet_particles.0 .1)
-            {
+            while !(current_particle.0 == closet_particles.0.0 && current_particle.1 == closet_particles.0.1) {
                 //Checks if particle exists
-                if self.grid[current_particle.0 as usize][current_particle.1 as usize]
-                    != SOPSBridEnviroment::PARTICLE_LAND
-                    && self.grid[current_particle.0 as usize][current_particle.1 as usize]
-                        != SOPSBridEnviroment::PARTICLE_OFFLAND
-                    && self.grid[current_particle.1 as usize][current_particle.1 as usize]
-                        != SOPSBridEnviroment::ANCHOR
-                {
-                    self.grid[current_particle.0 as usize][current_particle.1 as usize] = if self
-                        .grid[current_particle.0 as usize][current_particle.1 as usize]
-                        == SOPSBridEnviroment::EMPTY_LAND
+                if self.grid[current_particle.0 as usize][current_particle.1 as usize] != SOPSBridEnviroment::PARTICLE_LAND
+                && self.grid[current_particle.0 as usize][current_particle.1 as usize] != SOPSBridEnviroment::PARTICLE_OFFLAND
+                && self.grid[current_particle.0 as usize][current_particle.1 as usize] != SOPSBridEnviroment::ANCHOR {
+                self.grid[current_particle.0 as usize][current_particle.1 as usize] = if self.grid[current_particle.0 as usize][current_particle.1 as usize] == SOPSBridEnviroment::EMPTY_LAND
                     {
                         SOPSBridEnviroment::PARTICLE_LAND
                     } else {
@@ -1041,7 +1033,7 @@ impl SOPSBridEnviroment {
      */
     pub fn evaluate_fitness(&mut self) -> f32 {
         //Calculates distance
-        let max_phantom_amount: f32 = 40.0;
+        let max_phantom_amount: f32 = 10.0;
         let mut distance: u32 = self.bridge_distance();
 
         if distance == 0 {
@@ -1069,7 +1061,7 @@ impl SOPSBridEnviroment {
         // println!("Gap Amount: {}", phantom_amount);
 
         let return_value = f32::max(
-            (((6.0 * distance_ratio) + (1.5 * bridge_resource) + (1.5 * bridge_strength)) / 9.0)
+            (((8.0 * distance_ratio) + (1.0 * bridge_resource) + (1.0 * bridge_strength)) / 10.0)
                 - (phantom_amount as f32 / max_phantom_amount),
             0.0,
         );
