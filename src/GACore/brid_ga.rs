@@ -1,4 +1,4 @@
-use crate::SOPSCore::bridging::SOPSBridEnviroment;
+use crate::SOPSCore::bridging::SOPSBridEnvironment;
 
 use super::{BridGenome, Genome};
 use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
@@ -270,7 +270,7 @@ impl BridGA {
             let fitness_tot: f64 = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
-                    let mut genome_env = SOPSBridEnviroment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity);
+                    let mut genome_env = SOPSBridEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity);
                     let g_fitness = genome_env.simulate(false);
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);

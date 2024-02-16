@@ -8,7 +8,7 @@ use GACore::brid_ga::BridGA;
 
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::segregation::SOPSegEnvironment;
-use crate::SOPSCore::bridging::SOPSBridEnviroment;
+use crate::SOPSCore::bridging::SOPSBridEnvironment;
 
 use rayon::prelude::*;
 use gag::Redirect;
@@ -311,23 +311,25 @@ fn main() {
                         Behavior::Brid => {
                             println!("\nStarting Bridging Single Genome Trial...\n");
                             
-                            let mut genome: [[[u8; 10]; 6]; 10]  = [[[0; 10]; 6]; 10] ;
-                            let mut idx = 0;
-                            println!("All entries: ");
-                            for i in &all_entries {
-                                println!(" {} ", i);
-                            }
+                            let genome: [[[u8; 10]; 6]; 10]  = [[[0, 10, 10, 8, 0, 4, 4, 5, 1, 0], [7, 8, 4, 0, 0, 0, 0, 7, 2, 0], [5, 4, 3, 1, 0, 2, 0, 0, 0, 0], [4, 1, 1, 4, 9, 0, 9, 4, 4, 0], [0, 0, 2, 0, 2, 1, 3, 2, 3, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[0, 1, 0, 2, 3, 9, 5, 7, 4, 0], [0, 3, 0, 0, 4, 0, 0, 0, 6, 0], [0, 3, 2, 7, 0, 1, 0, 5, 2, 0], [4, 5, 1, 0, 4, 3, 1, 5, 0, 0], [6, 4, 0, 4, 2, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[0, 7, 1, 1, 9, 5, 0, 0, 0, 0], [0, 0, 0, 5, 3, 3, 5, 3, 10, 0], [3, 7, 0, 0, 5, 2, 2, 3, 3, 0], [5, 5, 5, 0, 0, 2, 1, 0, 1, 0], [6, 1, 0, 0, 0, 1, 6, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[0, 0, 5, 0, 0, 2, 3, 0, 1, 0], [4, 0, 0, 2, 4, 2, 1, 3, 9, 0], [3, 0, 7, 2, 0, 5, 1, 0, 7, 0], [7, 0, 5, 1, 0, 0, 0, 5, 0, 0], [0, 4, 5, 6, 1, 7, 2, 1, 4, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[1, 0, 1, 1, 1, 0, 4, 4, 5, 0], [4, 3, 2, 4, 1, 2, 0, 9, 0, 0], [2, 0, 6, 5, 4, 0, 3, 0, 1, 0], [0, 1, 4, 0, 0, 2, 1, 1, 7, 0], [1, 1, 1, 4, 2, 4, 2, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 1, 5, 1, 1, 0], [1, 0, 0, 0, 3, 4, 3, 1, 0, 0], [0, 5, 1, 2, 0, 3, 9, 10, 7, 0], [2, 7, 2, 1, 0, 4, 9, 5, 7, 0], [5, 0, 0, 1, 1, 3, 8, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[0, 0, 0, 2, 7, 0, 1, 2, 6, 0], [0, 2, 1, 4, 2, 6, 2, 0, 0, 0], [2, 0, 2, 3, 0, 2, 6, 8, 3, 0], [1, 5, 2, 1, 4, 0, 7, 3, 1, 0], [4, 1, 0, 5, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[6, 3, 0, 1, 1, 4, 4, 0, 0, 0], [1, 0, 3, 7, 2, 6, 7, 2, 0, 0], [0, 0, 3, 1, 6, 0, 0, 1, 1, 0], [1, 7, 4, 1, 9, 2, 5, 1, 1, 0], [1, 1, 4, 2, 1, 6, 2, 4, 6, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[6, 2, 1, 0, 4, 3, 2, 0, 1, 0], [0, 0, 5, 3, 1, 0, 8, 3, 5, 0], [0, 3, 0, 1, 0, 0, 1, 2, 1, 0], [5, 0, 1, 0, 2, 6, 8, 10, 1, 0], [0, 0, 0, 9, 0, 0, 5, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]];
+                            // let mut idx = 0;
+                            // println!("All entries: ");
+                            // let mut entry_amount = 0;
+                            // for i in &all_entries {
+                            //     println!(" {} ", i);
+                            //     entry_amount += 1;
+                            // }
 
-                            for n in 0_u8..10 {
-                                for j in 0_u8..6 {
-                                    for i in 0_u8..10 {
-                                        if idx < 599 {
-                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
-                                            idx += 1;
-                                        }
-                                    }
-                                }
-                            }
+                            // println!("Amount of entries: {}", entry_amount);
+
+                            // for n in 0_u8..10 {
+                            //     for j in 0_u8..6 {
+                            //         for i in 0_u8..10 {
+                            //             genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                            //             idx += 1;
+                            //         }
+                            //     }
+                            // }
 
                             println!("Read Genome:\n{:?}", genome);
 
@@ -346,7 +348,7 @@ fn main() {
                                 /*
                                      * Single Evaluation run of the Genome
                                      */
-                                    let mut sops_trial = SOPSBridEnviroment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
+                                    let mut sops_trial = SOPSBridEnvironment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
                                     sops_trial.print_grid();
                                     let edge_cnt: f32 = sops_trial.evaluate_fitness();
                                     println!("Edge Count: {}", edge_cnt);
