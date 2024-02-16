@@ -26,7 +26,7 @@ pub struct BridGA {
 }
 
 impl BridGA {
-    const GENOME_LEN: u16 = 9 * 5 * 9;
+    const GENOME_LEN: u16 = 10 * 6 * 10;
 
     #[inline]
     fn rng() -> rngs::ThreadRng {
@@ -105,9 +105,9 @@ impl BridGA {
     // mutate genome based on set mutation rate for every gene of the genome
     fn mutate_genome(&self, genome: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
         let mut new_genome = genome.clone();
-        for n in 0..9 {
-            for i in 0..5 {
-                for j in 0..9 {
+        for n in 0..10 {
+            for i in 0..6 {
+                for j in 0..10 {
                     let smpl = BridGA::mut_frng().u64(1_u64..=10000);
                     if smpl as f64 <= (self.mut_rate * 10000.0) {
                         // a random + or - mutation operation on each gene
@@ -138,9 +138,9 @@ impl BridGA {
         let higher_cross_pnt = if cross_pnt_1 > cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
 
         let mut cnt = 0;
-        for n in 0..9 {
-            for i in 0..5 {
-                for j in 0..9 {
+        for n in 0..10 {
+            for i in 0..6 {
+                for j in 0..10 {
                     if cnt < lower_cross_pnt {
                         new_genome[n][i][j] = parent1[n][i][j];
                     } else if cnt > lower_cross_pnt && cnt < higher_cross_pnt {
