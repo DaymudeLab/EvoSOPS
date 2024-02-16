@@ -26,6 +26,7 @@ pub struct SOPSBridEnvironment {
     particle_layers: u16,
     granularity: u8,
     phantom_particles: Vec<Particle>,
+    lookup_dim_idx: HashMap<(u8, u8, u8), u8>,
 }
 
 impl SOPSBridEnvironment {
@@ -256,6 +257,27 @@ impl SOPSBridEnvironment {
             (17, 6),
             (17, 7),
         ];
+
+        let lookup_dim_idx: HashMap<(u8, u8, u8), u8> = ([
+            ((0,0,2), 0), // (0,0,4)
+            ((1,0,2), 1),
+            ((1,1,2), 2),
+            ((2,0,2), 3),
+            ((2,1,2), 4),
+            ((2,2,2), 5),
+
+            ((0,0,3), 0), // (0,0,6)
+            ((1,0,3), 1), // 
+            ((1,1,3), 2), // 
+            ((2,0,3), 3), // 
+            ((2,1,3), 4), // 
+            ((2,2,3), 5), // 
+            ((3,0,3), 6), // 
+            ((3,1,3), 7), // 
+            ((3,2,3), 8), // 
+            ((3,3,3), 9), // 
+        ]).into();
+
         for coord in particle_coord {
             grid[coord.0 as usize][coord.1 as usize] = SOPSBridEnvironment::PARTICLE_LAND;
 
@@ -284,6 +306,7 @@ impl SOPSBridEnvironment {
             particle_layers,
             granularity,
             phantom_particles,
+            lookup_dim_idx
         }
     }
 
@@ -294,6 +317,19 @@ impl SOPSBridEnvironment {
                 print!(" {} ", self.grid[i][j])
             }
             println!("")
+        }
+    }
+
+    /*
+     * Func to get index into a genome's dimension
+     */
+    fn get_dim_idx(&self, all_cnt: u8, offland_cnt: u8, all_possible_cnt: u8) -> u8 {
+
+        match self.lookup_dim_idx.get(&(all_cnt, offland_cnt, all_possible_cnt)) {
+            Some(idx) => {
+                return *idx;
+            }
+            None => {0},
         }
     }
 
@@ -308,8 +344,12 @@ impl SOPSBridEnvironment {
      */
     fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8) {
         let mut back_cnt = 0;
+        let mut offland_back_cnt = 0;
         let mut mid_cnt = 0;
+        let mut offland_mid_cnt = 0;
         let mut front_cnt = 0;
+        let mut offland_front_cnt = 0;
+
         let particle = &self.participants[particle_idx];
         let move_i = (particle.x as i32 + direction.0) as usize;
         let move_j = (particle.y as i32 + direction.1) as usize;
@@ -319,12 +359,14 @@ impl SOPSBridEnvironment {
         for idx in 0..6 {
             let new_i = (particle.x as i32 + SOPSBridEnvironment::directions()[idx].0) as usize;
             let new_j = (particle.y as i32 + SOPSBridEnvironment::directions()[idx].1) as usize;
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == move_i) & (new_j == move_j)) {
                 seen_neighbor_cache.insert([new_i, new_j], true);
-                if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_LAND
-                    || self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND
-                {
+                if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_LAND || self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
                     back_cnt += 1;
+                } 
+                
+                if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
+                    offland_back_cnt += 1;
                 }
             }
         }
@@ -334,7 +376,7 @@ impl SOPSBridEnvironment {
             let new_i = (move_i as i32 + SOPSBridEnvironment::directions()[idx].0) as usize;
             let new_j = (move_j as i32 + SOPSBridEnvironment::directions()[idx].1) as usize;
 
-            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
+            if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
                 let mut position_type = SOPSBridEnvironment::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
@@ -343,16 +385,23 @@ impl SOPSBridEnvironment {
                     None => {}
                 }
 
-                if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_LAND
-                    || self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND
-                {
+                if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_LAND || self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
                     match position_type {
                         SOPSBridEnvironment::FRONT => {
                             front_cnt += 1;
+                            
+                            if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
+                                offland_front_cnt += 1;
+                            }
                         }
                         SOPSBridEnvironment::MID => {
                             mid_cnt += 1;
                             back_cnt -= 1;
+
+                            if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
+                                offland_back_cnt -= 1;
+                                offland_mid_cnt += 1;
+                            }
                         }
                         _ => todo!(),
                     }
@@ -360,10 +409,14 @@ impl SOPSBridEnvironment {
             }
         }
 
+        let back_idx: u8 = self.get_dim_idx(back_cnt, offland_back_cnt, 3);
+        let mid_idx: u8 = self.get_dim_idx(mid_cnt, offland_mid_cnt, 2);
+        let front_idx: u8 = self.get_dim_idx(front_cnt, offland_front_cnt, 3);
+
         return (
-            back_cnt.clamp(0, 3),
-            mid_cnt.clamp(0, 2),
-            front_cnt.clamp(0, 3),
+            back_idx.clamp(0, 9),
+            mid_idx.clamp(0, 5),
+            front_idx.clamp(0, 9),
         );
     }
 
@@ -1255,9 +1308,9 @@ impl SOPSBridEnvironment {
      *  A f32 value between 0 and 1.
      */
     pub fn evaluate_fitness(&mut self) -> f32 {
-        let strength_factor: f32 = 5.0;
-        let distance_factor: f32 = 5.0;
-        let phantom_factor: f32 = 0.0;
+        let strength_factor: f32 = 0.0;
+        let distance_factor: f32 = 3.0;
+        let phantom_factor: f32 = 7.0;
         let resource_factor: f32 = 0.0;
 
         let total: f32 = strength_factor + distance_factor + phantom_factor + resource_factor;
