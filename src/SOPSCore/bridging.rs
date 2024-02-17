@@ -435,15 +435,11 @@ impl SOPSBridEnvironment {
         let new_j = (particle.y as i32 + direction.1) as usize;
 
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
-            if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_LAND
-                || self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND
-                || self.grid[new_i][new_j] == SOPSBridEnvironment::ANCHOR
-                || self.grid[new_i][new_j] == SOPSBridEnvironment::BOUNDARY
+            if self.grid[new_i][new_j] == SOPSBridEnvironment::EMPTY_LAND || self.grid[new_i][new_j] == SOPSBridEnvironment::EMPTY_OFFLAND 
             {
-                return false;
-            } else {
-                //Particle can move.
                 return true;
+            } else {
+                return false;
             }
         } else {
             return false;
@@ -460,7 +456,7 @@ impl SOPSBridEnvironment {
      *  A boolean value representing whether the move was made.
      */
     fn move_particle_to(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
-        let mut particle = &mut self.participants[particle_idx];
+        let particle = &mut self.participants[particle_idx];
 
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
@@ -784,9 +780,11 @@ impl SOPSBridEnvironment {
             return 0.0;
         }
 
+        let max_tension_allowed: f32 = 5.0;
+
         //Minimum tension = 1
         //Maps [1,20] -> [1,0]
-        let min_tension_rating: f32 = ((-1.0 * max_tension as f32) / 19.0) + (20.0 / 19.0);
+        let min_tension_rating: f32 = ((-1.0 / (max_tension_allowed - 1.0)) * (max_tension as f32 - 1.0)) + 1.0;
 
         return min_tension_rating.max(0.0);
     }
@@ -1308,10 +1306,11 @@ impl SOPSBridEnvironment {
      *  A f32 value between 0 and 1.
      */
     pub fn evaluate_fitness(&mut self) -> f32 {
-        let strength_factor: f32 = 0.0;
+        let strength_factor: f32 = 0.5;
         let distance_factor: f32 = 3.0;
-        let phantom_factor: f32 = 7.0;
-        let resource_factor: f32 = 0.0;
+        let phantom_factor: f32 = 5.0;
+        let resource_factor: f32 = 1.5;
+        let test_phantom_metric: bool = true;
 
         let total: f32 = strength_factor + distance_factor + phantom_factor + resource_factor;
 
@@ -1324,7 +1323,7 @@ impl SOPSBridEnvironment {
             self.add_phantom_particles();
             distance_ratio = self.calculate_distance_ratio();
             phantom_metric = self.phantom_particle_metric();
-        } else {
+        } else if test_phantom_metric {
             //Gets distance without phantom
             let orig_distance_ratio = self.calculate_distance_ratio();
             if orig_distance_ratio > 1.0 {
@@ -1362,6 +1361,9 @@ impl SOPSBridEnvironment {
                 distance_ratio = phantom_distance_ratio;
             }
 
+            phantom_metric = self.phantom_particle_metric();
+        } else {
+            distance_ratio = self.calculate_distance_ratio();
             phantom_metric = self.phantom_particle_metric();
         }
 
