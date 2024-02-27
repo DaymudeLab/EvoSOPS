@@ -17,7 +17,7 @@ struct Genome {
 
 #[derive(Debug, Copy, Clone)]
 struct BridGenome {
-    string: [[[u8; 16]; 9]; 16],
+    string: [[[u8; 10]; 6]; 10],
     fitness: f64,
 }
 
