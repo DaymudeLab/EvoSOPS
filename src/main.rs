@@ -3,21 +3,21 @@ mod SOPSCore;
 mod utils;
 
 use GACore::base_ga::GeneticAlgo;
-use GACore::seg_ga::SegGA;
 use GACore::brid_ga::BridGA;
+use GACore::seg_ga::SegGA;
 
-use crate::SOPSCore::SOPSEnvironment;
-use crate::SOPSCore::segregation::SOPSegEnvironment;
 use crate::SOPSCore::bridging::SOPSBridEnvironment;
+use crate::SOPSCore::segregation::SOPSegEnvironment;
+use crate::SOPSCore::SOPSEnvironment;
 
-use rayon::prelude::*;
+use clap::{Parser, ValueEnum};
 use gag::Redirect;
-use std::path::PathBuf;
-use std::time::Instant;
+use rayon::prelude::*;
 use std::fs;
 use std::fs::OpenOptions;
+use std::path::PathBuf;
+use std::time::Instant;
 use std::usize;
-use clap::{Parser, ValueEnum};
 
 fn get_temp_filepath(filename: &String) -> String {
     #[cfg(unix)]
@@ -32,27 +32,27 @@ struct Args {
     behavior: Behavior,
 
     /// Type of Experiment to run
-    #[arg(short, long="exp", value_enum)]
+    #[arg(short, long = "exp", value_enum)]
     experiment_type: Experiment,
 
     /// Maximum no. of generations to run the Genetic Algorithm Experiment
-    #[arg(short='g', long="gen", default_value_t=0)]
+    #[arg(short = 'g', long = "gen", default_value_t = 0)]
     max_generations: u16,
 
     /// No. of genomes in the population for a Genetic Algorithm Experiment
-    #[arg(short='p', long="pop", default_value_t=0)]
+    #[arg(short = 'p', long = "pop", default_value_t = 0)]
     population: u16,
 
     /// Genome representation granularity
-    #[arg(long="gran", default_value_t=20)]
+    #[arg(long = "gran", default_value_t = 20)]
     granularity: u8,
 
     /// Mutation rate per gene
-    #[arg(short='m', long="mut", default_value_t=0.08)]
+    #[arg(short = 'm', long = "mut", default_value_t = 0.08)]
     mutation_rate: f64,
 
     /// Maximum no. of elite genomes to preserve in a generation
-    #[arg(long="eli", default_value_t=0)]
+    #[arg(long = "eli", default_value_t = 0)]
     elitist_count: u16,
 
     /// Particle Sizes to run on (eg. use multiple -k<String"(<u64>,<u64>)"> arguments to specify multiple sizes)
@@ -101,9 +101,19 @@ fn main() {
     /*
      * Pipe the output to the file with Experiment Parameters as its name
      */
-    let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity);
-    println!("Running the experiment... \nPlease check: {:?} file in ./output folder", &file_name);
-    
+    let file_name = format!(
+        "{:?}_{:?}_{}_sizes_{}_trials_gran_{}",
+        &args.behavior,
+        &args.experiment_type,
+        &args.particle_sizes.len(),
+        &args.seeds.len(),
+        &args.granularity
+    );
+    println!(
+        "Running the experiment... \nPlease check: {:?} file in ./output folder",
+        &file_name
+    );
+
     let log = OpenOptions::new()
         .truncate(true)
         .read(true)
@@ -126,13 +136,14 @@ fn main() {
     /*
      * Convert Particle Sizes from Vec<String> to Vec<(u16,u16)>
      */
-    let size_strings = args.particle_sizes
-        .iter()
-        .map(|s| s.split(&['(', ')', ','][..])
-        .filter_map(|ss| 
-            ss.parse::<u16>().ok()
-        ).collect::<Vec<u16>>());
-    let particle_sizes: Vec<(u16,u16)> = size_strings.map(|c| (c[0],c[1])).collect::<Vec<(u16,u16)>>();
+    let size_strings = args.particle_sizes.iter().map(|s| {
+        s.split(&['(', ')', ','][..])
+            .filter_map(|ss| ss.parse::<u16>().ok())
+            .collect::<Vec<u16>>()
+    });
+    let particle_sizes: Vec<(u16, u16)> = size_strings
+        .map(|c| (c[0], c[1]))
+        .collect::<Vec<(u16, u16)>>();
 
     /*
      * Based on Experiment type and Behaviour setup required experiment parameters
@@ -151,22 +162,50 @@ fn main() {
             match &args.behavior {
                 Behavior::Agg => {
                     println!("\nStarting Aggregation GA Experiment...\n");
-                    let mut ga_sops = GeneticAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, crossover, particle_sizes, args.seeds);
+                    let mut ga_sops = GeneticAlgo::init_ga(
+                        args.population,
+                        args.max_generations,
+                        args.elitist_count,
+                        args.mutation_rate,
+                        args.granularity,
+                        crossover,
+                        particle_sizes,
+                        args.seeds,
+                    );
                     ga_sops.run_through();
-                },
+                }
                 Behavior::Sep => {
                     println!("\nStarting Separation GA Experiment...\n");
-                    let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35);
+                    let mut ga_sops = SegGA::init_ga(
+                        args.population,
+                        args.max_generations,
+                        args.elitist_count,
+                        args.mutation_rate,
+                        args.granularity,
+                        true,
+                        particle_sizes,
+                        args.seeds,
+                        0.65,
+                        0.35,
+                    );
                     ga_sops.run_through();
-
-                },
+                }
                 Behavior::Brid => {
                     println!("\nStarting Bridging GA Experiment...\n");
-                    let mut ga_sops = BridGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds);
+                    let mut ga_sops = BridGA::init_ga(
+                        args.population,
+                        args.max_generations,
+                        args.elitist_count,
+                        args.mutation_rate,
+                        args.granularity,
+                        true,
+                        particle_sizes,
+                        args.seeds,
+                    );
                     ga_sops.run_through();
-                },
+                }
             }
-        },
+        }
         ref other_experiment => {
             println!("Snapshots: {:?}", &args.snaps);
 
@@ -178,8 +217,8 @@ fn main() {
 
             println!("Genome file path: {}", &path.display());
             // Read Genome file content and pre-process it
-            let contents = fs::read_to_string(&path)
-                .expect("Should have been able to read the file");
+            let contents =
+                fs::read_to_string(&path).expect("Should have been able to read the file");
             let mut striped_content = contents.replace("[", "").replace("]", "").replace(" ", "");
             striped_content.pop();
 
@@ -189,8 +228,11 @@ fn main() {
              */
             match &other_experiment {
                 Experiment::GM => {
-                    let all_entries: Vec<u8> = striped_content.split(',').filter_map(|x| x.parse::<u8>().ok()).collect();
-        
+                    let all_entries: Vec<u8> = striped_content
+                        .split(',')
+                        .filter_map(|x| x.parse::<u8>().ok())
+                        .collect();
+
                     match &args.behavior {
                         Behavior::Agg => {
                             println!("\nStarting Aggregation Single Genome Trial...\n");
@@ -204,7 +246,8 @@ fn main() {
                             for n in 0_u8..4 {
                                 for j in 0_u8..3 {
                                     for i in 0_u8..4 {
-                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                        genome[n as usize][j as usize][i as usize] =
+                                            all_entries[idx];
                                         idx += 1;
                                     }
                                 }
@@ -222,44 +265,56 @@ fn main() {
                             //     / 1;
                             // println!("N^3 Mean:{}", mean);
                             // println!("N^3 Variance:{}", variance);
-                            */
+                             */
 
                             // Run the trials in parallel
                             let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
-                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                            let trials_vec: Vec<((u16, u16), u64)> = particle_sizes
+                                .clone()
                                 .into_iter()
                                 .zip(seeds)
                                 .flat_map(|v| std::iter::repeat(v).take(trials.into()))
                                 .collect();
 
-                            let fitness_tot: f64 = trials_vec.clone()
-                            .into_par_iter()
-                            .map(|trial| {
-                                /*
+                            let fitness_tot: f64 = trials_vec
+                                .clone()
+                                .into_par_iter()
+                                .map(|trial| {
+                                    /*
                                      * Single Evaluation run of the Genome
                                      */
-                                    let mut sops_trial = SOPSEnvironment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
+                                    let mut sops_trial = SOPSEnvironment::init_sops_env(
+                                        &genome,
+                                        trial.0 .0,
+                                        trial.0 .1,
+                                        trial.1,
+                                        args.granularity,
+                                    );
                                     sops_trial.print_grid();
                                     let edge_cnt: u32 = sops_trial.evaluate_fitness();
                                     println!("Edge Count: {}", edge_cnt);
                                     println!("Max Fitness: {}", sops_trial.get_max_fitness());
-                                    println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+                                    println!(
+                                        "Starting Fitness: {}",
+                                        edge_cnt as f32 / sops_trial.get_max_fitness() as f32
+                                    );
                                     let now = Instant::now();
                                     let edge_cnt: u32 = sops_trial.simulate(true);
                                     let elapsed = now.elapsed().as_secs();
                                     sops_trial.print_grid();
                                     println!("Edge Count: {}", edge_cnt);
-                                    let t_fitness = edge_cnt as f64/ sops_trial.get_max_fitness() as f64;
+                                    let t_fitness =
+                                        edge_cnt as f64 / sops_trial.get_max_fitness() as f64;
                                     println!("Fitness: {}", &t_fitness);
                                     println!("Trial Elapsed Time: {:.2?}s", elapsed);
                                     t_fitness
-                            })
-                            .sum();
+                                })
+                                .sum();
 
                             println!("Total Fitness: {}", &fitness_tot);
-                        },
+                        }
                         Behavior::Sep => {
                             println!("\nStarting Separation Single Genome Trial...\n");
                             // Construct the genome in required dimension
@@ -268,7 +323,8 @@ fn main() {
                             for n in 0_u8..10 {
                                 for j in 0_u8..6 {
                                     for i in 0_u8..10 {
-                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                        genome[n as usize][j as usize][i as usize] =
+                                            all_entries[idx];
                                         idx += 1;
                                     }
                                 }
@@ -280,38 +336,129 @@ fn main() {
                             let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
-                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                            let trials_vec: Vec<((u16, u16), u64)> = particle_sizes
+                                .clone()
                                 .into_iter()
                                 .zip(seeds)
                                 .flat_map(|v| std::iter::repeat(v).take(trials.into()))
                                 .collect();
 
-                            let fitness_tot: f32 = trials_vec.clone()
-                            .into_par_iter()
-                            .map(|trial| {
-                                /*
-                                 * Single Evaluation run of the Genome
-                                 */
-                                let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
-                                sops_trial.print_grid();
-                                let fitness: f32 = sops_trial.evaluate_fitness();
-                                println!("Starting Fitness: {}", fitness);
-                                let now = Instant::now();
-                                let t_fitness: f32 = sops_trial.simulate(true);
-                                let elapsed = now.elapsed().as_secs();
-                                sops_trial.print_grid();
-                                println!("Fitness: {}", &t_fitness);
-                                println!("Trial Elapsed Time: {:.2?}s", elapsed);
-                                t_fitness
-                            })
-                            .sum();
-    
+                            let fitness_tot: f32 = trials_vec
+                                .clone()
+                                .into_par_iter()
+                                .map(|trial| {
+                                    /*
+                                     * Single Evaluation run of the Genome
+                                     */
+                                    let mut sops_trial = SOPSegEnvironment::init_sops_env(
+                                        &genome,
+                                        trial.0 .0,
+                                        trial.0 .1,
+                                        trial.1,
+                                        args.granularity,
+                                        0.65,
+                                        0.35,
+                                    );
+                                    sops_trial.print_grid();
+                                    let fitness: f32 = sops_trial.evaluate_fitness();
+                                    println!("Starting Fitness: {}", fitness);
+                                    let now = Instant::now();
+                                    let t_fitness: f32 = sops_trial.simulate(true);
+                                    let elapsed = now.elapsed().as_secs();
+                                    sops_trial.print_grid();
+                                    println!("Fitness: {}", &t_fitness);
+                                    println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                    t_fitness
+                                })
+                                .sum();
+
                             println!("Total Fitness: {}", &fitness_tot);
-                        },
+                        }
                         Behavior::Brid => {
                             println!("\nStarting Bridging Single Genome Trial...\n");
 
-                            let genome: [[[u8; 10]; 6]; 10] = [[[10, 8, 7, 3, 9, 2, 0, 4, 7, 3], [5, 0, 2, 1, 0, 7, 7, 4, 8, 0], [4, 0, 2, 3, 0, 4, 2, 2, 0, 4], [4, 1, 8, 2, 1, 0, 1, 3, 8, 9], [1, 10, 7, 4, 9, 0, 1, 0, 4, 0], [0, 2, 5, 1, 2, 1, 3, 2, 0, 0]], [[1, 0, 1, 4, 6, 4, 6, 0, 0, 2], [4, 0, 5, 0, 3, 5, 0, 5, 0, 5], [8, 2, 7, 2, 1, 3, 6, 3, 0, 4], [1, 3, 0, 0, 0, 0, 5, 2, 0, 0], [2, 0, 9, 6, 3, 0, 0, 1, 3, 0], [4, 8, 0, 0, 2, 0, 0, 7, 8, 0]], [[8, 0, 1, 1, 4, 3, 10, 3, 5, 0], [0, 0, 1, 0, 3, 7, 7, 0, 10, 8], [3, 0, 1, 3, 0, 1, 5, 4, 2, 0], [0, 2, 1, 0, 3, 1, 3, 3, 0, 0], [4, 4, 1, 3, 2, 5, 4, 3, 10, 6], [0, 3, 0, 5, 1, 4, 4, 3, 6, 0]], [[4, 1, 2, 1, 3, 7, 5, 4, 5, 5], [0, 0, 4, 1, 2, 3, 1, 5, 1, 5], [4, 0, 0, 6, 1, 0, 8, 0, 6, 6], [7, 3, 0, 2, 2, 6, 0, 7, 4, 3], [4, 0, 4, 7, 5, 3, 3, 4, 1, 1], [0, 0, 3, 2, 1, 3, 0, 6, 5, 2]], [[3, 0, 0, 0, 2, 7, 0, 5, 1, 1], [0, 2, 5, 1, 3, 2, 0, 6, 2, 1], [6, 3, 0, 6, 6, 2, 3, 0, 0, 1], [6, 1, 3, 1, 0, 6, 7, 3, 5, 0], [0, 1, 3, 3, 10, 4, 0, 0, 2, 0], [5, 1, 1, 8, 1, 4, 5, 5, 1, 3]], [[4, 0, 0, 7, 4, 2, 4, 3, 0, 4], [2, 0, 0, 3, 4, 2, 0, 0, 5, 2], [2, 0, 0, 5, 0, 5, 2, 0, 6, 2], [1, 0, 0, 2, 10, 2, 0, 8, 3, 5], [1, 3, 1, 5, 2, 1, 1, 5, 10, 1], [7, 6, 5, 0, 0, 4, 0, 1, 3, 2]], [[6, 9, 2, 2, 5, 0, 2, 5, 2, 0], [0, 0, 2, 2, 1, 0, 5, 9, 2, 2], [3, 4, 1, 1, 0, 0, 3, 3, 0, 2], [5, 0, 0, 5, 8, 6, 4, 2, 0, 3], [5, 0, 4, 2, 1, 0, 0, 1, 4, 3], [4, 5, 0, 4, 3, 0, 6, 1, 4, 1]], [[3, 0, 3, 0, 0, 0, 2, 6, 3, 1], [0, 0, 1, 1, 5, 0, 0, 1, 2, 1], [1, 0, 7, 4, 2, 5, 1, 4, 2, 6], [6, 0, 0, 4, 1, 1, 1, 1, 0, 0], [6, 6, 6, 5, 3, 1, 5, 5, 2, 0], [1, 4, 1, 8, 0, 0, 0, 0, 0, 6]], [[0, 0, 1, 5, 0, 6, 3, 0, 3, 0], [0, 1, 6, 6, 0, 0, 7, 6, 0, 1], [1, 0, 0, 4, 2, 6, 6, 1, 0, 8], [4, 5, 1, 0, 0, 3, 2, 1, 7, 4], [0, 4, 0, 3, 0, 2, 3, 0, 1, 3], [3, 6, 4, 7, 0, 5, 0, 7, 0, 7]], [[2, 3, 0, 1, 7, 0, 0, 1, 10, 0], [9, 1, 5, 1, 4, 7, 7, 5, 5, 7], [0, 0, 1, 5, 1, 0, 3, 0, 1, 6], [2, 1, 2, 0, 0, 3, 8, 5, 1, 2], [3, 0, 0, 0, 2, 0, 1, 0, 0, 1], [0, 9, 1, 3, 2, 1, 2, 7, 0, 2]]];
+                            let genome: [[[u8; 10]; 6]; 10] = [
+                                [
+                                    [0, 1, 5, 3, 5, 1, 0, 0, 3, 4],
+                                    [2, 6, 2, 9, 4, 0, 2, 1, 4, 0],
+                                    [0, 0, 0, 0, 1, 4, 5, 0, 8, 1],
+                                    [1, 3, 1, 0, 0, 4, 6, 3, 8, 3],
+                                    [0, 6, 9, 1, 6, 1, 0, 0, 0, 6],
+                                    [0, 10, 4, 1, 0, 1, 2, 2, 9, 7],
+                                ],
+                                [
+                                    [2, 0, 5, 1, 5, 3, 0, 0, 0, 5],
+                                    [0, 0, 0, 2, 0, 0, 5, 1, 0, 7],
+                                    [4, 0, 1, 5, 1, 6, 1, 0, 2, 7],
+                                    [0, 0, 3, 0, 0, 3, 2, 5, 2, 2],
+                                    [0, 0, 4, 7, 1, 0, 5, 0, 3, 6],
+                                    [0, 4, 9, 0, 0, 5, 4, 0, 1, 2],
+                                ],
+                                [
+                                    [0, 0, 3, 0, 6, 5, 6, 0, 8, 8],
+                                    [1, 0, 2, 3, 7, 6, 5, 1, 1, 4],
+                                    [0, 8, 2, 0, 0, 0, 0, 6, 2, 1],
+                                    [1, 1, 1, 0, 1, 5, 0, 3, 2, 2],
+                                    [1, 6, 2, 8, 6, 5, 0, 0, 1, 0],
+                                    [0, 2, 2, 3, 0, 1, 2, 6, 5, 1],
+                                ],
+                                [
+                                    [2, 1, 0, 0, 0, 0, 8, 0, 0, 5],
+                                    [0, 0, 5, 4, 5, 0, 6, 6, 7, 0],
+                                    [0, 0, 6, 3, 4, 1, 2, 3, 0, 0],
+                                    [4, 0, 0, 1, 6, 2, 0, 4, 8, 0],
+                                    [0, 0, 0, 4, 0, 2, 3, 7, 6, 4],
+                                    [0, 0, 0, 2, 0, 1, 1, 2, 4, 0],
+                                ],
+                                [
+                                    [9, 2, 1, 1, 1, 4, 0, 1, 6, 0],
+                                    [3, 8, 5, 3, 0, 0, 9, 1, 1, 1],
+                                    [1, 1, 5, 3, 0, 0, 0, 1, 0, 1],
+                                    [0, 2, 0, 2, 1, 2, 2, 1, 4, 5],
+                                    [6, 0, 6, 3, 7, 5, 3, 1, 1, 3],
+                                    [0, 7, 2, 4, 1, 3, 0, 7, 0, 6],
+                                ],
+                                [
+                                    [0, 6, 7, 2, 2, 0, 7, 0, 6, 6],
+                                    [0, 1, 1, 0, 0, 2, 2, 1, 5, 2],
+                                    [2, 8, 0, 1, 7, 0, 5, 1, 3, 3],
+                                    [0, 1, 0, 1, 6, 3, 0, 0, 0, 0],
+                                    [0, 5, 1, 1, 4, 0, 1, 8, 3, 0],
+                                    [2, 1, 8, 10, 0, 1, 0, 3, 5, 2],
+                                ],
+                                [
+                                    [7, 0, 0, 2, 5, 1, 2, 4, 6, 0],
+                                    [9, 1, 6, 0, 2, 2, 4, 0, 1, 0],
+                                    [1, 6, 1, 1, 5, 5, 3, 0, 0, 1],
+                                    [0, 0, 0, 0, 0, 6, 0, 1, 6, 0],
+                                    [2, 2, 7, 0, 8, 7, 1, 5, 0, 8],
+                                    [1, 4, 0, 5, 2, 3, 7, 0, 5, 1],
+                                ],
+                                [
+                                    [8, 2, 3, 0, 5, 0, 0, 6, 5, 4],
+                                    [5, 0, 0, 6, 1, 3, 9, 1, 3, 2],
+                                    [2, 0, 1, 1, 0, 2, 7, 0, 3, 5],
+                                    [3, 2, 8, 0, 3, 0, 0, 1, 0, 5],
+                                    [6, 6, 1, 5, 5, 0, 0, 2, 2, 0],
+                                    [6, 3, 9, 5, 0, 6, 0, 0, 7, 6],
+                                ],
+                                [
+                                    [6, 2, 3, 0, 0, 8, 3, 1, 5, 2],
+                                    [1, 5, 2, 1, 1, 3, 0, 0, 5, 0],
+                                    [0, 2, 1, 5, 1, 0, 5, 3, 2, 1],
+                                    [1, 6, 0, 0, 0, 0, 1, 1, 0, 4],
+                                    [0, 0, 1, 2, 5, 0, 5, 0, 5, 5],
+                                    [0, 6, 2, 3, 3, 1, 1, 0, 5, 5],
+                                ],
+                                [
+                                    [0, 4, 5, 0, 3, 0, 3, 4, 2, 8],
+                                    [1, 6, 5, 4, 6, 6, 5, 9, 1, 5],
+                                    [0, 1, 5, 0, 1, 0, 0, 0, 2, 3],
+                                    [2, 4, 0, 3, 7, 3, 0, 1, 2, 0],
+                                    [2, 0, 0, 5, 0, 5, 5, 0, 2, 0],
+                                    [1, 3, 2, 6, 1, 2, 5, 5, 3, 6],
+                                ],
+                            ];
 
                             // let mut genome: [[[u8; 10]; 6]; 10]  = [[[0; 10]; 6]; 10];
                             // let mut idx = 0;
@@ -338,43 +485,58 @@ fn main() {
                             let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
-                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
+                            let trials_vec: Vec<((u16, u16), u64)> = particle_sizes
+                                .clone()
                                 .into_iter()
                                 .zip(seeds)
                                 .flat_map(|v| std::iter::repeat(v).take(trials.into()))
                                 .collect();
 
-                            let fitness_tot: f64 = trials_vec.clone()
-                            .into_par_iter()
-                            .map(|trial| {
-                                /*
+                            let fitness_tot: f64 = trials_vec
+                                .clone()
+                                .into_par_iter()
+                                .map(|trial| {
+                                    /*
                                      * Single Evaluation run of the Genome
                                      */
-                                    let mut sops_trial = SOPSBridEnvironment::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
+                                    let mut sops_trial = SOPSBridEnvironment::init_sops_env(
+                                        &genome,
+                                        trial.0 .0,
+                                        trial.0 .1,
+                                        trial.1,
+                                        args.granularity,
+                                    );
                                     sops_trial.print_grid();
                                     let edge_cnt: f32 = sops_trial.evaluate_fitness();
                                     println!("Edge Count: {}", edge_cnt);
                                     println!("Max Fitness: {}", sops_trial.get_max_fitness());
-                                    println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+                                    println!(
+                                        "Starting Fitness: {}",
+                                        edge_cnt as f32 / sops_trial.get_max_fitness() as f32
+                                    );
                                     let now = Instant::now();
                                     let edge_cnt: f32 = sops_trial.simulate(true);
                                     let elapsed = now.elapsed().as_secs();
                                     sops_trial.print_grid();
                                     println!("Edge Count: {}", edge_cnt);
-                                    let t_fitness = edge_cnt as f64/ sops_trial.get_max_fitness() as f64;
+                                    let t_fitness =
+                                        edge_cnt as f64 / sops_trial.get_max_fitness() as f64;
                                     println!("Fitness: {}", &t_fitness);
                                     println!("Trial Elapsed Time: {:.2?}s", elapsed);
                                     t_fitness
-                            })
-                            .sum();
+                                })
+                                .sum();
 
                             println!("Total Fitness: {}", &fitness_tot);
-                        },
+                        }
                     }
-                },
+                }
                 Experiment::TH => {
-                    let all_entries: Vec<f32> = striped_content.split(',').map(|x| x.parse::<f32>().unwrap()).collect();
-        
+                    let all_entries: Vec<f32> = striped_content
+                        .split(',')
+                        .map(|x| x.parse::<f32>().unwrap())
+                        .collect();
+
                     match &args.behavior {
                         Behavior::Agg => {
                             let mut genome: [f32; 6] = [0.0; 6];
@@ -388,7 +550,7 @@ fn main() {
 
                             // Need to create a new class that takes the Genome's float values and operates on them
                             todo!()
-                        },
+                        }
                         Behavior::Sep => {
                             let mut genome: [[[f32; 6]; 7]; 7] = [[[0.0; 6]; 7]; 7];
                             let mut idx = 0;
@@ -396,8 +558,9 @@ fn main() {
                                 for j in 0_u8..7 {
                                     for i in 0_u8..6 {
                                         // if i+j <= n {
-                                            genome[n as usize][j as usize][i as usize] = all_entries[idx];
-                                            idx += 1;
+                                        genome[n as usize][j as usize][i as usize] =
+                                            all_entries[idx];
+                                        idx += 1;
                                         // }
                                     }
                                 }
@@ -407,15 +570,15 @@ fn main() {
 
                             // Need to create a new class that takes the Genome's float values and operates on them
                             todo!()
-                        },
+                        }
                         Behavior::Brid => {
                             todo!()
-                        },
+                        }
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
-        },
+        }
     }
 
     print_redirect.into_inner();
