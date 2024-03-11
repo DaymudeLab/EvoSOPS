@@ -10,7 +10,7 @@ pub struct SOPSBridEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
     anchors: Vec<Particle>,
-    phenotype: [[[[u8; 2]; 10]; 6]; 10],
+    phenotype: [[[u8; 10]; 6]; 10],
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -80,7 +80,7 @@ impl SOPSBridEnvironment {
     }
 
     pub fn init_sops_env(
-        genome: &[[[[u8; 2]; 10]; 6]; 10],
+        genome: &[[[u8; 10]; 6]; 10],
         arena_layers: u16,
         particle_layers: u16,
         pyramid_width: u16,
@@ -218,14 +218,13 @@ impl SOPSBridEnvironment {
      * Return:
      *  A (u8, u8, u8) tuple representing the amount of neighbors in the back, middle, and front.
      */
-    fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8, u8) {
+    fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8) {
         let mut back_cnt = 0;
         let mut offland_back_cnt = 0;
         let mut mid_cnt = 0;
         let mut offland_mid_cnt = 0;
         let mut front_cnt = 0;
         let mut offland_front_cnt = 0;
-        let mut anchor_cnt = 0;
 
         let particle = &self.participants[particle_idx];
         let move_i = (particle.x as i32 + direction.0) as usize;
@@ -246,9 +245,6 @@ impl SOPSBridEnvironment {
                     || self.grid[new_i][new_j] == SOPSBridEnvironment::ANCHOR
                 {
                     back_cnt += 1;
-                    if self.grid[new_i][new_j] == SOPSBridEnvironment::ANCHOR {
-                        anchor_cnt += 1;
-                    }
                 }
 
                 if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
@@ -282,15 +278,10 @@ impl SOPSBridEnvironment {
                         SOPSBridEnvironment::FRONT => {
                             front_cnt += 1;
 
-                            if self.grid[new_i][new_j] == SOPSBridEnvironment::ANCHOR {
-                                anchor_cnt += 1
-                            }
-
                             if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
                                 offland_front_cnt += 1;
                             }
                         }
-
                         SOPSBridEnvironment::MID => {
                             mid_cnt += 1;
                             back_cnt -= 1;
@@ -314,7 +305,6 @@ impl SOPSBridEnvironment {
             back_idx.clamp(0, 10),
             mid_idx.clamp(0, 6),
             front_idx.clamp(0, 10),
-            anchor_cnt.clamp(0, 2),
         );
     }
 
@@ -388,9 +378,9 @@ impl SOPSBridEnvironment {
             [SOPSBridEnvironment::move_frng().usize(..SOPSBridEnvironment::directions().len())];
 
         if self.particle_move_possible(par_idx, move_dir) {
-            let (back_cnt, mid_cnt, front_cnt, anchor_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+            let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
 
-            let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize][anchor_cnt as usize];
+            let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
             if SOPSBridEnvironment::move_frng().u16(1_u16..=1000)
                 <= SOPSBridEnvironment::gene_probability()[move_prb as usize]
             {
@@ -699,7 +689,7 @@ impl SOPSBridEnvironment {
 
             //If anchor1 -> anchor2
             if closest_path_particle == anchor1_coordinates && closest_non_path_particle == anchor2_coordinates {
-                return 0.0
+                return 0.0;
             }
 
             if closest_particles_distance == f32::MAX {
