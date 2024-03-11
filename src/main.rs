@@ -2,13 +2,9 @@ mod GACore;
 mod SOPSCore;
 mod utils;
 
-use GACore::base_ga::GeneticAlgo;
 use GACore::brid_ga::BridGA;
-use GACore::seg_ga::SegGA;
 
 use crate::SOPSCore::bridging::SOPSBridEnvironment;
-use crate::SOPSCore::segregation::SOPSegEnvironment;
-use crate::SOPSCore::SOPSEnvironment;
 
 use clap::{Parser, ValueEnum};
 use gag::Redirect;
@@ -161,34 +157,10 @@ fn main() {
              */
             match &args.behavior {
                 Behavior::Agg => {
-                    println!("\nStarting Aggregation GA Experiment...\n");
-                    let mut ga_sops = GeneticAlgo::init_ga(
-                        args.population,
-                        args.max_generations,
-                        args.elitist_count,
-                        args.mutation_rate,
-                        args.granularity,
-                        crossover,
-                        particle_sizes,
-                        args.seeds,
-                    );
-                    ga_sops.run_through();
+                    todo!();
                 }
                 Behavior::Sep => {
-                    println!("\nStarting Separation GA Experiment...\n");
-                    let mut ga_sops = SegGA::init_ga(
-                        args.population,
-                        args.max_generations,
-                        args.elitist_count,
-                        args.mutation_rate,
-                        args.granularity,
-                        true,
-                        particle_sizes,
-                        args.seeds,
-                        0.65,
-                        0.35,
-                    );
-                    ga_sops.run_through();
+                    todo!();
                 }
                 Behavior::Brid => {
                     println!("\nStarting Bridging GA Experiment...\n");
@@ -237,248 +209,40 @@ fn main() {
                         Behavior::Agg => {
                             println!("\nStarting Aggregation Single Genome Trial...\n");
                             // Construct the genome in required dimension
-                            let mut genome: [[[u8; 4]; 3]; 4] = [[[0; 4]; 3]; 4];
-                            let mut idx = 0;
-                            println!("All entries: ");
-                            for i in &all_entries {
-                                println!(" {} ", i);
-                            }
-                            for n in 0_u8..4 {
-                                for j in 0_u8..3 {
-                                    for i in 0_u8..4 {
-                                        genome[n as usize][j as usize][i as usize] =
-                                            all_entries[idx];
-                                        idx += 1;
-                                    }
-                                }
-                            }
-
-                            println!("Read Genome:\n{:?}", genome);
-
-                            /*
-                             * Sample snippet for computing variance and mean stats of the trials
-                            // let scores: Vec<u32> => (for each particle sizes and seed value)
-                            // let mean = scores.clone().into_iter().fold(0, |sum, score| sum + score) / 1;
-                            // let variance = scores
-                            //     .into_iter()
-                            //     .fold(0, |sum, score| sum + (score as i32 - mean as i32).pow(2))
-                            //     / 1;
-                            // println!("N^3 Mean:{}", mean);
-                            // println!("N^3 Variance:{}", variance);
-                             */
-
-                            // Run the trials in parallel
-                            let trials = args.seeds.len();
-                            let seeds = args.seeds.clone();
-
-                            let trials_vec: Vec<((u16, u16), u64)> = particle_sizes
-                                .clone()
-                                .into_iter()
-                                .zip(seeds)
-                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-                                .collect();
-
-                            let fitness_tot: f64 = trials_vec
-                                .clone()
-                                .into_par_iter()
-                                .map(|trial| {
-                                    /*
-                                     * Single Evaluation run of the Genome
-                                     */
-                                    let mut sops_trial = SOPSEnvironment::init_sops_env(
-                                        &genome,
-                                        trial.0 .0,
-                                        trial.0 .1,
-                                        trial.1,
-                                        args.granularity,
-                                    );
-                                    sops_trial.print_grid();
-                                    let edge_cnt: u32 = sops_trial.evaluate_fitness();
-                                    println!("Edge Count: {}", edge_cnt);
-                                    println!("Max Fitness: {}", sops_trial.get_max_fitness());
-                                    println!(
-                                        "Starting Fitness: {}",
-                                        edge_cnt as f32 / sops_trial.get_max_fitness() as f32
-                                    );
-                                    let now = Instant::now();
-                                    let edge_cnt: u32 = sops_trial.simulate(true);
-                                    let elapsed = now.elapsed().as_secs();
-                                    sops_trial.print_grid();
-                                    println!("Edge Count: {}", edge_cnt);
-                                    let t_fitness =
-                                        edge_cnt as f64 / sops_trial.get_max_fitness() as f64;
-                                    println!("Fitness: {}", &t_fitness);
-                                    println!("Trial Elapsed Time: {:.2?}s", elapsed);
-                                    t_fitness
-                                })
-                                .sum();
-
-                            println!("Total Fitness: {}", &fitness_tot);
+                            todo!();
                         }
                         Behavior::Sep => {
                             println!("\nStarting Separation Single Genome Trial...\n");
                             // Construct the genome in required dimension
-                            let mut genome: [[[u8; 10]; 6]; 10] = [[[0; 10]; 6]; 10];
-                            let mut idx = 0;
-                            for n in 0_u8..10 {
-                                for j in 0_u8..6 {
-                                    for i in 0_u8..10 {
-                                        genome[n as usize][j as usize][i as usize] =
-                                            all_entries[idx];
-                                        idx += 1;
-                                    }
-                                }
-                            }
-
-                            println!("Read Genome:\n{:?}", genome);
-
-                            // Run the trials in parallel
-                            let trials = args.seeds.len();
-                            let seeds = args.seeds.clone();
-
-                            let trials_vec: Vec<((u16, u16), u64)> = particle_sizes
-                                .clone()
-                                .into_iter()
-                                .zip(seeds)
-                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-                                .collect();
-
-                            let fitness_tot: f32 = trials_vec
-                                .clone()
-                                .into_par_iter()
-                                .map(|trial| {
-                                    /*
-                                     * Single Evaluation run of the Genome
-                                     */
-                                    let mut sops_trial = SOPSegEnvironment::init_sops_env(
-                                        &genome,
-                                        trial.0 .0,
-                                        trial.0 .1,
-                                        trial.1,
-                                        args.granularity,
-                                        0.65,
-                                        0.35,
-                                    );
-                                    sops_trial.print_grid();
-                                    let fitness: f32 = sops_trial.evaluate_fitness();
-                                    println!("Starting Fitness: {}", fitness);
-                                    let now = Instant::now();
-                                    let t_fitness: f32 = sops_trial.simulate(true);
-                                    let elapsed = now.elapsed().as_secs();
-                                    sops_trial.print_grid();
-                                    println!("Fitness: {}", &t_fitness);
-                                    println!("Trial Elapsed Time: {:.2?}s", elapsed);
-                                    t_fitness
-                                })
-                                .sum();
-
-                            println!("Total Fitness: {}", &fitness_tot);
+                            todo!();
                         }
                         Behavior::Brid => {
                             println!("\nStarting Bridging Single Genome Trial...\n");
 
-                            let genome: [[[u8; 10]; 6]; 10] = [
-                                [
-                                    [0, 1, 5, 3, 5, 1, 0, 0, 3, 4],
-                                    [2, 6, 2, 9, 4, 0, 2, 1, 4, 0],
-                                    [0, 0, 0, 0, 1, 4, 5, 0, 8, 1],
-                                    [1, 3, 1, 0, 0, 4, 6, 3, 8, 3],
-                                    [0, 6, 9, 1, 6, 1, 0, 0, 0, 6],
-                                    [0, 10, 4, 1, 0, 1, 2, 2, 9, 7],
-                                ],
-                                [
-                                    [2, 0, 5, 1, 5, 3, 0, 0, 0, 5],
-                                    [0, 0, 0, 2, 0, 0, 5, 1, 0, 7],
-                                    [4, 0, 1, 5, 1, 6, 1, 0, 2, 7],
-                                    [0, 0, 3, 0, 0, 3, 2, 5, 2, 2],
-                                    [0, 0, 4, 7, 1, 0, 5, 0, 3, 6],
-                                    [0, 4, 9, 0, 0, 5, 4, 0, 1, 2],
-                                ],
-                                [
-                                    [0, 0, 3, 0, 6, 5, 6, 0, 8, 8],
-                                    [1, 0, 2, 3, 7, 6, 5, 1, 1, 4],
-                                    [0, 8, 2, 0, 0, 0, 0, 6, 2, 1],
-                                    [1, 1, 1, 0, 1, 5, 0, 3, 2, 2],
-                                    [1, 6, 2, 8, 6, 5, 0, 0, 1, 0],
-                                    [0, 2, 2, 3, 0, 1, 2, 6, 5, 1],
-                                ],
-                                [
-                                    [2, 1, 0, 0, 0, 0, 8, 0, 0, 5],
-                                    [0, 0, 5, 4, 5, 0, 6, 6, 7, 0],
-                                    [0, 0, 6, 3, 4, 1, 2, 3, 0, 0],
-                                    [4, 0, 0, 1, 6, 2, 0, 4, 8, 0],
-                                    [0, 0, 0, 4, 0, 2, 3, 7, 6, 4],
-                                    [0, 0, 0, 2, 0, 1, 1, 2, 4, 0],
-                                ],
-                                [
-                                    [9, 2, 1, 1, 1, 4, 0, 1, 6, 0],
-                                    [3, 8, 5, 3, 0, 0, 9, 1, 1, 1],
-                                    [1, 1, 5, 3, 0, 0, 0, 1, 0, 1],
-                                    [0, 2, 0, 2, 1, 2, 2, 1, 4, 5],
-                                    [6, 0, 6, 3, 7, 5, 3, 1, 1, 3],
-                                    [0, 7, 2, 4, 1, 3, 0, 7, 0, 6],
-                                ],
-                                [
-                                    [0, 6, 7, 2, 2, 0, 7, 0, 6, 6],
-                                    [0, 1, 1, 0, 0, 2, 2, 1, 5, 2],
-                                    [2, 8, 0, 1, 7, 0, 5, 1, 3, 3],
-                                    [0, 1, 0, 1, 6, 3, 0, 0, 0, 0],
-                                    [0, 5, 1, 1, 4, 0, 1, 8, 3, 0],
-                                    [2, 1, 8, 10, 0, 1, 0, 3, 5, 2],
-                                ],
-                                [
-                                    [7, 0, 0, 2, 5, 1, 2, 4, 6, 0],
-                                    [9, 1, 6, 0, 2, 2, 4, 0, 1, 0],
-                                    [1, 6, 1, 1, 5, 5, 3, 0, 0, 1],
-                                    [0, 0, 0, 0, 0, 6, 0, 1, 6, 0],
-                                    [2, 2, 7, 0, 8, 7, 1, 5, 0, 8],
-                                    [1, 4, 0, 5, 2, 3, 7, 0, 5, 1],
-                                ],
-                                [
-                                    [8, 2, 3, 0, 5, 0, 0, 6, 5, 4],
-                                    [5, 0, 0, 6, 1, 3, 9, 1, 3, 2],
-                                    [2, 0, 1, 1, 0, 2, 7, 0, 3, 5],
-                                    [3, 2, 8, 0, 3, 0, 0, 1, 0, 5],
-                                    [6, 6, 1, 5, 5, 0, 0, 2, 2, 0],
-                                    [6, 3, 9, 5, 0, 6, 0, 0, 7, 6],
-                                ],
-                                [
-                                    [6, 2, 3, 0, 0, 8, 3, 1, 5, 2],
-                                    [1, 5, 2, 1, 1, 3, 0, 0, 5, 0],
-                                    [0, 2, 1, 5, 1, 0, 5, 3, 2, 1],
-                                    [1, 6, 0, 0, 0, 0, 1, 1, 0, 4],
-                                    [0, 0, 1, 2, 5, 0, 5, 0, 5, 5],
-                                    [0, 6, 2, 3, 3, 1, 1, 0, 5, 5],
-                                ],
-                                [
-                                    [0, 4, 5, 0, 3, 0, 3, 4, 2, 8],
-                                    [1, 6, 5, 4, 6, 6, 5, 9, 1, 5],
-                                    [0, 1, 5, 0, 1, 0, 0, 0, 2, 3],
-                                    [2, 4, 0, 3, 7, 3, 0, 1, 2, 0],
-                                    [2, 0, 0, 5, 0, 5, 5, 0, 2, 0],
-                                    [1, 3, 2, 6, 1, 2, 5, 5, 3, 6],
-                                ],
-                            ];
+                            // let genome: [[[[u8; 2]; 10]; 6]; 10] = [[[7, 8, 10, 6, 10, 8, 4, 9, 2, 4], [3, 2, 1, 3, 5, 8, 8, 4, 1, 6], [9, 3, 3, 8, 5, 8, 3, 1, 5, 1], [9, 8, 3, 0, 5, 1, 5, 9, 7, 9], [10, 0, 8, 6, 2, 6, 4, 7, 5, 4], [1, 9, 9, 4, 4, 7, 6, 7, 4, 4]], [[10, 6, 0, 9, 5, 6, 4, 9, 6, 3], [3, 7, 4, 2, 9, 7, 2, 3, 0, 9], [4, 5, 8, 2, 9, 1, 5, 2, 10, 2], [7, 5, 8, 7, 5, 0, 7, 7, 9, 7], [4, 2, 9, 8, 4, 4, 7, 0, 7, 7], [6, 5, 1, 7, 9, 7, 7, 2, 2, 2]], [[0, 6, 7, 1, 8, 9, 7, 3, 2, 4], [4, 6, 8, 7, 1, 0, 1, 0, 9, 3], [3, 6, 8, 1, 1, 5, 3, 4, 0, 10], [3, 3, 8, 3, 4, 4, 7, 1, 5, 0], [3, 7, 10, 2, 10, 8, 5, 7, 0, 9], [2, 3, 8, 5, 10, 8, 3, 8, 6, 9]], [[6, 4, 4, 10, 9, 1, 7, 5, 0, 2], [3, 6, 8, 8, 6, 1, 6, 9, 1, 7], [7, 7, 5, 2, 8, 9, 3, 2, 8, 5], [7, 10, 6, 3, 7, 8, 1, 10, 3, 8], [6, 5, 7, 1, 8, 2, 2, 8, 5, 0], [8, 4, 7, 9, 3, 0, 9, 2, 9, 3]], [[1, 4, 6, 3, 5, 4, 7, 9, 0, 4], [4, 7, 3, 7, 6, 5, 7, 6, 9, 5], [5, 6, 8, 2, 2, 0, 0, 4, 10, 9], [1, 10, 4, 1, 3, 3, 2, 6, 0, 8], [0, 5, 1, 1, 10, 10, 4, 3, 8, 0], [2, 5, 5, 4, 9, 2, 2, 6, 5, 2]], [[9, 7, 6, 3, 4, 1, 7, 0, 9, 6], [7, 5, 9, 4, 6, 2, 3, 6, 0, 9], [0, 1, 3, 7, 8, 3, 2, 7, 1, 3], [3, 2, 10, 6, 9, 0, 4, 1, 2, 3], [0, 4, 3, 0, 0, 4, 4, 2, 3, 8], [8, 7, 9, 5, 10, 3, 9, 8, 9, 5]], [[4, 3, 6, 6, 2, 9, 7, 6, 3, 3], [1, 7, 6, 5, 4, 7, 9, 8, 5, 9], [4, 0, 2, 3, 2, 7, 9, 10, 7, 7], [5, 10, 5, 3, 5, 8, 9, 4, 2, 9], [4, 4, 4, 10, 6, 5, 9, 6, 8, 0], [5, 6, 0, 3, 7, 3, 0, 4, 2, 10]], [[3, 4, 7, 7, 3, 4, 5, 5, 8, 4], [0, 6, 9, 6, 4, 1, 6, 2, 4, 7], [5, 0, 4, 2, 4, 1, 4, 2, 6, 10], [1, 9, 2, 8, 8, 4, 10, 8, 10, 1], [7, 4, 2, 2, 7, 7, 6, 7, 8, 6], [10, 1, 0, 3, 6, 7, 9, 7, 6, 0]], [[10, 8, 5, 0, 9, 5, 2, 9, 5, 6], [0, 8, 10, 5, 10, 3, 0, 10, 9, 8], [6, 5, 2, 7, 3, 6, 3, 9, 7, 10], [10, 1, 4, 1, 3, 5, 9, 9, 9, 3], [7, 2, 7, 5, 4, 6, 9, 9, 2, 10], [1, 9, 8, 4, 6, 1, 3, 8, 6, 2]], [[10, 1, 5, 0, 8, 7, 6, 9, 7, 0], [3, 7, 6, 5, 7, 3, 5, 1, 5, 9], [8, 6, 5, 6, 3, 5, 8, 2, 7, 3], [6, 3, 1, 0, 6, 1, 3, 0, 9, 3], [1, 4, 10, 9, 3, 0, 5, 0, 6, 3], [4, 3, 3, 7, 4, 4, 1, 4, 8, 3]]];
 
-                            // let mut genome: [[[u8; 10]; 6]; 10]  = [[[0; 10]; 6]; 10];
-                            // let mut idx = 0;
-                            // println!("All entries: ");
-                            // let mut entry_amount = 0;
-                            // for i in &all_entries {
-                            //     println!(" {} ", i);
-                            //     entry_amount += 1;
-                            // }
+                            let mut genome: [[[[u8; 2]; 10]; 6]; 10] = [[[[0; 2]; 10]; 6]; 10];
+                            let mut idx = 0;
+                            println!("All entries: ");
+                            let mut entry_amount = 0;
+                            for i in &all_entries {
+                                println!(" {} ", i);
+                                entry_amount += 1;
+                            }
 
-                            // println!("Amount of entries: {}", entry_amount);
+                            println!("Amount of entries: {}", entry_amount);
 
-                            // for n in 0_u8..10 {
-                            //     for j in 0_u8..6 {
-                            //         for i in 0_u8..10 {
-                            //             genome[n as usize][j as usize][i as usize] = all_entries[idx];
-                            //             idx += 1;
-                            //         }
-                            //     }
-                            // }
+                            for n in 0_u8..10 {
+                                for j in 0_u8..6 {
+                                    for i in 0_u8..10 {
+                                        for k in 0_u8..2 {
+                                            genome[n as usize][j as usize][i as usize][k as usize] =
+                                                all_entries[idx];
+                                            idx += 1;
+                                        }
+                                    }
+                                }
+                            }
 
                             println!("Read Genome:\n{:?}", genome);
 
@@ -501,8 +265,9 @@ fn main() {
                                      */
                                     let mut sops_trial = SOPSBridEnvironment::init_sops_env(
                                         &genome,
-                                        trial.0 .0,
-                                        trial.0 .1,
+                                        13,
+                                        3,
+                                        17,
                                         trial.1,
                                         args.granularity,
                                     );
