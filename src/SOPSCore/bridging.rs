@@ -10,7 +10,7 @@ pub struct SOPSBridEnvironment {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
     anchors: Vec<Particle>,
-    phenotype: [[[u8; 10]; 6]; 10],
+    phenotype: [[[[u8; 2]; 10]; 6]; 10],
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -80,7 +80,7 @@ impl SOPSBridEnvironment {
     }
 
     pub fn init_sops_env(
-        genome: &[[[u8; 10]; 6]; 10],
+        genome: &[[[[u8; 2]; 10]; 6]; 10],
         arena_layers: u16,
         particle_layers: u16,
         pyramid_width: u16,
@@ -96,14 +96,14 @@ impl SOPSBridEnvironment {
 
         // let mut grid_rng = SOPSBridEnvironment::seed_rng(seed);
 
-        //Places EMPTY_OFFLAND square
+        //Places EMPTY_OFFLAND and ANCHORS square
         for i in 0..grid_size {
             for j in 0..grid_size {
                 if j >= grid_size - pyramid_width as usize
                     && i >= grid_size - pyramid_width as usize
                 {
                     grid[i as usize][j as usize] = SOPSBridEnvironment::EMPTY_OFFLAND;
-                }
+                } 
             }
         }
 
@@ -117,16 +117,6 @@ impl SOPSBridEnvironment {
             }
         }
 
-        let anchor_coords: [(u8, u8); 2] = [(9, 22), (22, 9)];
-        for coordinate in anchor_coords {
-            grid[coordinate.0 as usize][coordinate.1 as usize] = SOPSBridEnvironment::ANCHOR;
-            anchors.push(Particle {
-                x: coordinate.0 as u8,
-                y: coordinate.1 as u8,
-                onland: true,
-            });
-        }
-
         //Creates particle_layers around perimeter of pyramid
         for i in 0..grid_size {
             for j in 0..grid_size {
@@ -134,14 +124,32 @@ impl SOPSBridEnvironment {
                     && i >= grid_size - pyramid_width as usize - particle_layers as usize
                     && j >= grid_size - pyramid_width as usize - particle_layers as usize
                 {
-                    grid[i as usize][j as usize] = SOPSBridEnvironment::PARTICLE_LAND;
+                    if grid[i as usize][j as usize + 1] == SOPSBridEnvironment::EMPTY_OFFLAND
+                    && grid[i as usize + 1][j as usize] == SOPSBridEnvironment::BOUNDARY {
+                        grid[i as usize][j as usize] = SOPSBridEnvironment::ANCHOR;
+                        anchors.push(Particle {
+                            x: i as u8,
+                            y: j as u8,
+                            onland: true,
+                        });
+                    } else if grid[i as usize + 1][j as usize] == SOPSBridEnvironment::EMPTY_OFFLAND
+                    && grid[i as usize - 1][j as usize ] == SOPSBridEnvironment::BOUNDARY {
+                        grid[i as usize][j as usize] = SOPSBridEnvironment::ANCHOR;
+                        anchors.push(Particle {
+                            x: i as u8,
+                            y: j as u8,
+                            onland: true,
+                        });
+                    } else {
+                        grid[i as usize][j as usize] = SOPSBridEnvironment::PARTICLE_LAND;
 
-                    participants.push(Particle {
-                        x: i as u8,
-                        y: j as u8,
-                        onland: true,
-                    });
-                }
+                        participants.push(Particle {
+                            x: i as u8,
+                            y: j as u8,
+                            onland: true,
+                        });
+                    }
+                } 
             }
         }
 
@@ -218,13 +226,14 @@ impl SOPSBridEnvironment {
      * Return:
      *  A (u8, u8, u8) tuple representing the amount of neighbors in the back, middle, and front.
      */
-    fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8) {
+    fn get_ext_neighbors_cnt(&self, particle_idx: usize, direction: (i32, i32)) -> (u8, u8, u8, u8) {
         let mut back_cnt = 0;
         let mut offland_back_cnt = 0;
         let mut mid_cnt = 0;
         let mut offland_mid_cnt = 0;
         let mut front_cnt = 0;
         let mut offland_front_cnt = 0;
+        let mut anchor_cnt = 0;
 
         let particle = &self.participants[particle_idx];
         let move_i = (particle.x as i32 + direction.0) as usize;
@@ -245,6 +254,9 @@ impl SOPSBridEnvironment {
                     || self.grid[new_i][new_j] == SOPSBridEnvironment::ANCHOR
                 {
                     back_cnt += 1;
+                    if self.grid[new_i][new_j] == SOPSBridEnvironment::ANCHOR {
+                        anchor_cnt += 1;
+                    }
                 }
 
                 if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
@@ -278,10 +290,15 @@ impl SOPSBridEnvironment {
                         SOPSBridEnvironment::FRONT => {
                             front_cnt += 1;
 
+                            if self.grid[new_i][new_j] == SOPSBridEnvironment::ANCHOR {
+                                anchor_cnt += 1
+                            }
+
                             if self.grid[new_i][new_j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
                                 offland_front_cnt += 1;
                             }
                         }
+
                         SOPSBridEnvironment::MID => {
                             mid_cnt += 1;
                             back_cnt -= 1;
@@ -305,6 +322,7 @@ impl SOPSBridEnvironment {
             back_idx.clamp(0, 10),
             mid_idx.clamp(0, 6),
             front_idx.clamp(0, 10),
+            anchor_cnt.clamp(0, 2),
         );
     }
 
@@ -378,9 +396,9 @@ impl SOPSBridEnvironment {
             [SOPSBridEnvironment::move_frng().usize(..SOPSBridEnvironment::directions().len())];
 
         if self.particle_move_possible(par_idx, move_dir) {
-            let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+            let (back_cnt, mid_cnt, front_cnt, anchor_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
 
-            let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
+            let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize][anchor_cnt as usize];
             if SOPSBridEnvironment::move_frng().u16(1_u16..=1000)
                 <= SOPSBridEnvironment::gene_probability()[move_prb as usize]
             {
@@ -594,13 +612,128 @@ impl SOPSBridEnvironment {
      *  A f32 value in [0,1] representing the strength of the current bridge. The value 1 is a maximum strength bridge.
      */
     pub fn bridge_strength(&self) -> f32 {
-        todo!();
-        println!("TODO: Bridge Strength Metric. Check github for previous implementations.");
-        return 0.0;
+        let mut distance_matrix: Vec<Vec<i32>> = vec![vec![-1; self.grid.len()]; self.grid.len()];
+
+        let mut offland_particles: Vec<&Particle> = vec![];
+        let mut border_particles: Vec<&Particle> = vec![];
+
+        //Sets tension_rating for onland and determines offland particles
+        for particle in self.participants.iter() {
+            let x: usize = particle.x as usize;
+            let y: usize = particle.y as usize;
+
+            if self.grid[x][y] == SOPSBridEnvironment::PARTICLE_LAND {
+                distance_matrix[particle.x as usize][particle.y as usize] = 0;
+            } else if self.grid[x][y] == SOPSBridEnvironment::PARTICLE_OFFLAND {
+                offland_particles.push(particle);
+
+                //Checks neighborhood for a land particle
+                let mut border_particle: bool = false;
+                for i in 0..=2 {
+                    let checking_x: i32 = x as i32 + i - 1;
+                    if checking_x >= 0 && (0..self.grid.len()).contains(&(checking_x as usize)) {
+                        for j in 0..=2 {
+                            let checking_y: i32 = y as i32 + j - 1;
+                            if checking_y >= 0 && (0..self.grid.len()).contains(&(checking_y as usize)) {
+                                if self.grid[checking_x as usize][checking_y as usize]
+                                    == SOPSBridEnvironment::PARTICLE_LAND
+                                {
+                                    border_particle = true;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if border_particle {
+                    border_particles.push(particle);
+                }
+            }
+        }
+
+        let mut max_tension: u32 = 0;
+
+        let mut queue: PriorityQueue<(u8, u8), Reverse<i32>> = PriorityQueue::new();
+        let mut closed: Vec<(u8, u8)> = vec![];
+
+        for particle in border_particles {
+            queue.push((particle.x, particle.y), Reverse(0));
+        }
+
+        while !queue.is_empty() {
+            let particle = queue.pop().expect("Empty priority queue.");
+            let x = particle.0 .0;
+            let y = particle.0 .1;
+
+            distance_matrix[x as usize][y as usize] = particle.1 .0 + 1;
+            closed.push((x, y));
+
+            //Get particle neighbors
+            for i in 0..=2 {
+                let checking_x: i32 = x as i32 + i - 1;
+                if checking_x >= 0 && (0..self.grid.len()).contains(&(checking_x as usize)) {
+                    for j in 0..=2 {
+                        let checking_y: i32 = y as i32 + j - 1;
+                        if checking_y >= 0 && (0..self.grid.len()).contains(&(checking_y as usize))  {
+                            if self.grid[checking_x as usize][checking_y as usize]
+                                == SOPSBridEnvironment::PARTICLE_OFFLAND
+                                && !closed.contains(&(checking_x as u8, checking_y as u8))
+                                && !queue.clone().iter().any(|(value, _)| {
+                                    value.0 == checking_x as u8 && value.1 == checking_y as u8
+                                })
+                            {
+                                queue.push(
+                                    (checking_x as u8, checking_y as u8),
+                                    Reverse(particle.1 .0 + 1),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //Find offland_particle with max tension
+        for particle in offland_particles.iter() {
+            let x: usize = particle.x as usize;
+            let y: usize = particle.y as usize;
+
+            let distance: u32 = (distance_matrix[x][y]) as u32;
+
+            let mut neighbors: u8 = 0;
+            for i in 0..2 {
+                let checking_x: i32 = x as i32 + i - 1;
+                if checking_x >= 0 {
+                    for j in 0..2 {
+                        let checking_y: i32 = y as i32 + j - 1;
+                        if checking_y >= 0 {
+                            if self.grid[checking_x as usize][checking_y as usize]
+                                == SOPSBridEnvironment::PARTICLE_LAND
+                                || self.grid[checking_x as usize][checking_y as usize]
+                                    == SOPSBridEnvironment::PARTICLE_OFFLAND
+                            {
+                                neighbors += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            let tension: i32 = distance as i32 - neighbors as i32;
+
+            if tension as u32 > max_tension {
+                max_tension = tension as u32;
+            }
+        }
+
+        let decay_factor: f32 = 0.1;
+        let tension_rating: f32 =
+            std::f32::consts::E.powf(-1.0 * decay_factor as f32 * max_tension.max(0) as f32);
+
+        return tension_rating.max(0.0);
     }
 
-    fn find_path_particles(&self)->HashSet<(u8, u8)> {
-        let anchor1_coordinates: (u8, u8) = (self.anchors[0].x, self.anchors[0].y);
+    fn find_path_particles(&self, anchor1_coordinates: (u8, u8))->HashSet<(u8, u8)> {
 
         let mut path_particles: HashSet<(u8, u8)> = HashSet::new();
 
@@ -657,24 +790,23 @@ impl SOPSBridEnvironment {
         let anchor2_coordinates: (u8, u8) = (self.anchors[1].x, self.anchors[1].y);
 
         //Adds phantom particles iteratively
-        let mut path_particles: HashSet<(u8, u8)> = self.find_path_particles();
+        let mut path_particles: HashSet<(u8, u8)> = self.find_path_particles(anchor1_coordinates);
 
+        //Condition1: while !path_particles.contains(&anchor2_coordinates)
+        //Condition2: while path_particles.len() != self.participants.len() + self.anchors.len()
         while !path_particles.contains(&anchor2_coordinates) {
             //Finds closest particles with consideration to anchor2
             let mut closest_path_particle: (u8, u8) = (0, 0);
             let mut closest_non_path_particle: (u8, u8) = (0, 0);
             let mut closest_particles_distance: f32 = f32::MAX;
 
-            for non_path_particle in self.participants.iter().chain(self.anchors.iter()) {
+            for non_path_particle in self.participants.iter() {
                 let current_particle_coordinates = (non_path_particle.x, non_path_particle.y);
                 if !path_particles.contains(&current_particle_coordinates) {
                     for path_particle_coordinates in path_particles.iter() {
                         let particle_distance = SOPSBridEnvironment::euclidean_distance(
                             &current_particle_coordinates,
                             path_particle_coordinates,
-                        ) + SOPSBridEnvironment::euclidean_distance(
-                            &current_particle_coordinates,
-                            &anchor2_coordinates,
                         );
 
                         if particle_distance < closest_particles_distance as f32 {
@@ -687,13 +819,21 @@ impl SOPSBridEnvironment {
                 }
             }
 
-            //If anchor1 -> anchor2
-            if closest_path_particle == anchor1_coordinates && closest_non_path_particle == anchor2_coordinates {
-                return 0.0;
-            }
-
+            
             if closest_particles_distance == f32::MAX {
-                panic!("Could not find the closest points!");
+                closest_non_path_particle = anchor2_coordinates;
+
+                for path_particle_coordinates in path_particles.iter() {
+                    let particle_distance = SOPSBridEnvironment::euclidean_distance(
+                        &closest_non_path_particle,
+                        path_particle_coordinates,
+                    );
+
+                    if particle_distance < closest_particles_distance as f32 {
+                        closest_particles_distance = particle_distance;
+                        closest_path_particle = (path_particle_coordinates.0, path_particle_coordinates.1);
+                    }
+                }
             }
 
             //Computes opt_matrix for two points
@@ -872,10 +1012,10 @@ impl SOPSBridEnvironment {
                 }
             }
 
-            path_particles = self.find_path_particles();
+            path_particles = self.find_path_particles(anchor1_coordinates);
         }
 
-        let decay_factor: f32 = 0.75;
+        let decay_factor: f32 = 0.1;
 
         let phantom_amount: u8 = self.phantom_particles.len() as u8;
         let phantom_metric: f32 =
@@ -885,7 +1025,7 @@ impl SOPSBridEnvironment {
     }
 
     /**
-     * Description: Returns te metric used to evaluation the phantom particle placement.
+     * Description: Returns thee metric used to evaluate phantom particle placement.
      * Parameters:
      *  -coordinate: The coordinate being considered.
      *  -opt_matrix: The matrix being used to remember scores.
@@ -966,7 +1106,7 @@ impl SOPSBridEnvironment {
             return 0.0;
         }
 
-        return self.bridge_optimal_distance() as f32 / current_distance as f32;
+        return (self.bridge_optimal_distance() as f32 / current_distance as f32).powf(3.0);
     }
 
     /**
@@ -977,10 +1117,10 @@ impl SOPSBridEnvironment {
      *  A f32 value between 0 and 1.
      */
     pub fn evaluate_fitness(&mut self) -> f32 {
-        let strength_factor: f32 = 0.0;
-        let distance_factor: f32 = 2.00;
-        let connectivity_factor: f32 = 8.0;
-        let resource_factor: f32 = 0.0;
+        let strength_factor: f32 = 1.0;
+        let distance_factor: f32 = 5.00;
+        let connectivity_factor: f32 = 3.0;
+        let resource_factor: f32 = 1.5;
 
         let total_factor: f32 =
             strength_factor + distance_factor + connectivity_factor + resource_factor;
@@ -993,8 +1133,7 @@ impl SOPSBridEnvironment {
         }
 
         let resource_metric: f32 = self.bridge_resource();
-        // let bridge_strength: f32 = self.bridge_strength();
-        let bridge_strength: f32 = 0.0;
+        let bridge_strength: f32 = self.bridge_strength();
 
         if self.phantom_particles.len() > 0 {
             self.remove_phantom_particles();
@@ -1028,7 +1167,9 @@ impl SOPSBridEnvironment {
             if take_snaps
                 && (step == (self.participants.len() as u64)
                     || step == (self.participants.len() as u64).pow(2))
+                // && step % 25000 == 0
             {
+                println!("Step: {}", step);
                 self.print_grid();
                 println!(
                     "Fitness: {}",

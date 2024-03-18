@@ -13,14 +13,14 @@ pub struct BridGA {
     population: Vec<BridGenome>,
     mut_rate: f64,
     granularity: u8,
-    genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64>,
+    genome_cache: HashMap<[[[[u8; 2]; 10]; 6]; 10], f64>,
     perform_cross: bool,
     sizes: Vec<(u16, u16)>,
     trial_seeds: Vec<u64>,
 }
 
 impl BridGA {
-    const GENOME_LEN: u16 = 10 * 6 * 10;
+    const GENOME_LEN: u16 = 10 * 6 * 10 * 2;
     #[inline]
     fn rng() -> rngs::ThreadRng {
         return rand::thread_rng();
@@ -34,6 +34,11 @@ impl BridGA {
     #[inline]
     fn genome_init_rng(granularity: u8) -> Uniform<u8> {
         return Uniform::new_inclusive(1, granularity);
+    }
+
+    #[inline]
+    fn genome_rng(population_size: u16) -> Uniform<u16> {
+        Uniform::new(0, population_size)
     }
 
     #[inline]
@@ -63,13 +68,15 @@ impl BridGA {
         let mut starting_pop: Vec<BridGenome> = vec![];
 
         for _ in 0..population_size {
-            let mut genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
+            let mut genome: [[[[u8; 2]; 10]; 6]; 10] = [[[[0_u8; 2]; 10]; 6]; 10];
 
             for i in 0_u8..10 {
                 for j in 0_u8..6 {
                     for k in 0_u8..10 {
-                        genome[i as usize][j as usize][k as usize] =
-                            BridGA::rng().sample(BridGA::genome_init_rng(granularity));
+                        for l in 0_u8..2 {
+                            genome[i as usize][j as usize][k as usize][l as usize] =
+                                BridGA::rng().sample(BridGA::genome_init_rng(granularity));
+                        }
                     }
                 }
             }
@@ -80,7 +87,7 @@ impl BridGA {
             });
         }
 
-        let genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64> = HashMap::new();
+        let genome_cache: HashMap<[[[[u8; 2]; 10]; 6]; 10], f64> = HashMap::new();
 
         return BridGA {
             max_gen,
@@ -97,23 +104,25 @@ impl BridGA {
 
     // Mutate Genome based on set mutation rate for every gene of the genome
     // mutate genome based on set mutation rate for every gene of the genome
-    fn mutate_genome(&self, genome: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
+    fn mutate_genome(&self, genome: &[[[[u8; 2]; 10]; 6]; 10]) -> [[[[u8; 2]; 10]; 6]; 10] {
         let mut new_genome = genome.clone();
         for n in 0..10 {
             for i in 0..6 {
                 for j in 0..10 {
-                    let smpl = BridGA::mut_frng().u64(1_u64..=10000);
-                    if smpl as f64 <= (self.mut_rate * 10000.0) {
-                        // a random + or - mutation operation on each gene
-                        let per_dir = BridGA::rng().sample(&BridGA::mut_sign());
-                        new_genome[n][i][j] = (if per_dir {
-                            genome[n][i][j] + 1
-                        } else if genome[n][i][j] == 0 {
-                            0
-                        } else {
-                            genome[n][i][j] - 1
-                        })
-                        .clamp(0, self.granularity.into());
+                    for k in 0..2 {
+                        let smpl = BridGA::mut_frng().u64(1_u64..=10000);
+                        if smpl as f64 <= (self.mut_rate * 10000.0) {
+                            // a random + or - mutation operation on each gene
+                            let per_dir = BridGA::rng().sample(&BridGA::mut_sign());
+                            new_genome[n][i][j][k] = (if per_dir {
+                                genome[n][i][j][k] + 1
+                            } else if genome[n][i][j][k] == 0 {
+                                0
+                            } else {
+                                genome[n][i][j][k] - 1
+                            })
+                            .clamp(0, self.granularity.into());
+                        }
                     }
                 }
             }
@@ -124,24 +133,12 @@ impl BridGA {
     /*
      * Implements a simple single-point crossover operator with crossover point choosen at random in genome vector
      *  */
-    fn generate_offspring(
-        &self,
-        parent1: &[[[u8; 10]; 6]; 10],
-        parent2: &[[[u8; 10]; 6]; 10],
-    ) -> [[[u8; 10]; 6]; 10] {
-        let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0; 10]; 6]; 10];
+     fn generate_offspring(&self, parent1: &[[[[u8; 2]; 10]; 6]; 10], parent2: &[[[[u8; 2]; 10]; 6]; 10]) -> [[[[u8; 2]; 10]; 6]; 10] {
+        let mut new_genome: [[[[u8; 2]; 10]; 6]; 10] = [[[[0_u8; 2]; 10]; 6]; 10];
         let cross_pnt_1 = BridGA::rng().sample(&BridGA::cross_pnt());
         let cross_pnt_2 = BridGA::rng().sample(&BridGA::cross_pnt());
-        let lower_cross_pnt = if cross_pnt_1 <= cross_pnt_2 {
-            cross_pnt_1
-        } else {
-            cross_pnt_2
-        };
-        let higher_cross_pnt = if cross_pnt_1 > cross_pnt_2 {
-            cross_pnt_1
-        } else {
-            cross_pnt_2
-        };
+        let lower_cross_pnt = if cross_pnt_1 <= cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
+        let higher_cross_pnt = if cross_pnt_1 > cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
 
         let mut cnt = 0;
         for n in 0..10 {
@@ -165,63 +162,85 @@ impl BridGA {
      * Performs the 3 operations (in sequence 1. selection, 2. crossover, 3. mutation)
      * on the existing populations to generate new population
      *  */
-    fn generate_new_pop(&mut self) {
+     fn generate_new_pop(&mut self) {
         let mut new_pop: Vec<BridGenome> = vec![];
-        let mut selected_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
-        let mut rank_wheel: Vec<usize> = vec![];
+        let mut selected_g: Vec<[[[[u8; 2]; 10]; 6]; 10]> = vec![];
+        let mut crossed_g: Vec<[[[[u8; 2]; 10]; 6]; 10]> = vec![];
+        let population_size = self.population.len() as u16;
         //sort the genomes in population by fitness value
-        self.population.sort_unstable_by(|genome_a, genome_b| {
-            genome_b.fitness.partial_cmp(&genome_a.fitness).unwrap()
-        });
+        // self.population.sort_unstable_by(|genome_a, genome_b| {
+        //     genome_b.fitness.partial_cmp(&genome_a.fitness).unwrap()
+        // });
 
-        let best_genome = self.population[0];
+        //print genomes for analysis
+        let best_genome = self.population.iter().max_by(|&g1, &g2| g1.fitness.partial_cmp(&g2.fitness).unwrap()).unwrap();
         println!("Best Genome -> {best_genome:.5?}");
-        for idx in 1..self.population.len() {
-            println!("{y:.5?}", y = self.population[idx]);
-        }
 
-        //bifurcate genomes
-        for (index, genome) in self.population.iter().enumerate() {
-            if index < self.elitist_cnt as usize {
-                //seperate out the elitist and directly pass them to next gen
-                new_pop.push(*genome);
-            }
-            let genome_rank = self.population.len() - index;
-            //create rank wheel for selection
-            for _ in 0..genome_rank {
-                rank_wheel.push(index);
+        // for idx in 1..self.population.len() {
+        //     println!("{y:.5?}", y = self.population[idx].fitness);
+        // }
+
+        // Write all the genomic data to a file
+        {
+            let mut buff: Vec<u8> = Vec::new();
+            for genome in &self.population {
+                for n in 0..10 {
+                    for i in 0..6 {
+                        for j in 0..10 {
+                            for k in 0..2 {
+                                buff.push(genome.string[n][i][j][k]);
+                            }
+                        }
+                    }
+                }
+                buff.extend(genome.fitness.to_be_bytes());
             }
         }
-
-        //perform selection and then (if perform_cross flag is set) single-point crossover
-        let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
-        for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
-            let mut wheel_idx = BridGA::rng().sample(&rank_wheel_rng);
-            let p_genome_idx1 = rank_wheel[wheel_idx];
-            if self.perform_cross {
-                wheel_idx = BridGA::rng().sample(&rank_wheel_rng);
-                let p_genome_idx2 = rank_wheel[wheel_idx];
-                selected_g.push(self.generate_offspring(
-                    &self.population[p_genome_idx1].string,
-                    &self.population[p_genome_idx2].string,
-                ));
+        
+        //perform tournament selection
+        for _ in 0..(population_size) {
+            let genome_idx_1 = BridGA::rng().sample(&BridGA::genome_rng(population_size));
+            let mut genome_idx_2;
+            loop {
+                genome_idx_2 = BridGA::rng().sample(&BridGA::genome_rng(population_size));
+                if genome_idx_1 != genome_idx_2 {
+                    break;
+                }
+            }
+            let genome_1 = self.population[genome_idx_1 as usize];
+            let genome_2 = self.population[genome_idx_2 as usize];
+            if genome_1.fitness > genome_2.fitness {
+                selected_g.push(genome_1.string);
             } else {
-                selected_g.push(self.population[p_genome_idx1].string); //added
+                selected_g.push(genome_2.string);
             }
+        }
+        
+        //perform 2-point crossover
+        for _ in 0..(population_size) {
+            let genome_idx_1 = BridGA::rng().sample(&BridGA::genome_rng(population_size));
+            let mut genome_idx_2;
+            loop {
+                genome_idx_2 = BridGA::rng().sample(&BridGA::genome_rng(population_size));
+                if genome_idx_1 != genome_idx_2 {
+                    break;
+                }
+            }
+            let genome_1 = selected_g[genome_idx_1 as usize];
+            let genome_2 = selected_g[genome_idx_2 as usize];
+            crossed_g.push(self.generate_offspring(&genome_1,&genome_2));
         }
 
         //perform mutation
-        for idx in 0..selected_g.len() {
-            let genome = selected_g[idx];
-            println!("Genome: {} mutations", idx);
-
+        for idx in 0..(population_size) {
+            let genome = crossed_g[idx as usize];
+            // println!("Genome:{} mutations", idx);
             let mutated_g = self.mutate_genome(&genome);
             new_pop.push(BridGenome {
                 string: mutated_g,
                 fitness: 0.0,
-            })
+            });
         }
-
         self.population = new_pop;
     }
 
@@ -337,13 +356,15 @@ impl BridGA {
                 for n in 0..10 {
                     for i in 0..6 {
                         for j in 0..10 {
-                            let genome1_prob =
-                                genome1.string[n][i][j] as f64 / (self.granularity as f64);
-                            let genome2_prob =
-                                genome2.string[n][i][j] as f64 / (self.granularity as f64);
+                            for k in 0..2 {
+                                let genome1_prob =
+                                    genome1.string[n][i][j][k] as f64 / (self.granularity as f64);
+                                let genome2_prob =
+                                    genome2.string[n][i][j][k] as f64 / (self.granularity as f64);
 
-                            let dis = (genome1_prob - genome2_prob).abs();
-                            dis_sum += dis.powf(2.0);
+                                let dis = (genome1_prob - genome2_prob).abs();
+                                dis_sum += dis.powf(2.0);
+                            }
                         }
                     }
                 }
