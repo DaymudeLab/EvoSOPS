@@ -1,6 +1,7 @@
 use crate::SOPSCore::bridging::SOPSBridEnvironment;
 
 use super::BridGenome;
+use rand::distributions::weighted;
 use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -15,11 +16,11 @@ pub struct BridGA {
     granularity: u8,
     genome_cache: HashMap<[[[[[u8; 2]; 2]; 4]; 3]; 4], f64>,
     arena_parameters: Vec<(u16, u16, u16, u16)>,
-    weights: (f32, f32, f32, f32)
+    weights: (f32, f32, f32, f32)   
 }
 
 impl BridGA {
-    const GENOME_LEN: u16 = 2 * 2 * 4 * 3 * 4;
+    const GENOME_LEN: u16 = 4 * 3 * 4 * 2 * 2;
     #[inline]
     fn rng() -> rngs::ThreadRng {
         return rand::thread_rng();
@@ -72,8 +73,8 @@ impl BridGA {
                 for j in 0_u8..3 {
                     for k in 0_u8..4 {
                         for l in 0_u8..2 {
-                            for m in 0_u8..2 {
-                                genome[i as usize][j as usize][k as usize][l as usize][m as usize] =
+                            for m in 0_u8..2{
+                            genome[i as usize][j as usize][k as usize][l as usize][m as usize] =
                                 BridGA::rng().sample(BridGA::genome_init_rng(granularity));
                             }
                         }
@@ -109,17 +110,17 @@ impl BridGA {
             for i in 0..3 {
                 for j in 0..4 {
                     for k in 0..2 {
-                        for l in 0..2 {
+                        for m in 0..2{
                             let smpl = BridGA::mut_frng().u64(1_u64..=10000);
                             if smpl as f64 <= (self.mut_rate * 10000.0) {
                                 // a random + or - mutation operation on each gene
                                 let per_dir = BridGA::rng().sample(&BridGA::mut_sign());
-                                new_genome[n][i][j][k][l] = (if per_dir {
-                                    genome[n][i][j][k][l] + 1
-                                } else if genome[n][i][j][k][l] == 0 {
+                                new_genome[n][i][j][k][m] = (if per_dir {
+                                    genome[n][i][j][k][m] + 1
+                                } else if genome[n][i][j][k][m] == 0 {
                                     0
                                 } else {
-                                    genome[n][i][j][k][l] - 1
+                                    genome[n][i][j][k][m] - 1
                                 })
                                 .clamp(0, self.granularity.into());
                             }
@@ -148,11 +149,11 @@ impl BridGA {
                     for k in 0..2 {
                         for l in 0..2 {
                             if cnt < lower_cross_pnt {
-                                new_genome[n][i][j] = parent1[n][i][j];
+                                new_genome[n][i][j][k][l] = parent1[n][i][j][k][l];
                             } else if cnt > lower_cross_pnt && cnt < higher_cross_pnt {
-                                new_genome[n][i][j] = parent2[n][i][j];
+                                new_genome[n][i][j][k][l] = parent2[n][i][j][k][l];
                             } else {
-                                new_genome[n][i][j] = parent1[n][i][j];
+                                new_genome[n][i][j][k][l] = parent1[n][i][j][k][l];
                             }
                             cnt += 1;
                         }
@@ -301,7 +302,7 @@ impl BridGA {
                         trial.0,
                         trial.1,
                         trial.2,
-                        trial.3, 
+                        trial.3,
                         granularity,
                         weights.0,
                         weights.1,
@@ -362,7 +363,7 @@ impl BridGA {
                             for k in 0..2 {
                                 for l in 0..2 {
                                     let genome1_prob =
-                                    genome1.string[n][i][j][k][l] as f64 / (self.granularity as f64);
+                                        genome1.string[n][i][j][k][l] as f64 / (self.granularity as f64);
                                     let genome2_prob =
                                         genome2.string[n][i][j][k][l] as f64 / (self.granularity as f64);
 
