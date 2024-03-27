@@ -13,7 +13,6 @@ pub struct SOPSBridEnvironment {
     anchors: Vec<Particle>,
     phantom_participants: Vec<Particle>,
     phenotype: [[[[[u8; 2]; 2]; 4]; 3]; 4],
-    lookup_dim_idx: HashMap<(u8, u8, u8), u8>,
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -191,26 +190,6 @@ impl SOPSBridEnvironment {
             j += 1;
         }
 
-        let lookup_dim_idx: HashMap<(u8, u8, u8), u8> = ([
-            ((0, 0, 2), 0), // (0,0,4)
-            ((1, 0, 2), 1),
-            ((1, 1, 2), 2),
-            ((2, 0, 2), 3),
-            ((2, 1, 2), 4),
-            ((2, 2, 2), 5),
-            ((0, 0, 3), 0), // (0,0,6)
-            ((1, 0, 3), 1), //
-            ((1, 1, 3), 2), //
-            ((2, 0, 3), 3), //
-            ((2, 1, 3), 4), //
-            ((2, 2, 3), 5), //
-            ((3, 0, 3), 6), //
-            ((3, 1, 3), 7), //
-            ((3, 2, 3), 8), //
-            ((3, 3, 3), 9), //
-        ])
-        .into();
-
         let num_participants = participants.len() as u64;
 
         SOPSBridEnvironment {
@@ -219,7 +198,6 @@ impl SOPSBridEnvironment {
             anchors,
             phantom_participants,
             phenotype: *genome,
-            lookup_dim_idx,
             sim_duration: (num_participants).pow(3),
             fitness_val: 0.0,
             size: grid_size,
@@ -238,21 +216,6 @@ impl SOPSBridEnvironment {
                 print!(" {} ", self.grid[i][j])
             }
             println!("")
-        }
-    }
-
-    /**
-     * Description: Func to get index into a genome's dimension
-     */
-    fn get_dim_idx(&self, all_cnt: u8, offland_cnt: u8, all_possible_cnt: u8) -> u8 {
-        match self
-            .lookup_dim_idx
-            .get(&(all_cnt, offland_cnt, all_possible_cnt))
-        {
-            Some(idx) => {
-                return *idx;
-            }
-            None => 0,
         }
     }
 
@@ -671,8 +634,6 @@ impl SOPSBridEnvironment {
             }
         }
 
-        let mut max_tension: u32 = 0;
-
         let mut queue: PriorityQueue<(u8, u8), Reverse<i32>> = PriorityQueue::new();
         let mut closed: Vec<(u8, u8)> = vec![];
 
@@ -714,6 +675,8 @@ impl SOPSBridEnvironment {
         }
 
         //Find offland_particle with max tension
+        let mut max_tension: u32 = 0;
+
         for particle in offland_particles.iter() {
             let x: usize = particle.x as usize;
             let y: usize = particle.y as usize;
@@ -741,14 +704,14 @@ impl SOPSBridEnvironment {
 
             let tension: i32 = distance as i32 - neighbors as i32;
 
-            if tension as u32 > max_tension {
+            if tension.max(0) as u32 > max_tension {
                 max_tension = tension as u32;
             }
         }
 
         let decay_factor: f32 = 0.1;
         let tension_rating: f32 =
-            std::f32::consts::E.powf(-1.0 * decay_factor as f32 * max_tension.max(0) as f32);
+            std::f32::consts::E.powf(-1.0 * decay_factor as f32 * max_tension as f32);
 
         return tension_rating.max(0.0);
     }
@@ -1152,12 +1115,13 @@ impl SOPSBridEnvironment {
             distance_ratio = self.calculate_distance_ratio();
         }
 
-        let resource_metric: f32 = self.bridge_resource();
         let bridge_strength: f32 = self.bridge_strength();
-
+        
         if self.phantom_participants.len() > 0 {
             self.remove_phantom_participants();
         }
+
+        let resource_metric: f32 = self.bridge_resource();
 
         let return_value = f32::max(
             ((distance_factor * distance_ratio)
@@ -1210,16 +1174,6 @@ impl SOPSBridEnvironment {
      */
     pub fn get_max_fitness(&self) -> f32 {
         return 1.0;
-    }
-
-    /*
-     * Description:
-     *   Gets the amount of participants within the expirament.
-     * Return:
-     *   A usize value representing the amount of participants.
-     */
-    pub fn get_participant_cnt(&self) -> usize {
-        return self.participants.len();
     }
 
     /**
