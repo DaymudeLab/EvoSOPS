@@ -59,6 +59,10 @@ struct Args {
     #[arg(short='w', long="wf", required=true, action = clap::ArgAction::Append)]
     weights: String,
 
+    /// Maximum no. of elite genomes to preserve in a generation
+    #[arg(short='d', required=false, long="dur", default_value_t = 8000000)]
+    duration: u32,
+
     /// File to read genome value from
     #[arg(long, required=false, value_name = "FILE")]
     path: Option<PathBuf>,
@@ -296,47 +300,84 @@ fn main() {
                     }
                 }
                 Experiment::TH => {
-                    let all_entries: Vec<f32> = striped_content
-                        .split(',')
-                        .map(|x| x.parse::<f32>().unwrap())
-                        .collect();
-
                     match &args.behavior {
                         Behavior::Agg => {
-                            let mut genome: [f32; 6] = [0.0; 6];
-                            let mut idx = 0;
-                            for i in 0_u8..6 {
-                                genome[i as usize] = all_entries[idx];
-                                idx += 1;
-                            }
+                            // let mut genome: [f32; 6] = [0.0; 6];
+                            // let mut idx = 0;
+                            // for i in 0_u8..6 {
+                            //     genome[i as usize] = all_entries[idx];
+                            //     idx += 1;
+                            // }
 
-                            println!("Read Genome:\n{:?}", genome);
+                            // println!("Read Genome:\n{:?}", genome);
 
                             // Need to create a new class that takes the Genome's float values and operates on them
                             todo!()
                         }
                         Behavior::Sep => {
-                            let mut genome: [[[f32; 6]; 7]; 7] = [[[0.0; 6]; 7]; 7];
-                            let mut idx = 0;
-                            for n in 0_u8..7 {
-                                for j in 0_u8..7 {
-                                    for i in 0_u8..6 {
-                                        // if i+j <= n {
-                                        genome[n as usize][j as usize][i as usize] =
-                                            all_entries[idx];
-                                        idx += 1;
-                                        // }
-                                    }
-                                }
-                            }
+                            // let mut genome: [[[f32; 6]; 7]; 7] = [[[0.0; 6]; 7]; 7];
+                            // let mut idx = 0;
+                            // for n in 0_u8..7 {
+                            //     for j in 0_u8..7 {
+                            //         for i in 0_u8..6 {
+                            //             // if i+j <= n {
+                            //             genome[n as usize][j as usize][i as usize] =
+                            //                 all_entries[idx];
+                            //             idx += 1;
+                            //             // }
+                            //         }
+                            //     }
+                            // }
 
-                            println!("Read Genome:\n{:?}", genome);
+                            // println!("Read Genome:\n{:?}", genome);
 
                             // Need to create a new class that takes the Genome's float values and operates on them
                             todo!()
                         }
                         Behavior::Brid => {
-                            todo!()
+                            let genome: [[[[[u8; 2]; 2]; 4]; 3]; 4] = [[[[[0; 2]; 2]; 4]; 3]; 4];
+
+                            let fitness_tot: f64 = arena_parameters
+                                .clone()
+                                .into_par_iter()
+                                .map(|trial| {
+                                    /*
+                                     * Single Evaluation run of the Genome
+                                     */
+                                    let mut sops_trial = SOPSBridEnvironment::init_sops_env(
+                                        &genome,
+                                        trial.0,
+                                        trial.1,
+                                        trial.2,
+                                        trial.3,
+                                        args.granularity,
+                                        weights.0,
+                                        weights.1,
+                                        weights.2,
+                                        weights.3
+                                    );
+                                    sops_trial.print_grid();
+                                    let edge_cnt: f32 = sops_trial.evaluate_fitness();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    println!("Max Fitness: {}", sops_trial.get_max_fitness());
+                                    println!(
+                                        "Starting Fitness: {}",
+                                        edge_cnt as f32 / sops_trial.get_max_fitness() as f32
+                                    );
+                                    let now = Instant::now();
+                                    let edge_cnt: f32 = sops_trial.simulate_theory(args.duration as u64,true);
+                                    let elapsed = now.elapsed().as_secs();
+                                    sops_trial.print_grid();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    let t_fitness =
+                                        edge_cnt as f64 / sops_trial.get_max_fitness() as f64;
+                                    println!("Fitness: {}", &t_fitness);
+                                    println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                    t_fitness
+                                })
+                                .sum();
+
+                            println!("Total Fitness: {}", &fitness_tot);
                         }
                     }
                 }
