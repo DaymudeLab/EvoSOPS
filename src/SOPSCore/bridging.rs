@@ -816,95 +816,26 @@ impl SOPSBridEnvironment {
             let mut found_point_2: bool = false;
 
             while !found_point_2 {
-                //Checks horizontal parts of distance-square perimeter
+                //Checks points beaconing through neighbors
                 for direction in SOPSBridEnvironment::directions() {
-                    let checking_x: i32 = point1.0 as i32 + (direction.0 * distance_factor as i32);
-                    if checking_x >= 0 && checking_x < self.grid.len() as i32 {
-                        //Checks (checking_x, point1.1 + distance_factor)
-                        let top_horizontal_coordinate =
-                            (checking_x as u32, (point1.1 as u32 + distance_factor));
-                        if top_horizontal_coordinate.1 < self.grid.len() as u32 {
-                            opt_matrix[top_horizontal_coordinate.0 as usize]
-                                [top_horizontal_coordinate.1 as usize] = self.phantom_metric(
+                    let checking_coordinates = (point1.0 as i32  + direction.0 * distance_factor as i32, point1.1 as i32 + direction.1 * distance_factor as i32);
+                    if checking_coordinates.0 >= 0 && (0..self.grid.len()).contains(&(checking_coordinates.0 as usize))
+                    && checking_coordinates.1 >= 0 && (0..self.grid.len()).contains(&(checking_coordinates.1 as usize)) {
+                        opt_matrix[checking_coordinates.0 as usize]
+                                [checking_coordinates.1 as usize] = self.phantom_metric(
                                 (
-                                    top_horizontal_coordinate.0 as u16,
-                                    top_horizontal_coordinate.1 as u16,
+                                    checking_coordinates.0 as u16,
+                                    checking_coordinates.1 as u16,
                                 ),
                                 &opt_matrix,
                             );
-                            if top_horizontal_coordinate.0 == closest_non_path_particle.0.into()
-                                && top_horizontal_coordinate.1 == closest_non_path_particle.1.into()
-                            {
-                                found_point_2 = true;
-                            }
-                        }
+                    }
 
-                        //Checks (checking_x, point1.1 - distance_factor)
-                        let bottom_horizontal_coordinate = (
-                            checking_x as u32,
-                            (point1.1 as i32),
-                        );
-                        if bottom_horizontal_coordinate.1 >= 0 {
-                            opt_matrix[bottom_horizontal_coordinate.0 as usize]
-                                [bottom_horizontal_coordinate.1 as usize] = self.phantom_metric(
-                                (
-                                    bottom_horizontal_coordinate.0 as u16,
-                                    bottom_horizontal_coordinate.1 as u16,
-                                ),
-                                &opt_matrix,
-                            );
-                            if bottom_horizontal_coordinate.0 == closest_non_path_particle.0.into()
-                                && bottom_horizontal_coordinate.1
-                                    == closest_non_path_particle.1.into()
-                            {
-                                found_point_2 = true;
-                            }
-                        }
+                    if checking_coordinates.0 == closest_non_path_particle.0.into() && checking_coordinates.1 == closest_non_path_particle.1.into() {
+                            found_point_2 = true;
                     }
                 }
 
-                for j in 1..distance_factor * 2 {
-                    let checking_y: i32 = point1.1 as i32 + j as i32 - distance_factor as i32;
-                    if checking_y >= 0 && checking_y < self.grid[0].len() as i32 {
-                        //Checks (closet_particles.0.0 + distance_factor, checking_y)
-                        let right_vertical_coorindate =
-                            (point1.0 as u32 + distance_factor, checking_y);
-                        if right_vertical_coorindate.0 < self.grid[0].len() as u32 {
-                            opt_matrix[right_vertical_coorindate.0 as usize]
-                                [right_vertical_coorindate.1 as usize] = self.phantom_metric(
-                                (
-                                    right_vertical_coorindate.0 as u16,
-                                    right_vertical_coorindate.1 as u16,
-                                ),
-                                &opt_matrix,
-                            );
-                            if right_vertical_coorindate.0 == closest_non_path_particle.0.into()
-                                && right_vertical_coorindate.1 == closest_non_path_particle.1.into()
-                            {
-                                found_point_2 = true;
-                            }
-                        }
-
-                        //Checks (closet_particles.0.0 - distance_factor, checking_y)
-                        let left_vertical_coorindate =
-                            ((point1.0 as i32 - distance_factor as i32), checking_y);
-                        if left_vertical_coorindate.0 >= 0 {
-                            opt_matrix[left_vertical_coorindate.0 as usize]
-                                [left_vertical_coorindate.1 as usize] = self.phantom_metric(
-                                (
-                                    left_vertical_coorindate.0 as u16,
-                                    left_vertical_coorindate.1 as u16,
-                                ),
-                                &opt_matrix,
-                            );
-                            if left_vertical_coorindate.0 == closest_non_path_particle.0.into()
-                                && left_vertical_coorindate.1 == closest_non_path_particle.1.into()
-                            {
-                                found_point_2 = true;
-                            }
-                        }
-                    }
-                }
                 distance_factor += 1;
             }
 
@@ -985,10 +916,10 @@ impl SOPSBridEnvironment {
         let decay_factor: f32 = 0.1;
 
         let phantom_amount: u16 = self.phantom_participants.len() as u16;
-        let phantom_metric: f32 =
+        let phantom_metric_score: f32 =
             std::f32::consts::E.powf(-1.0 * decay_factor as f32 * phantom_amount as f32);
 
-        return phantom_metric.max(0.0);
+        return phantom_metric_score.max(0.0);
     }
 
     /**
