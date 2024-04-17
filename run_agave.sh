@@ -12,4 +12,4 @@
 #SBATCH --export=NONE   # Purge the job-submitting shell environment
 
 source "$HOME/.cargo/env"
-sh ./run_job.sh
+sh ./run_job.sh 0 0
