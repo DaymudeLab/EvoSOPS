@@ -16,7 +16,7 @@ pub struct SOPSBridEnvironment {
     participants: Vec<Particle>,
     anchors: Vec<Particle>,
     phantom_participants: Vec<Particle>,
-    phenotype: [[[[[u8; 4]; 2]; 4]; 3]; 4],
+    phenotype: [[[[[u8; 3]; 2]; 4]; 3]; 4],
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -26,7 +26,7 @@ pub struct SOPSBridEnvironment {
     connectivity_weight: f32,
     resource_weight: f32,
     gap_info: (u16, u16), 
-    optimal_fitness: f32
+    optimal_fitness: Option<(f32, f32, f32, f32)>
 }
 
 impl SOPSBridEnvironment {
@@ -87,7 +87,7 @@ impl SOPSBridEnvironment {
     }
 
     pub fn init_sops_env(
-        genome: &[[[[[u8; 4]; 2]; 4]; 3]; 4],
+        genome: &[[[[[u8; 3]; 2]; 4]; 3]; 4],
         arena_layers: u16,
         particle_layers: u16,
         gap_diagonal_length: u16,
@@ -116,6 +116,8 @@ impl SOPSBridEnvironment {
         }
 
         let line_m1_check = |i: f32, j: f32, offset: u16, gap_angle_degrees: u16| { 
+            let gap_angle_degrees = (gap_angle_degrees * 2) / 3;
+
             let intersection_point: (u16, u16) = (grid_size as u16 - gap_diagonal_length as u16 - 1 - offset, grid_size as u16 - gap_diagonal_length as u16 - offset - 1);
             if gap_angle_degrees == 90 {
                 i as u16 >= intersection_point.1
@@ -127,6 +129,8 @@ impl SOPSBridEnvironment {
         };
 
         let line_m2_check = |i: f32, j: f32, offset: u16, gap_angle_degrees: u16| {
+            let gap_angle_degrees = (gap_angle_degrees * 2) / 3;
+
             let intersection_point: (u16, u16) = (grid_size as u16 - gap_diagonal_length - 1 as u16 - offset, grid_size as u16 - gap_diagonal_length as u16 - offset - 1);
             if gap_angle_degrees == 90 {
                 j as u16 >= ((0.0 * i as f32 - 0.0 * intersection_point.0 as f32 + intersection_point.1 as f32) as u16)
@@ -230,7 +234,7 @@ impl SOPSBridEnvironment {
             connectivity_weight,
             resource_weight,
             gap_info: (gap_angle_degrees, gap_diagonal_length),
-            optimal_fitness: 2.0
+            optimal_fitness: None
         }
     }
 
@@ -246,17 +250,18 @@ impl SOPSBridEnvironment {
 
     fn calcuate_optimal_fitness(&mut self) {
         //Optimal particle count
+        let participant_scale: f32 = 2.0;
+
         let w_theta: f32 = 0.2;
         let gap_angle_radians: f32 = self.gap_info.0 as f32 * (std::f32::consts::PI / 180.0);
         let gap_angle_radians_halved: f32 = gap_angle_radians / 2.0;
 
-
         let displacement_first_term = f32::cos(gap_angle_radians_halved) / (2.0 * (1.0 - f32::sin(gap_angle_radians_halved)));
-        let sqrt_term = f32::powf((2.0 * self.gap_info.1 as f32) / f32::cos(gap_angle_radians), 2.0) - ((self.participants.len() as f32 * f32::powf(1.0 - f32::sin(gap_angle_radians_halved), 2.0)) / (w_theta * (1.0 - w_theta * f32::tan(gap_angle_radians_halved) * f32::powf(f32::sin(gap_angle_radians_halved),2.0))));
+        let sqrt_term = f32::powf((2.0 * self.gap_info.1 as f32) / f32::cos(gap_angle_radians), 2.0) - (((self.participants.len() as f32 * participant_scale) * f32::powf(1.0 - f32::sin(gap_angle_radians_halved), 2.0)) / (w_theta * (1.0 - w_theta * f32::tan(gap_angle_radians_halved) * f32::powf(f32::sin(gap_angle_radians_halved),2.0))));
         let displacement_second_term = ((2.0 * self.gap_info.1 as f32) / f32::cos(gap_angle_radians)) - f32::sqrt(sqrt_term);
 
         let displacement: u32 = (displacement_first_term * displacement_second_term).round() as u32;
-        let diagonal_optimal_coordinate: usize = self.grid.len() - 1 - self.gap_info.1 as usize + displacement as usize;
+        let diagonal_optimal_coordinate: usize = self.grid.len() - 2 - self.gap_info.1 as usize + displacement as usize;
 
         let mut bridge_length: usize = 0;
         
@@ -272,7 +277,7 @@ impl SOPSBridEnvironment {
 
         for i in 0..self.grid.len() {
             for j in 0..self.grid.len() {
-                if (w_theta * bridge_length as f32).round() as i32 >= i32::abs(-1 * i as i32 + 2 * diagonal_optimal_coordinate as i32 - j as i32) &&
+                if ((w_theta * bridge_length as f32).round() / 2.0).floor() as i32 >= i32::abs(-1 * i as i32 + 2 * diagonal_optimal_coordinate as i32 - j as i32) &&
                     self.grid[i][j] == SOPSBridEnvironment::EMPTY_OFFLAND || self.grid[i][j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
                     optimal_particles.push((i as u16, j as u16));
                 }
@@ -280,15 +285,8 @@ impl SOPSBridEnvironment {
         }
 
         // Calculates arena optimal fitness
-        let strength_factor: f32 = self.strength_weight;
-        let distance_factor: f32 = self.distance_weight;
-        let connectivity_factor: f32 = self.connectivity_weight;
-        let resource_factor: f32 = self.resource_weight;
 
-        let total_factor: f32 =
-            strength_factor + distance_factor + connectivity_factor + resource_factor;
-
-        if strength_factor > 0.0 {
+        if self.strength_weight > 0.0 {
             panic!("Implement shortcut bridging with strength!");
         }
 
@@ -314,7 +312,8 @@ impl SOPSBridEnvironment {
 
         let strength_metric: f32 = 1.0;
         let connectivity_metric: f32 = 1.0;
-        self.optimal_fitness =  (strength_factor * strength_metric + connectivity_factor * connectivity_metric + distance_factor * distance_metric + resource_factor * resource_metric) / total_factor;
+        self.optimal_fitness = Some((strength_metric, connectivity_metric, distance_metric, resource_metric));
+        
     }
 
     /**
@@ -332,7 +331,7 @@ impl SOPSBridEnvironment {
         let mut front_cnt = 0;
         let mut anchor_cnt = 0;
 
-        let mut land_idx:u8 = 0;
+        let land_idx:u8;
 
         let particle = &self.participants[particle_idx];
         let move_i = (particle.x as i32 + direction.0) as usize;
@@ -402,18 +401,15 @@ impl SOPSBridEnvironment {
 
 
 
-        if particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_LAND {
-            // land -> land
-            land_idx = 0;
-        } else if particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_OFFLAND {
+        if particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_OFFLAND {
             // land -> offland
             land_idx = 1;
-        } else if !particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_OFFLAND {
-            // offland -> offland
+        } else if !particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_LAND {
+            // offland -> land
             land_idx = 2;
         } else {
             // offland -> land
-            land_idx = 3;
+            land_idx = 0;
         }
 
         return (
@@ -421,7 +417,7 @@ impl SOPSBridEnvironment {
             mid_cnt.clamp(0, 3),
             front_cnt.clamp(0, 4),
             anchor_cnt.clamp(0,2),
-            land_idx.clamp(0, 4),
+            land_idx.clamp(0, 3),
         );
     }
 
@@ -1142,7 +1138,10 @@ impl SOPSBridEnvironment {
             distance_ratio = self.calculate_distance_ratio();
         }
 
-        let bridge_strength: f32 = self.bridge_strength();
+        let mut bridge_strength: f32 = 1.0;
+        if strength_factor > 0.0 {
+            bridge_strength = self.bridge_strength();
+        }
         
         if self.phantom_participants.len() > 0 {
             self.remove_phantom_participants();
@@ -1150,20 +1149,28 @@ impl SOPSBridEnvironment {
 
         let resource_metric: f32 = self.bridge_resource();
 
-        let return_value = f32::max(
-            ((distance_factor * distance_ratio)
-                + (connectivity_factor * connectivity_score)
-                + (resource_factor * resource_metric)
-                + (strength_factor * bridge_strength))
-                / total_factor,
-            0.0,
-        );
-
-        if return_value.is_infinite() {
-            panic!("Infinite fitness!");
+        if self.optimal_fitness.is_none() {
+            self.calcuate_optimal_fitness();
         }
+        
+        if let Some((opt_strength_measure, opt_connectivity_measure, opt_distance_measure, opt_resource_measure)) = self.optimal_fitness {
+            let return_value = f32::max(
+                ((distance_factor * (distance_ratio / opt_distance_measure))
+                    + (connectivity_factor * (connectivity_score / opt_connectivity_measure))
+                    + (resource_factor * (resource_metric / opt_resource_measure))
+                    + (strength_factor * (bridge_strength / opt_strength_measure)))
+                    / total_factor,
+                0.0
+            );
+    
+            if return_value.is_infinite() {
+                panic!("Infinite fitness!");
+            }
 
-        return return_value;
+            return return_value;
+        } else {
+            panic!("No optimal fitness while computing final evaluation.");
+        }
     }
 
     /*
@@ -1173,11 +1180,28 @@ impl SOPSBridEnvironment {
      *   A f32 value representing the maximum fitness value. Range: [0,1]
      */
     pub fn get_max_fitness(&mut self) -> f32 {
-        if self.optimal_fitness > 1.0 {
+        if self.optimal_fitness.is_none() {
             self.calcuate_optimal_fitness();
         }
-        
-        return self.optimal_fitness;
+
+        if let Some((opt_strength_measure, opt_connectivity_measure, opt_distance_measure, opt_resource_measure)) = self.optimal_fitness {
+            let return_value = f32::max(
+                ((self.distance_weight * (opt_distance_measure))
+                    + (self.connectivity_weight * (opt_connectivity_measure))
+                    + (self.resource_weight * (opt_resource_measure))
+                    + (self.strength_weight * (opt_strength_measure)))
+                    / (self.distance_weight + self.connectivity_weight + self.resource_weight + self.strength_weight),
+                0.0,
+            );
+    
+            if return_value.is_infinite() {
+                panic!("Infinite fitness!");
+            }
+
+            return return_value;
+        } else {
+            panic!("Could not calculate max_fitness");
+        }
     }
 
     /**
