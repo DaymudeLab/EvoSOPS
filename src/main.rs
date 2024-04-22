@@ -147,6 +147,7 @@ fn main() {
     println!("Target Behavior: {:?}", &args.behavior);
     println!("Experiment Type: {:?}", &args.experiment_type);
     println!("Arena Parameters: {:?}", &args.arena_parameters);
+    println!("Weights: {:?}", &args.weights);
     println!("Representation Granularity: {:?}", &args.granularity);
 
     /*
@@ -248,7 +249,7 @@ fn main() {
                         Behavior::Brid => {
                             println!("\nStarting Bridging Single Genome Trial...\n");
 
-                            let genome: [[[[[u8; 3]; 2]; 4]; 3]; 4] =  [[[[[10, 4, 7], [9, 5, 9]], [[1, 4, 5], [1, 3, 6]], [[2, 8, 2], [6, 3, 9]], [[6, 9, 7], [4, 4, 4]]], [[[9, 2, 7], [10, 8, 8]], [[4, 10, 9], [6, 1, 2]], [[1, 5, 9], [3, 7, 7]], [[3, 1, 5], [0, 1, 2]]], [[[5, 3, 2], [5, 7, 8]], [[5, 7, 3], [9, 7, 8]], [[0, 0, 3], [7, 9, 3]], [[4, 10, 1], [2, 3, 5]]]], [[[[8, 1, 9], [4, 3, 4]], [[9, 3, 1], [7, 9, 2]], [[1, 8, 6], [4, 7, 8]], [[6, 2, 5], [8, 10, 7]]], [[[10, 1, 4], [9, 8, 7]], [[10, 1, 1], [5, 7, 6]], [[1, 8, 7], [4, 6, 8]], [[4, 8, 6], [7, 7, 6]]], [[[9, 3, 6], [9, 9, 3]], [[7, 3, 9], [1, 7, 6]], [[8, 6, 2], [2, 8, 6]], [[10, 8, 3], [7, 4, 3]]]], [[[[9, 3, 8], [8, 4, 6]], [[8, 2, 5], [1, 3, 10]], [[3, 2, 5], [4, 5, 5]], [[0, 9, 4], [0, 1, 6]]], [[[9, 7, 1], [7, 3, 2]], [[9, 2, 0], [4, 9, 9]], [[1, 1, 4], [6, 8, 1]], [[6, 6, 9], [2, 2, 2]]], [[[8, 1, 6], [9, 6, 2]], [[0, 0, 4], [3, 4, 7]], [[1, 7, 9], [5, 9, 8]], [[5, 1, 7], [4, 9, 6]]]], [[[[9, 9, 10], [8, 5, 7]], [[9, 1, 9], [2, 9, 1]], [[1, 5, 3], [2, 4, 1]], [[5, 8, 1], [8, 3, 7]]], [[[9, 2, 3], [9, 6, 4]], [[7, 8, 2], [7, 0, 1]], [[0, 1, 3], [7, 8, 3]], [[3, 4, 10], [6, 6, 8]]], [[[8, 4, 5], [7, 9, 7]], [[1, 1, 2], [4, 9, 6]], [[0, 1, 8], [2, 8, 5]], [[1, 3, 7], [0, 6, 3]]]]];
+                            let genome: [[[[[u8; 3]; 2]; 4]; 3]; 4] =  [[[[[8, 10, 4], [7, 4, 8]], [[0, 8, 9], [3, 8, 9]], [[0, 6, 5], [5, 2, 3]], [[6, 5, 1], [4, 6, 7]]], [[[8, 10, 0], [9, 9, 4]], [[5, 4, 3], [2, 9, 2]], [[7, 6, 2], [2, 3, 2]], [[1, 8, 0], [8, 4, 2]]], [[[5, 7, 0], [5, 9, 4]], [[8, 8, 4], [2, 2, 6]], [[2, 1, 1], [5, 7, 5]], [[5, 3, 3], [8, 6, 6]]]], [[[[10, 9, 5], [10, 4, 8]], [[9, 2, 4], [7, 3, 10]], [[1, 5, 6], [5, 9, 0]], [[1, 9, 1], [7, 5, 6]]], [[[10, 10, 0], [7, 4, 6]], [[7, 10, 2], [4, 0, 3]], [[10, 10, 0], [4, 9, 8]], [[8, 6, 1], [2, 9, 8]]], [[[10, 6, 10], [4, 2, 5]], [[5, 9, 1], [0, 8, 4]], [[4, 7, 1], [3, 6, 0]], [[8, 1, 1], [7, 8, 9]]]], [[[[10, 10, 9], [8, 8, 9]], [[9, 5, 4], [8, 7, 9]], [[2, 2, 8], [1, 8, 5]], [[5, 6, 4], [10, 5, 2]]], [[[10, 10, 2], [10, 9, 6]], [[7, 9, 3], [2, 7, 9]], [[6, 6, 2], [5, 1, 10]], [[5, 5, 8], [9, 4, 3]]], [[[10, 10, 10], [10, 9, 7]], [[1, 3, 8], [9, 9, 4]], [[10, 8, 1], [1, 10, 8]], [[10, 4, 3], [3, 5, 9]]]], [[[[10, 8, 5], [8, 5, 6]], [[4, 8, 6], [1, 2, 3]], [[6, 4, 3], [6, 1, 7]], [[10, 8, 6], [5, 9, 10]]], [[[9, 8, 5], [8, 9, 3]], [[10, 6, 8], [3, 5, 9]], [[2, 6, 2], [8, 8, 3]], [[10, 8, 1], [9, 4, 2]]], [[[6, 9, 6], [9, 10, 8]], [[2, 9, 0], [1, 6, 9]], [[8, 8, 1], [6, 2, 5]], [[7, 10, 5], [1, 3, 8]]]]];
 
                             // let genome: [[[[[u8; 3]; 2]; 4]; 3]; 4] = [[[[[0; 3]; 2]; 4]; 3]; 4];
                             // let mut idx = 0;
@@ -360,13 +361,18 @@ fn main() {
                         Behavior::Brid => {
                             let genome: [[[[[u8; 3]; 2]; 4]; 3]; 4] = [[[[[0; 3]; 2]; 4]; 3]; 4];
 
-                            let fitness_tot: f64 = arena_parameters
+                            let trials_vec: Vec<(u16, u16, u16, u16)> = arena_parameters.clone().into_iter()
+                            .flat_map(|i| std::iter::repeat(i).take(3))
+                            .collect();
+
+                            let fitness_tot: f64 = trials_vec
                                 .clone()
-                                .into_par_iter()
+                                .into_iter()
                                 .map(|trial| {
                                     /*
                                      * Single Evaluation run of the Genome
                                      */
+                                    println!("Trial Info: {}, {}, {}, {}", trial.0, trial.1, trial.2, trial.3);
                                     let mut sops_trial = SOPSBridEnvironment::init_sops_env(
                                         &genome,
                                         trial.0,
@@ -385,22 +391,22 @@ fn main() {
                                     println!("Max Fitness: {}", sops_trial.get_max_fitness());
                                     println!(
                                         "Starting Fitness: {}",
-                                        edge_cnt as f32 / sops_trial.get_max_fitness() as f32
+                                        edge_cnt as f32 as f32
                                     );
                                     let now = Instant::now();
-                                    let edge_cnt: f32 = sops_trial.simulate_theory(args.duration as u64,true);
+                                    let edge_cnt: f32 = sops_trial.simulate_theory(args.duration as u64,false);
                                     let elapsed = now.elapsed().as_secs();
                                     sops_trial.print_grid();
                                     println!("Edge Count: {}", edge_cnt);
                                     let t_fitness =
-                                        edge_cnt as f64 / sops_trial.get_max_fitness() as f64;
+                                        edge_cnt as f64 as f64;
                                     println!("Fitness: {}", &t_fitness);
                                     println!("Trial Elapsed Time: {:.2?}s", elapsed);
                                     t_fitness
                                 })
                                 .sum();
 
-                            println!("Total Fitness: {}", &fitness_tot);
+                            println!("Total Fitness: {}", &fitness_tot / trials_vec.len() as f64);
                         }
                     }
                 }

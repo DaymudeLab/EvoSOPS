@@ -3,7 +3,7 @@ import numpy as np
 
 grids = []
 
-with open("./output/Brid_GM_1_sizes_1_trials_gran_10.log", "r") as outputFile:
+with open("./output/small_trials/Brid_GM_1_sizes_trials_gran_10_trial_1.log", "r") as outputFile:
     readingGrid = False
     currentGrid = []
     for line in outputFile:

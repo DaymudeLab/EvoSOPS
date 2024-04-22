@@ -277,8 +277,8 @@ impl SOPSBridEnvironment {
 
         for i in 0..self.grid.len() {
             for j in 0..self.grid.len() {
-                if ((w_theta * bridge_length as f32).round() / 2.0).floor() as i32 >= i32::abs(-1 * i as i32 + 2 * diagonal_optimal_coordinate as i32 - j as i32) &&
-                    self.grid[i][j] == SOPSBridEnvironment::EMPTY_OFFLAND || self.grid[i][j] == SOPSBridEnvironment::PARTICLE_OFFLAND {
+                if (((w_theta * bridge_length as f32) / 2.0).floor() as i32 >= i32::abs(-1 * i as i32 + 2 * diagonal_optimal_coordinate as i32 - j as i32)) &&
+                    (self.grid[i][j] == SOPSBridEnvironment::EMPTY_OFFLAND || self.grid[i][j] == SOPSBridEnvironment::PARTICLE_OFFLAND) {
                     optimal_particles.push((i as u16, j as u16));
                 }
             }
@@ -290,7 +290,8 @@ impl SOPSBridEnvironment {
             panic!("Implement shortcut bridging with strength!");
         }
 
-        let resource_metric: f32 = (self.participants.len() as f32 - optimal_particles.len() as f32) / self.participants.len()  as f32;
+        let resource_metric: f32 = SOPSBridEnvironment::resource_function(optimal_particles.len() as f32, self.participants.len() as f32);
+        // let resource_metric: f32 = (self.participants.len() as f32 - optimal_particles.len() as f32) / self.participants.len() as f32;
         
         let mut min_anchor1_distance: f32 = f32::MAX;
         let mut min_anchor2_distance: f32 = f32::MAX;
@@ -308,12 +309,16 @@ impl SOPSBridEnvironment {
             }
         }
 
-        let distance_metric: f32 = SOPSBridEnvironment::bridge_optimal_distance(&self.anchors[0], &self.anchors[1]) as f32 / (min_anchor1_distance + min_anchor2_distance + optimal_particles.len() as f32);
+        let distance_metric: f32 = SOPSBridEnvironment::bridge_optimal_distance(&self.anchors[0], &self.anchors[1]) as f32 / (min_anchor1_distance + min_anchor2_distance + bridge_length as f32);
 
         let strength_metric: f32 = 1.0;
         let connectivity_metric: f32 = 1.0;
         self.optimal_fitness = Some((strength_metric, connectivity_metric, distance_metric, resource_metric));
         
+    }
+
+    fn resource_function(offland_particle_count: f32, total_count: f32)->f32 {
+        return std::f32::consts::E.powf(-1.0 * f32::powf(total_count, -0.75) * offland_particle_count)
     }
 
     /**
@@ -667,6 +672,11 @@ impl SOPSBridEnvironment {
         return bridge_length + 1;
     }
 
+    fn resource_measure(&self, offland_particles: f32)->f32 {
+        let decay_exponent: f32 = -0.5;
+        return std::f32::consts::E.powf(-1.0 * f32::powf(self.participants.len() as f32, decay_exponent) * offland_particles);
+    }
+
     /**
      * Description:
      *  Determines ratio of onland to total particles. Favors more particles onland.
@@ -685,7 +695,8 @@ impl SOPSBridEnvironment {
             }
         }
 
-        return total_on_land_particles as f32 / total_particles as f32;
+        return SOPSBridEnvironment::resource_function((total_particles - total_on_land_particles) as f32, total_particles as f32);
+        // return total_on_land_particles as f32 / total_particles as f32;
     }
 
     /**
@@ -1130,13 +1141,8 @@ impl SOPSBridEnvironment {
         let total_factor: f32 =
             strength_factor + distance_factor + connectivity_factor + resource_factor;
 
-        let mut connectivity_score: f32 = 1.0;
-        let mut distance_ratio = self.calculate_distance_ratio();
-        
-        if distance_ratio == 0.0 {
-            connectivity_score = self.add_phantom_participants();
-            distance_ratio = self.calculate_distance_ratio();
-        }
+        let connectivity_score: f32 = self.add_phantom_participants();
+        let distance_ratio = self.calculate_distance_ratio();
 
         let mut bridge_strength: f32 = 1.0;
         if strength_factor > 0.0 {
@@ -1154,6 +1160,10 @@ impl SOPSBridEnvironment {
         }
         
         if let Some((opt_strength_measure, opt_connectivity_measure, opt_distance_measure, opt_resource_measure)) = self.optimal_fitness {
+            // println!("Distance: {}/{} = {}", distance_ratio, opt_distance_measure, distance_ratio / opt_distance_measure);
+            // println!("Connectivity: {}/{} = {}", connectivity_score, opt_connectivity_measure, connectivity_score / opt_connectivity_measure);
+            // println!("Resource: {}/{} = {}", resource_metric, opt_resource_measure, resource_metric / opt_resource_measure);
+
             let return_value = f32::max(
                 ((distance_factor * (distance_ratio / opt_distance_measure))
                     + (connectivity_factor * (connectivity_score / opt_connectivity_measure))
@@ -1164,7 +1174,7 @@ impl SOPSBridEnvironment {
             );
     
             if return_value.is_infinite() {
-                panic!("Infinite fitness!");
+                panic!("Infinite fitness!\n\topt_distance: {}\n\topt_connectivity: {}\n\topt_resource: {}\n\topt_strength:{}\n\ttotal_factor:{}", opt_distance_measure, opt_connectivity_measure, opt_resource_measure, opt_strength_measure, total_factor);
             }
 
             return return_value;
@@ -1222,7 +1232,7 @@ impl SOPSBridEnvironment {
                 self.print_grid();
                 println!(
                     "Fitness: {}",
-                    self.evaluate_fitness() / self.get_max_fitness()
+                    self.evaluate_fitness()
                 );
             }
         }

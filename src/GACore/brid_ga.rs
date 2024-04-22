@@ -329,7 +329,7 @@ impl BridGA {
             // println!("Mid: {y}",y=((trials / 2) as usize));
             // genome.fitness = sorted_fitness_eval[((trials / 2) as usize)];
              */
-            let fitness_val = fitness_tot / (trials_vec.len() as f64) as f64;
+            let fitness_val = fitness_tot / trials_vec.len() as f64;
             genome.fitness = fitness_val;
         });
 
