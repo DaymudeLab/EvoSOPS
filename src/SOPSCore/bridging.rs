@@ -16,7 +16,7 @@ pub struct SOPSBridEnvironment {
     participants: Vec<Particle>,
     anchors: Vec<Particle>,
     phantom_participants: Vec<Particle>,
-    phenotype: [[[[[u8; 3]; 2]; 4]; 3]; 4],
+    phenotype: [[[[[u8; 4]; 2]; 4]; 3]; 4],
     sim_duration: u64,
     fitness_val: f32,
     size: usize,
@@ -87,7 +87,7 @@ impl SOPSBridEnvironment {
     }
 
     pub fn init_sops_env(
-        genome: &[[[[[u8; 3]; 2]; 4]; 3]; 4],
+        genome: &[[[[[u8; 4]; 2]; 4]; 3]; 4],
         arena_layers: u16,
         particle_layers: u16,
         gap_diagonal_length: u16,
@@ -408,13 +408,15 @@ impl SOPSBridEnvironment {
 
         if particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_OFFLAND {
             // land -> offland
-            land_idx = 1;
+            land_idx = 0;
         } else if !particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_LAND {
             // offland -> land
+            land_idx = 1;
+        } else if particle.onland && self.grid[move_i as usize][move_j as usize] == SOPSBridEnvironment::EMPTY_LAND{
+            // land -> land
             land_idx = 2;
         } else {
-            // offland -> land
-            land_idx = 0;
+            land_idx =3;
         }
 
         return (
@@ -422,7 +424,7 @@ impl SOPSBridEnvironment {
             mid_cnt.clamp(0, 3),
             front_cnt.clamp(0, 4),
             anchor_cnt.clamp(0,2),
-            land_idx.clamp(0, 3),
+            land_idx.clamp(0, 4),
         );
     }
 
