@@ -1,6 +1,7 @@
 pub mod base_ga;
-pub mod seg_ga;
+pub mod sep_ga;
 pub mod coat_ga;
+pub mod loco_ga;
 
 /*
  * Main file all the basic classes needed for GA to work
@@ -19,7 +20,7 @@ struct Genome {
   * Separation Genome structure
   */
 #[derive(Debug, Copy, Clone)]
-struct SegGenome {
+struct SepGenome {
     string: [[[u8; 10]; 6]; 10],
     fitness: f64,
 }
@@ -30,6 +31,15 @@ struct SegGenome {
   #[derive(Debug, Copy, Clone)]
   struct CoatGenome {
       string: [[[u8; 10]; 6]; 10],
+      fitness: f64,
+  }
+
+  /*
+  * Locomotion Genome structure
+  */
+  #[derive(Debug, Copy, Clone)]
+  struct LocoGenome {
+      string: [[[[u8; 4]; 3]; 4]; 3],
       fitness: f64,
   }
 

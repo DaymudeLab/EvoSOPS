@@ -2,11 +2,13 @@ mod GACore;
 mod SOPSCore;
 mod utils;
 use GACore::base_ga::GeneticAlgo;
-use GACore::seg_ga::SegGA;
+use GACore::sep_ga::SepGA;
 use GACore::coat_ga::CoatGA;
+use GACore::loco_ga::LocoGA;
 
+use crate::SOPSCore::locomotion::SOPSLocoEnvironment;
 use crate::SOPSCore::SOPSEnvironment;
-use crate::SOPSCore::segregation::SOPSegEnvironment;
+use crate::SOPSCore::separation::SOPSepEnvironment;
 use crate::SOPSCore::coating::SOPSCoatEnvironment;
 
 use rayon::prelude::*;
@@ -83,6 +85,8 @@ enum Behavior {
     Sep,
     /// Coating
     Coat,
+    /// Locomotion
+    Loco,
 }
 
 #[derive(ValueEnum, Debug, Clone)] // ArgEnum here
@@ -100,8 +104,16 @@ fn main() {
     /*
      * Pipe the output to the file with Experiment Parameters as its name
      */
+
+    assert_eq!(&args.path.is_some(), &true);
+    let path = &args.path.clone().unwrap();
+    assert_eq!(&path.is_file(), &true);
+    // println!("Genome file path: {}", &path.display());
+    // let filename = path.file_stem().unwrap().to_str().unwrap();
+    // println!("Genome file name: {:?}", filename);
     let random_trial_seed = fastrand::u32(..);
     let file_name = format!("{:?}_{:?}_{}_sizes_{}_trials_gran_{}_{}", &args.behavior, &args.experiment_type, &args.particle_sizes.len(), &args.seeds.len(), &args.granularity, random_trial_seed);
+    // let file_name = format!("{:?}_{:?}_sizes_{}_{}_bulk", &args.behavior, &args.particle_sizes, random_trial_seed, filename);
     println!("Running the experiment... \nPlease check: {:?} file in ./output folder", &file_name);
     
     let log = OpenOptions::new()
@@ -156,7 +168,7 @@ fn main() {
                 },
                 Behavior::Sep => {
                     println!("\nStarting Separation GA Experiment...\n");
-                    let mut ga_sops = SegGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35, random_trial_seed);
+                    let mut ga_sops = SepGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35, random_trial_seed);
                     ga_sops.run_through();
                 },
                 Behavior::Coat => {
@@ -165,16 +177,22 @@ fn main() {
                     let mut ga_sops = CoatGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35, random_trial_seed);
                     ga_sops.run_through();
                 },
+                Behavior::Loco => {
+                    println!("\nStarting Locomotion GA Experiment...\n");
+                    let mut ga_sops = LocoGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.75, 0.25, random_trial_seed);
+                    ga_sops.run_through();
+
+                },
             }
         },
         ref other_experiment => {
             println!("Snapshots: {:?}", &args.snaps);
 
-            assert_eq!(&args.path.is_some(), &true);
+            // assert_eq!(&args.path.is_some(), &true);
 
-            let path = &args.path.clone().unwrap();
+            // let path = &args.path.clone().unwrap();
 
-            assert_eq!(&path.is_file(), &true);
+            // assert_eq!(&path.is_file(), &true);
 
             println!("Genome file path: {}", &path.display());
             // Read Genome file content and pre-process it
@@ -221,14 +239,15 @@ fn main() {
                             */
 
                             // Run the trials in parallel
-                            let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
-                            let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
-                                .into_iter()
-                                .zip(seeds)
-                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-                                .collect();
+                            let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
+
+                            particle_sizes.iter().for_each(|size| {
+                                seeds.iter().for_each(|seed| {
+                                    trials_vec.push(((size.0,size.1),*seed));
+                                });
+                            });
 
                             let fitness_tot: f64 = trials_vec.clone()
                             .into_par_iter()
@@ -273,14 +292,8 @@ fn main() {
                             println!("Read Genome:\n{:?}", genome);
 
                             // Run the trials in parallel
-                            let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
-                            // let trials_vec: Vec<((u16,u16),u64)> = particle_sizes.clone()
-                            //     .into_iter()
-                            //     .zip(seeds)
-                            //     .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-                            //     .collect();
                             let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
 
                             particle_sizes.iter().for_each(|size| {
@@ -295,7 +308,7 @@ fn main() {
                                 /*
                                  * Single Evaluation run of the Genome
                                  */
-                                let mut sops_trial = SOPSegEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
+                                let mut sops_trial = SOPSepEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
                                 sops_trial.print_grid();
                                 let fitness: f32 = sops_trial.evaluate_fitness();
                                 println!("Starting Fitness: {}", fitness);
@@ -328,16 +341,21 @@ fn main() {
                             println!("Read Genome:\n{:?}", genome);
 
                             // Run the trials in parallel
-                            let trials = args.seeds.len();
                             let seeds = args.seeds.clone();
 
                             let particle_sizes: Vec<(u16,u16,u16)> = size_strings.map(|c| (c[0],c[1],c[2])).collect::<Vec<(u16,u16,u16)>>();
 
-                            let trials_vec: Vec<((u16,u16,u16),u64)> = particle_sizes.clone()
-                                .into_iter()
-                                .zip(seeds)
-                                .flat_map(|v| std::iter::repeat(v).take(trials.into()))
-                                .collect();
+
+                            let mut trials_vec: Vec<((u16,u16,u16),u64)> = Vec::new();
+
+                            particle_sizes.iter().for_each(|size| {
+                                seeds.iter().for_each(|seed| {
+                                    trials_vec.push(((size.0,size.1,size.2),*seed));
+                                });
+                            });
+
+                            // let mut sops_trial = SOPSCoatEnvironment::init_sops_env(&genome,trials_vec[0].0.0, trials_vec[0].0.1, trials_vec[0].0.2, trials_vec[0].1, args.granularity, 0.65, 0.35, None);
+                            // let grid = sops_trial.save_distance_grid();
 
                             let fitness_tot: f32 = trials_vec.clone()
                             .into_par_iter()
@@ -345,7 +363,7 @@ fn main() {
                                 /*
                                  * Single Evaluation run of the Genome
                                  */
-                                let mut sops_trial = SOPSCoatEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.0.2, trial.1, args.granularity, 0.65, 0.35, None);
+                                let mut sops_trial = SOPSCoatEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.0.2, trial.1, args.granularity, 0.65, 0.35, None); // Some(grid.clone())
                                 sops_trial.save_distance_grid();
                                 // sops_trial.print_dist_grid();
                                 sops_trial.print_grid();
@@ -357,6 +375,59 @@ fn main() {
                                 sops_trial.print_grid();
                                 println!("Fitness: {}", &t_fitness);
                                 println!("Trial Elapsed Time: {:.4?}s", elapsed);
+                                t_fitness
+                            })
+                            .sum();
+    
+                            println!("Total Fitness: {}", &fitness_tot);
+                        },
+                        Behavior::Loco => {
+                            println!("\nStarting Locomotion Single Genome Trial...\n");
+                            // Construct the genome in required dimension
+                            let mut genome: [[[[u8; 4]; 3]; 4]; 3] = [[[[0_u8; 4]; 3]; 4]; 3];
+                            let mut idx = 0;
+                            
+                            for j in 0_u8..3 {
+                                for i in 0_u8..4 {
+                                    for h in 0_u8..3 {
+                                        for g in 0_u8..4{
+                                            genome[j as usize][i as usize][h as usize][g as usize] = all_entries[idx];
+                                            idx += 1;
+                                        }
+                                    }
+                                }
+                            }
+                            
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            // Run the trials in parallel
+                            let seeds = args.seeds.clone();
+
+                            let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
+
+                            particle_sizes.iter().for_each(|size| {
+                                seeds.iter().for_each(|seed| {
+                                    trials_vec.push(((size.0,size.1),*seed));
+                                });
+                            });
+
+                            let fitness_tot: f32 = trials_vec.clone()
+                            .into_par_iter()
+                            .map(|trial| {
+                                /*
+                                 * Single Evaluation run of the Genome
+                                 */
+                                let mut sops_trial = SOPSLocoEnvironment::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
+                                sops_trial.print_grid();
+                                let fitness: f32 = sops_trial.evaluate_fitness();
+                                println!("Starting Fitness: {}", fitness);
+                                let now = Instant::now();
+                                let t_fitness: f32 = sops_trial.simulate(true);
+                                let elapsed = now.elapsed().as_secs();
+                                sops_trial.print_grid();
+                                println!("Fitness: {}", &t_fitness);
+                                println!("Trial Elapsed Time: {:.2?}s", elapsed);
                                 t_fitness
                             })
                             .sum();
@@ -379,7 +450,6 @@ fn main() {
 
                             println!("Read Genome:\n{:?}", genome);
 
-                            // Need to create a new class that takes the Genome's float values and operates on them
                             todo!()
                         },
                         Behavior::Sep => {
@@ -398,7 +468,6 @@ fn main() {
 
                             println!("Read Genome:\n{:?}", genome);
 
-                            // Need to create a new class that takes the Genome's float values and operates on them
                             todo!()
                         },
                         Behavior::Coat => {
@@ -417,7 +486,26 @@ fn main() {
 
                             println!("Read Genome:\n{:?}", genome);
 
-                            // Need to create a new class that takes the Genome's float values and operates on them
+                            todo!()
+                        },
+                        Behavior::Loco => {
+                            let mut genome: [[[[[f32; 6]; 7]; 7]; 2]; 2] = [[[[[0.0; 6]; 7]; 7]; 2]; 2];
+                            let mut idx = 0;
+                            for n in 0_u8..7 {
+                                for j in 0_u8..7 {
+                                    for i in 0_u8..6 {
+                                        for h in 0_u8..2 {
+                                            for g in 0_u8..2 {
+                                                genome[n as usize][j as usize][i as usize][h as usize][g as usize] = all_entries[idx];
+                                                idx += 1;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
                             todo!()
                         },
                     }

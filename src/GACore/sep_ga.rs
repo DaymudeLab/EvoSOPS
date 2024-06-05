@@ -1,6 +1,6 @@
-use crate::SOPSCore::segregation::SOPSegEnvironment;
+use crate::SOPSCore::separation::SOPSepEnvironment;
 
-use super::SegGenome;
+use super::SepGenome;
 use super::DiversThresh;
 use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
 use rayon::prelude::*;
@@ -16,10 +16,10 @@ use std::usize;
  * Provides basic 3 operators of the GAs and a step by step (1 step = 1 generation)
  * population generator for each step
  *  */
-pub struct SegGA {
+pub struct SepGA {
     max_gen: u16,
     elitist_cnt: u16,
-    population: Vec<SegGenome>,
+    population: Vec<SepGenome>,
     mut_rate: f64,
     granularity: u8,
     genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64>,
@@ -33,7 +33,7 @@ pub struct SegGA {
     random_seed: u32
 }
 
-impl SegGA {
+impl SepGA {
 
     const GENOME_LEN: u16 = 10 * 6 * 10;
     const BUFFER_LEN: usize = 10;
@@ -65,7 +65,7 @@ impl SegGA {
     // }
     #[inline]
     fn cross_pnt() -> Uniform<u16> {
-        Uniform::new_inclusive(0, SegGA::GENOME_LEN-1)
+        Uniform::new_inclusive(0, SepGA::GENOME_LEN-1)
     }
 
     #[inline]
@@ -92,8 +92,8 @@ impl SegGA {
     ) -> Self {
 
         println!("Weights: {} x Total Edges + {} x Avg. Same Clr Edges", w1, w2);
-        println!("Thresholds: UPPER: {}, LOWER {}", SegGA::UPPER_T, SegGA::LOWER_T);
-        let mut starting_pop: Vec<SegGenome> = vec![];
+        println!("Thresholds: UPPER: {}, LOWER {}", SepGA::UPPER_T, SepGA::LOWER_T);
+        let mut starting_pop: Vec<SepGenome> = vec![];
 
         for _ in 0..population_size {
             //init genome
@@ -101,11 +101,11 @@ impl SegGA {
             for n in 0_u8..10 {
                 for j in 0_u8..6 {
                     for i in 0_u8..10 {
-                        genome[n as usize][j as usize][i as usize] = SegGA::rng().sample(SegGA::genome_init_rng(granularity))
+                        genome[n as usize][j as usize][i as usize] = SepGA::rng().sample(SepGA::genome_init_rng(granularity))
                     }
                 }
             }
-            starting_pop.push(SegGenome {
+            starting_pop.push(SepGenome {
                 string: (genome),
                 fitness: (0.0),
             });
@@ -113,7 +113,7 @@ impl SegGA {
 
         let genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64> = HashMap::new();
 
-        SegGA {
+        SepGA {
             max_gen,
             elitist_cnt,
             population: starting_pop,
@@ -124,7 +124,7 @@ impl SegGA {
             sizes,
             trial_seeds,
             div_state: DiversThresh::INIT,
-            max_div: ((granularity-1) as u32)*(SegGA::GENOME_LEN as u32),
+            max_div: ((granularity-1) as u32)*(SepGA::GENOME_LEN as u32),
             w1,
             w2,
             random_seed
@@ -137,10 +137,10 @@ impl SegGA {
         for n in 0..10 {
             for i in 0..6 {
                 for j in 0..10 {
-                    let smpl = SegGA::mut_frng().u64(1_u64..=10000);
+                    let smpl = SepGA::mut_frng().u64(1_u64..=10000);
                     if smpl as f64 <= (self.mut_rate * 10000.0) {
                         // a random + or - mutation operation on each gene
-                        let per_dir = SegGA::rng().sample(&SegGA::mut_sign());
+                        let per_dir = SepGA::rng().sample(&SepGA::mut_sign());
                         new_genome[n][i][j] = (if per_dir {
                             genome[n][i][j] + 1
                         } else if genome[n][i][j] == 0 {
@@ -161,7 +161,7 @@ impl SegGA {
      *  */
     // fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
     //     let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
-    //     let cross_pnt = SegGA::rng().sample(&SegGA::cross_pnt());
+    //     let cross_pnt = SepGA::rng().sample(&SepGA::cross_pnt());
     //     let mut cnt = 0;
     //     for n in 0..10 {
     //         for i in 0..6 {
@@ -183,8 +183,8 @@ impl SegGA {
      *  */
     fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
         let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
-        let cross_pnt_1 = SegGA::rng().sample(&SegGA::cross_pnt());
-        let cross_pnt_2 = SegGA::rng().sample(&SegGA::cross_pnt());
+        let cross_pnt_1 = SepGA::rng().sample(&SepGA::cross_pnt());
+        let cross_pnt_2 = SepGA::rng().sample(&SepGA::cross_pnt());
         let lower_cross_pnt = if cross_pnt_1 <= cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
         let higher_cross_pnt = if cross_pnt_1 > cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
 
@@ -211,7 +211,7 @@ impl SegGA {
      * on the existing populations to generate new population
      *  */
     // fn generate_new_pop(&mut self) {
-    //     let mut new_pop: Vec<SegGenome> = vec![];
+    //     let mut new_pop: Vec<SepGenome> = vec![];
     //     let mut selected_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
     //     let mut rank_wheel: Vec<usize> = vec![];
     //     //sort the genomes in population by fitness value
@@ -242,10 +242,10 @@ impl SegGA {
     //     //perform selection and then (if perform_cross flag is set) single-point crossover
     //     let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
     //     for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
-    //         let mut wheel_idx = SegGA::rng().sample(&rank_wheel_rng);
+    //         let mut wheel_idx = SepGA::rng().sample(&rank_wheel_rng);
     //         let p_genome_idx1 = rank_wheel[wheel_idx];
     //         if self.perform_cross {
-    //             wheel_idx = SegGA::rng().sample(&rank_wheel_rng);
+    //             wheel_idx = SepGA::rng().sample(&rank_wheel_rng);
     //             let p_genome_idx2 = rank_wheel[wheel_idx];
     //             selected_g.push(self.generate_offspring(
     //                 &self.population[p_genome_idx1].string,
@@ -261,7 +261,7 @@ impl SegGA {
     //         let genome = selected_g[idx];
     //         // println!("Genome:{} mutations", idx);
     //         let mutated_g = self.mutate_genome(&genome);
-    //         new_pop.push(SegGenome {
+    //         new_pop.push(SepGenome {
     //             string: mutated_g,
     //             fitness: 0.0,
     //         });
@@ -274,7 +274,7 @@ impl SegGA {
      * on the existing populations to generate new population
      *  */
      fn generate_new_pop(&mut self) {
-        let mut new_pop: Vec<SegGenome> = vec![];
+        let mut new_pop: Vec<SepGenome> = vec![];
         let mut selected_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
         let mut crossed_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
         let population_size = self.population.len() as u16;
@@ -311,10 +311,10 @@ impl SegGA {
         
         //perform tournament selection
         for _ in 0..(population_size) {
-            let genome_idx_1 = SegGA::rng().sample(&SegGA::genome_rng(population_size));
+            let genome_idx_1 = SepGA::rng().sample(&SepGA::genome_rng(population_size));
             let mut genome_idx_2;
             loop {
-                genome_idx_2 = SegGA::rng().sample(&SegGA::genome_rng(population_size));
+                genome_idx_2 = SepGA::rng().sample(&SepGA::genome_rng(population_size));
                 if genome_idx_1 != genome_idx_2 {
                     break;
                 }
@@ -330,10 +330,10 @@ impl SegGA {
         
         //perform 2-point crossover
         for _ in 0..(population_size) {
-            let genome_idx_1 = SegGA::rng().sample(&SegGA::genome_rng(population_size));
+            let genome_idx_1 = SepGA::rng().sample(&SepGA::genome_rng(population_size));
             let mut genome_idx_2;
             loop {
-                genome_idx_2 = SegGA::rng().sample(&SegGA::genome_rng(population_size));
+                genome_idx_2 = SepGA::rng().sample(&SepGA::genome_rng(population_size));
                 if genome_idx_1 != genome_idx_2 {
                     break;
                 }
@@ -348,7 +348,7 @@ impl SegGA {
             let genome = crossed_g[idx as usize];
             // println!("Genome:{} mutations", idx);
             let mutated_g = self.mutate_genome(&genome);
-            new_pop.push(SegGenome {
+            new_pop.push(SepGenome {
                 string: mutated_g,
                 fitness: 0.0,
             });
@@ -430,7 +430,7 @@ impl SegGA {
                 .into_par_iter()
                 .map(|trial| {
                     // let now = Instant::now();
-                    let mut genome_env = SOPSegEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity, w1, w2);
+                    let mut genome_env = SOPSepEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity, w1, w2);
                     let g_fitness = genome_env.simulate(false);
                     // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
@@ -523,26 +523,26 @@ impl SegGA {
      * is reached
      *  */
     pub fn run_through(&mut self) {
-        let mut diversity_q: VecDeque<f32> = VecDeque::with_capacity(SegGA::BUFFER_LEN);
+        let mut diversity_q: VecDeque<f32> = VecDeque::with_capacity(SepGA::BUFFER_LEN);
         // Run the GA for given #. of Generations
         for gen in 0..self.max_gen {
             println!("Starting Gen:{}", gen);
             let now = Instant::now();
-            if diversity_q.len() == SegGA::BUFFER_LEN { diversity_q.pop_front(); }
+            if diversity_q.len() == SepGA::BUFFER_LEN { diversity_q.pop_front(); }
             diversity_q.push_back(self.step_through(gen));
             let avg_div: f32 = diversity_q.iter().sum::<f32>() / (diversity_q.len() as f32);
             let norm_avg_div = avg_div / (self.max_div as f32);
-            // println!("Avg. Population diversity for last {} gen -> {}", SegGA::BUFFER_LEN, avg_div);
+            // println!("Avg. Population diversity for last {} gen -> {}", SepGA::BUFFER_LEN, avg_div);
             println!("Avg. Population diversity for last {} gen -> {}", diversity_q.len(), norm_avg_div);
             match self.div_state {
                 DiversThresh::INIT => {
-                    if norm_avg_div <= SegGA::LOWER_T {
+                    if norm_avg_div <= SepGA::LOWER_T {
                         self.increase_mut();
                         self.div_state = DiversThresh::LOWER_HIT;
                     }
                 },
                 DiversThresh::LOWER_HIT => {
-                    if norm_avg_div >= SegGA::UPPER_T {
+                    if norm_avg_div >= SepGA::UPPER_T {
                         self.lower_mut();
                         self.div_state = DiversThresh::INIT;
                     }

@@ -1,6 +1,6 @@
-use crate::SOPSCore::coating::SOPSCoatEnvironment;
+use crate::SOPSCore::locomotion::SOPSLocoEnvironment;
 
-use super::CoatGenome;
+use super::LocoGenome;
 use super::DiversThresh;
 use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
 use rayon::prelude::*;
@@ -12,34 +12,33 @@ use std::io::Write;
 use std::fs::File;
 
 /*
- * Main GA class for Separation behavior
+ * Main GA class for Locomotion behavior
  * Provides basic 3 operators of the GAs and a step by step (1 step = 1 generation)
  * population generator for each step
  *  */
-pub struct CoatGA {
+pub struct LocoGA {
     max_gen: u16,
     elitist_cnt: u16,
-    population: Vec<CoatGenome>,
+    population: Vec<LocoGenome>,
     mut_rate: f64,
     granularity: u8,
-    genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64>,
+    genome_cache: HashMap<[[[[u8; 4]; 3]; 4]; 3], f64>,
     perform_cross: bool,
-    sizes: Vec<(u16,u16, u16)>,
+    sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>,
     div_state: DiversThresh,
     max_div: u32,
     w1: f32,
     w2: f32,
-    random_seed: u32,
-    distances_hash: HashMap<(u16, u16, u16, u64), HashMap<[usize; 2], u16>>
+    random_seed: u32
 }
 
-impl CoatGA {
+impl LocoGA {
 
-    const GENOME_LEN: u16 = 10 * 6 * 10;
+    const GENOME_LEN: u16 = 4 * 3 * 4 * 3;
     const BUFFER_LEN: usize = 10;
-    const UPPER_T: f32 = 0.3;
-    const LOWER_T: f32 = 0.08;
+    const UPPER_T: f32 = 0.2;
+    const LOWER_T: f32 = 0.02;
     
     #[inline]
     fn rng() -> rngs::ThreadRng {
@@ -66,7 +65,7 @@ impl CoatGA {
     // }
     #[inline]
     fn cross_pnt() -> Uniform<u16> {
-        Uniform::new_inclusive(0, CoatGA::GENOME_LEN-1)
+        Uniform::new_inclusive(0, LocoGA::GENOME_LEN-1)
     }
 
     #[inline]
@@ -85,36 +84,41 @@ impl CoatGA {
         mut_rate: f64,
         granularity: u8,
         perform_cross: bool,
-        sizes: Vec<(u16, u16, u16)>,
+        sizes: Vec<(u16, u16)>,
         trial_seeds: Vec<u64>,
         w1: f32,
         w2: f32,
-        random_seed: u32     
+        random_seed: u32
     ) -> Self {
 
-        println!("Weights: {} x Total Edges + {} x Avg. Same Clr Edges", w1, w2);
-        println!("Thresholds: UPPER: {}, LOWER {}", CoatGA::UPPER_T, CoatGA::LOWER_T);
-        let mut starting_pop: Vec<CoatGenome> = vec![];
+        println!("Weights: {} x Total Edges + {} x Avg. Distance", w1, w2);
+        println!("Thresholds: UPPER: {}, LOWER {}", LocoGA::UPPER_T, LocoGA::LOWER_T);
+        let mut starting_pop: Vec<LocoGenome> = vec![];
 
         for _ in 0..population_size {
             //init genome
-            let mut genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
-            for n in 0_u8..10 {
-                for j in 0_u8..6 {
-                    for i in 0_u8..10 {
-                        genome[n as usize][j as usize][i as usize] = CoatGA::rng().sample(CoatGA::genome_init_rng(granularity))
+            let mut genome: [[[[u8; 4]; 3]; 4]; 3] = [[[[0_u8; 4]; 3]; 4]; 3];
+            
+            
+            for j in 0_u8..3 {
+                for i in 0_u8..4 {
+                    for h in 0_u8..3 {
+                        for g in 0_u8..4 {
+                            genome[j as usize][i as usize][h as usize][g as usize] = LocoGA::rng().sample(LocoGA::genome_init_rng(granularity))
+                        }
                     }
                 }
             }
-            starting_pop.push(CoatGenome {
+            
+            starting_pop.push(LocoGenome {
                 string: (genome),
                 fitness: (0.0),
             });
         }
 
-        let genome_cache: HashMap<[[[u8; 10]; 6]; 10], f64> = HashMap::new();
+        let genome_cache: HashMap<[[[[u8; 4]; 3]; 4]; 3], f64> = HashMap::new();
 
-        CoatGA {
+        LocoGA {
             max_gen,
             elitist_cnt,
             population: starting_pop,
@@ -125,32 +129,34 @@ impl CoatGA {
             sizes,
             trial_seeds,
             div_state: DiversThresh::INIT,
-            max_div: ((granularity-1) as u32)*(CoatGA::GENOME_LEN as u32),
+            max_div: ((granularity-1) as u32)*(LocoGA::GENOME_LEN as u32),
             w1,
             w2,
-            random_seed,
-            distances_hash: HashMap::new()
+            random_seed
         }
     }
 
     // mutate genome based on set mutation rate for every gene of the genome
-    fn mutate_genome(&self, genome: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
+    fn mutate_genome(&self, genome: &[[[[u8; 4]; 3]; 4]; 3]) -> [[[[u8; 4]; 3]; 4]; 3] {
         let mut new_genome = genome.clone();
-        for n in 0..10 {
-            for i in 0..6 {
-                for j in 0..10 {
-                    let smpl = CoatGA::mut_frng().u64(1_u64..=10000);
-                    if smpl as f64 <= (self.mut_rate * 10000.0) {
-                        // a random + or - mutation operation on each gene
-                        let per_dir = CoatGA::rng().sample(&CoatGA::mut_sign());
-                        new_genome[n][i][j] = (if per_dir {
-                            genome[n][i][j] + 1
-                        } else if genome[n][i][j] == 0 {
-                            0
-                        } else {
-                            genome[n][i][j] - 1
-                        })
-                        .clamp(0, self.granularity.into());
+        
+        for i in 0..3 {
+            for j in 0..4 {
+                for k in 0..3 {
+                    for l in 0..4 {
+                        let smpl = LocoGA::mut_frng().u64(1_u64..=10000);
+                        if smpl as f64 <= (self.mut_rate * 10000.0) {
+                            // a random + or - mutation operation on each gene
+                            let per_dir = LocoGA::rng().sample(&LocoGA::mut_sign());
+                            new_genome[i][j][k][l] = (if per_dir {
+                                genome[i][j][k][l] + 1
+                            } else if genome[i][j][k][l] == 0 {
+                                0
+                            } else {
+                                genome[i][j][k][l] - 1
+                            })
+                            .clamp(0, self.granularity.into());
+                        }
                     }
                 }
             }
@@ -163,7 +169,7 @@ impl CoatGA {
      *  */
     // fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
     //     let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
-    //     let cross_pnt = CoatGA::rng().sample(&CoatGA::cross_pnt());
+    //     let cross_pnt = LocoGA::rng().sample(&LocoGA::cross_pnt());
     //     let mut cnt = 0;
     //     for n in 0..10 {
     //         for i in 0..6 {
@@ -183,28 +189,32 @@ impl CoatGA {
     /*
      * Implements a simple two-point crossover operator with crossover point choosen at random in genome vector
      *  */
-    fn generate_offspring(&self, parent1: &[[[u8; 10]; 6]; 10], parent2: &[[[u8; 10]; 6]; 10]) -> [[[u8; 10]; 6]; 10] {
-        let mut new_genome: [[[u8; 10]; 6]; 10] = [[[0_u8; 10]; 6]; 10];
-        let cross_pnt_1 = CoatGA::rng().sample(&CoatGA::cross_pnt());
-        let cross_pnt_2 = CoatGA::rng().sample(&CoatGA::cross_pnt());
+     fn generate_offspring(&self, parent1: &[[[[u8; 4]; 3]; 4]; 3], parent2: &[[[[u8; 4]; 3]; 4]; 3]) -> [[[[u8; 4]; 3]; 4]; 3] {
+        let mut new_genome: [[[[u8; 4]; 3]; 4]; 3] = [[[[0_u8; 4]; 3]; 4]; 3];
+        let cross_pnt_1 = LocoGA::rng().sample(&LocoGA::cross_pnt());
+        let cross_pnt_2 = LocoGA::rng().sample(&LocoGA::cross_pnt());
         let lower_cross_pnt = if cross_pnt_1 <= cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
         let higher_cross_pnt = if cross_pnt_1 > cross_pnt_2 {cross_pnt_1} else {cross_pnt_2};
 
         let mut cnt = 0;
-        for n in 0..10 {
-            for i in 0..6 {
-                for j in 0..10 {
-                    if cnt < lower_cross_pnt {
-                        new_genome[n][i][j] = parent1[n][i][j];
-                    } else if cnt > lower_cross_pnt && cnt < higher_cross_pnt {
-                        new_genome[n][i][j] = parent2[n][i][j];
-                    } else {
-                        new_genome[n][i][j] = parent1[n][i][j];
+        
+        for i in 0..3 {
+            for j in 0..4 {
+                for k in 0..3 {
+                    for l in 0..4 {
+                        if cnt < lower_cross_pnt {
+                            new_genome[i][j][k][l] = parent1[i][j][k][l];
+                        } else if cnt > lower_cross_pnt && cnt < higher_cross_pnt {
+                            new_genome[i][j][k][l] = parent2[i][j][k][l];
+                        } else {
+                            new_genome[i][j][k][l] = parent1[i][j][k][l];
+                        }
+                        cnt += 1; 
                     }
-                    cnt += 1;
                 }
             }
         }
+        
         new_genome
     }
 
@@ -213,7 +223,7 @@ impl CoatGA {
      * on the existing populations to generate new population
      *  */
     // fn generate_new_pop(&mut self) {
-    //     let mut new_pop: Vec<CoatGenome> = vec![];
+    //     let mut new_pop: Vec<LocoGenome> = vec![];
     //     let mut selected_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
     //     let mut rank_wheel: Vec<usize> = vec![];
     //     //sort the genomes in population by fitness value
@@ -241,13 +251,14 @@ impl CoatGA {
     //             rank_wheel.push(index);
     //         }
     //     }
+        
     //     //perform selection and then (if perform_cross flag is set) single-point crossover
     //     let rank_wheel_rng = Uniform::new(0, rank_wheel.len());
     //     for _ in 0..(self.population.len() - self.elitist_cnt as usize) {
-    //         let mut wheel_idx = CoatGA::rng().sample(&rank_wheel_rng);
+    //         let mut wheel_idx = LocoGA::rng().sample(&rank_wheel_rng);
     //         let p_genome_idx1 = rank_wheel[wheel_idx];
     //         if self.perform_cross {
-    //             wheel_idx = CoatGA::rng().sample(&rank_wheel_rng);
+    //             wheel_idx = LocoGA::rng().sample(&rank_wheel_rng);
     //             let p_genome_idx2 = rank_wheel[wheel_idx];
     //             selected_g.push(self.generate_offspring(
     //                 &self.population[p_genome_idx1].string,
@@ -263,7 +274,7 @@ impl CoatGA {
     //         let genome = selected_g[idx];
     //         // println!("Genome:{} mutations", idx);
     //         let mutated_g = self.mutate_genome(&genome);
-    //         new_pop.push(CoatGenome {
+    //         new_pop.push(LocoGenome {
     //             string: mutated_g,
     //             fitness: 0.0,
     //         });
@@ -272,47 +283,49 @@ impl CoatGA {
     // }
 
     /*
-     * Performs the 3 operations (in sequence 1. selection (tournament), 2. crossover, 3. mutation) 
+     * Performs the 3 operations (in sequence 1. selection (Tournament), 2. crossover, 3. mutation) 
      * on the existing populations to generate new population
      *  */
      fn generate_new_pop(&mut self) {
-        let mut new_pop: Vec<CoatGenome> = vec![];
-        let mut selected_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
-        let mut crossed_g: Vec<[[[u8; 10]; 6]; 10]> = vec![];
+        let mut new_pop: Vec<LocoGenome> = vec![];
+        let mut selected_g: Vec<[[[[u8; 4]; 3]; 4]; 3]> = vec![];
+        let mut crossed_g: Vec<[[[[u8; 4]; 3]; 4]; 3]> = vec![];
         let population_size = self.population.len() as u16;
 
         //print genomes for analysis
         let best_genome = self.population.iter().max_by(|&g1, &g2| g1.fitness.partial_cmp(&g2.fitness).unwrap()).unwrap();
         println!("Best Genome -> {best_genome:.5?}");
 
-        // for idx in 1..self.population.len() {
-        //     println!("{y:.5?}", y = self.population[idx].fitness);
-        // }
+        //for idx in 1..self.population.len() {
+        //    println!("{y:.5?}", y = self.population[idx].fitness);
+        //}
 
         // Write all the genomic data to a file
         {
             let mut buff: Vec<u8> = Vec::new();
             for genome in &self.population {
-                for n in 0..10 {
-                    for i in 0..6 {
-                        for j in 0..10 {
-                            buff.push(genome.string[n][i][j]);
+                for n in 0..3 {
+                    for i in 0..4 {
+                        for j in 0..3 {
+                            for k in 0..4 {
+                                buff.push(genome.string[n][i][j][k]);
+                            }
                         }
                     }
                 }
                 buff.extend(genome.fitness.to_be_bytes());
             }
 
-            let mut file = File::options().create(true).append(true).open(format!("./output/genomic_data_Coat_{}.log", self.random_seed)).expect("Failed to create genomic data file!");
+            let mut file = File::options().create(true).append(true).open(format!("./output/genomic_data_Loco_{}.log", self.random_seed)).expect("Failed to create genomic data file!");
             file.write_all(&buff).expect("Failed to append to the genomic data file!");
         }
         
         //perform tournament selection
         for _ in 0..(population_size) {
-            let genome_idx_1 = CoatGA::rng().sample(&CoatGA::genome_rng(population_size));
+            let genome_idx_1 = LocoGA::rng().sample(&LocoGA::genome_rng(population_size));
             let mut genome_idx_2;
             loop {
-                genome_idx_2 = CoatGA::rng().sample(&CoatGA::genome_rng(population_size));
+                genome_idx_2 = LocoGA::rng().sample(&LocoGA::genome_rng(population_size));
                 if genome_idx_1 != genome_idx_2 {
                     break;
                 }
@@ -328,10 +341,10 @@ impl CoatGA {
         
         //perform 2-point crossover
         for _ in 0..(population_size) {
-            let genome_idx_1 = CoatGA::rng().sample(&CoatGA::genome_rng(population_size));
+            let genome_idx_1 = LocoGA::rng().sample(&LocoGA::genome_rng(population_size));
             let mut genome_idx_2;
             loop {
-                genome_idx_2 = CoatGA::rng().sample(&CoatGA::genome_rng(population_size));
+                genome_idx_2 = LocoGA::rng().sample(&LocoGA::genome_rng(population_size));
                 if genome_idx_1 != genome_idx_2 {
                     break;
                 }
@@ -346,7 +359,7 @@ impl CoatGA {
             let genome = crossed_g[idx as usize];
             // println!("Genome:{} mutations", idx);
             let mutated_g = self.mutate_genome(&genome);
-            new_pop.push(CoatGenome {
+            new_pop.push(LocoGenome {
                 string: mutated_g,
                 fitness: 0.0,
             });
@@ -359,53 +372,49 @@ impl CoatGA {
     // 2. Save each genome's fitness value based on mean fitness for 'n' eval trials
     // 3. Generate new population based on these fitness values
     fn step_through(&mut self, gen: u16) -> f32 {
+        let trials = self.trial_seeds.len();
+        let seeds = self.trial_seeds.clone();
         let granularity = self.granularity.clone();
         let w1 = self.w1.clone();
         let w2 = self.w2.clone();
-        let distances_hash = self.distances_hash.clone();
 
         println!("Mutation Rate:{}", self.mut_rate);
         println!("Diversity State:{:?}", self.div_state);
 
+        let trials_vec: Vec<((u16,u16),u64)> = self
+            .sizes.clone()
+            .into_iter()
+            .zip(seeds)
+            .flat_map(|v| std::iter::repeat(v).take(trials.into()))
+            .collect();
 
-        let mut trials_vec: Vec<((u16,u16,u16),u64)> = Vec::new();
-
-        self.sizes.iter().for_each(|size| {
-            self.trial_seeds.iter().for_each(|seed| {
-                trials_vec.push(((size.0,size.1,size.2),*seed));
-            });
-        });
-
-        /*
-        Turn on/off memoization using following snippet
-         */
-        // let mut genome_fitnesses = vec![-1.0; self.population.len()];
+        
+        let mut genome_fitnesses = vec![-1.0; self.population.len()];
 
         // check if the cache has the genome's fitness calculated
-        // self.population
-        //     .iter()
-        //     .enumerate()
-        //     .for_each(|(idx, genome)| {
-        //         let genome_s = genome.string.clone();
-        //         match self.genome_cache.get(&genome_s) {
-        //             Some(fitness) => {
-        //                 println!("Cache Hit!");
-        //                 genome_fitnesses.insert(idx, *fitness);
-        //                 return;
-        //             }
-        //             None => return,
-        //         }
-        //     });
+        self.population
+            .iter()
+            .enumerate()
+            .for_each(|(idx, genome)| {
+                let genome_s = genome.string.clone();
+                match self.genome_cache.get(&genome_s) {
+                    Some(fitness) => {
+                        genome_fitnesses.insert(idx, *fitness);
+                        return;
+                    }
+                    None => return,
+                }
+            });
 
         // update the genome if the value exists in the cache
-        // self.population
-        //     .iter_mut()
-        //     .enumerate()
-        //     .for_each(|(idx, genome)| {
-        //         if genome_fitnesses[idx] > -1.0 {
-        //             genome.fitness = genome_fitnesses[idx];
-        //         }
-        //     });
+        self.population
+            .iter_mut()
+            .enumerate()
+            .for_each(|(idx, genome)| {
+                if genome_fitnesses[idx] > -1.0 {
+                    genome.fitness = genome_fitnesses[idx];
+                }
+            });
 
         self.population.par_iter_mut().for_each(|genome| {
             // bypass if genome has already fitness value calculated
@@ -418,20 +427,9 @@ impl CoatGA {
             let fitness_tot: f64 = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
-                    // let now = Instant::now();
-                    match distances_hash.get(&(trial.0.0, trial.0.1, trial.0.2, trial.1)) {
-                        Some(grid_distances) => {
-                            // println!("Cache Hit!");
-                            let dist_hash = &*grid_distances;
-                            let mut genome_env = SOPSCoatEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.0.2, trial.1.into(), granularity, w1, w2, Some(dist_hash.clone()));
-                            let g_fitness = genome_env.simulate(false);
-                            return g_fitness as f64;
-                        }
-                        None => {
-                            println!("Error! Pre-calculated distance grid is not present");
-                            return 0 as f64;
-                        },
-                    }
+                    let mut genome_env = SOPSLocoEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity, w1, w2);
+                    let g_fitness = genome_env.simulate(false);
+                    g_fitness as f64
                 })
                 .sum();
 
@@ -449,11 +447,11 @@ impl CoatGA {
         });
 
         // populate the cache
-        // for idx in 0..self.population.len() {
-        //     let genome_s = self.population[idx].string.clone();
-        //     let genome_f = self.population[idx].fitness.clone();
-        //     self.genome_cache.insert(genome_s, genome_f);
-        // }
+        for idx in 0..self.population.len() {
+            let genome_s = self.population[idx].string.clone();
+            let genome_f = self.population[idx].fitness.clone();
+            self.genome_cache.insert(genome_s, genome_f);
+        }
 
         //avg.fitness of population
         let fit_sum = self
@@ -474,20 +472,24 @@ impl CoatGA {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
                 let mut dis_sum: u16 = 0;
-                for n in 0..10 {
-                    for i in 0..6 {
-                        for j in 0..10 {
-                            let dis = (genome1.string[n][i][j]).abs_diff(genome2.string[n][i][j]);
-                            dis_sum += dis as u16;
+                
+                for i in 0..3 {
+                    for j in 0..4 {
+                        for k in 0..3 {
+                            for l in 0..4 {
+                                let dis = (genome1.string[i][j][k][l]).abs_diff(genome2.string[i][j][k][l]);
+                                dis_sum += dis as u16;
+                            }
                         }
                     }
                 }
+                
                 // pop_dist.push(dis_sum.sqrt());
                 pop_dist.push(dis_sum.into());
             }
         }
         let pop_diversity: f32 = pop_dist.iter().sum();
-        let avg_pop_diversity: f32 = if pop_dist.len() == 0 {0.0} else {pop_diversity / (pop_dist.len() as f32)};
+        let avg_pop_diversity: f32 = pop_diversity / (pop_dist.len() as f32);
         println!(
             "Population diversity -> {}",
             avg_pop_diversity / (self.max_div as f32)
@@ -505,62 +507,31 @@ impl CoatGA {
         self.mut_rate = self.mut_rate / 10.0;
     }
 
-    pub fn calculate_dist_hash(&mut self) {
-        let granularity = self.granularity.clone();
-        let w1 = self.w1.clone();
-        let w2 = self.w2.clone();
-
-        let mut trials_vec: Vec<((u16,u16,u16),u64)> = Vec::new();
-
-        self.sizes.iter().for_each(|size| {
-            self.trial_seeds.iter().for_each(|seed| {
-                trials_vec.push(((size.0,size.1,size.2),*seed));
-            });
-        });
-        
-        trials_vec.clone()
-            .iter()
-            .for_each(|trial| {
-                // println!("For size: ({},{},{}) seed:{}", trial.0.0, trial.0.1, trial.0.2, trial.1);
-                match self.distances_hash.get(&(trial.0.0, trial.0.1, trial.0.2, trial.1)) {
-                    Some(grid_distances) => {
-                        // println!("Cache hit for size: ({},{},{}) seed:{}", trial.0.0, trial.0.1, trial.0.2, trial.1);
-                    }
-                    None => {
-                        let mut genome_env = SOPSCoatEnvironment::init_sops_env(&self.population[0].string, trial.0.0, trial.0.1, trial.0.2, trial.1.into(), granularity, w1, w2, None);
-                        let distance_grid = genome_env.save_distance_grid();
-                        self.distances_hash.insert((trial.0.0, trial.0.1, trial.0.2, trial.1), distance_grid);
-                    },
-                }
-            });
-    }
-
     /*
      * The main loop of the GA which runs the full scale GA steps untill stopping criterion (ie. MAX Generations)
      * is reached
      *  */
     pub fn run_through(&mut self) {
-        let mut diversity_q: VecDeque<f32> = VecDeque::with_capacity(CoatGA::BUFFER_LEN);
+        let mut diversity_q: VecDeque<f32> = VecDeque::with_capacity(LocoGA::BUFFER_LEN);
         // Run the GA for given #. of Generations
-        self.calculate_dist_hash();
         for gen in 0..self.max_gen {
             println!("Starting Gen:{}", gen);
             let now = Instant::now();
-            if diversity_q.len() == CoatGA::BUFFER_LEN { diversity_q.pop_front(); }
+            if diversity_q.len() == LocoGA::BUFFER_LEN { diversity_q.pop_front(); }
             diversity_q.push_back(self.step_through(gen));
             let avg_div: f32 = diversity_q.iter().sum::<f32>() / (diversity_q.len() as f32);
             let norm_avg_div = avg_div / (self.max_div as f32);
-            println!("Avg. Population diversity for last {} gen -> {}", CoatGA::BUFFER_LEN, avg_div);
+            // println!("Avg. Population diversity for last {} gen -> {}", LocoGA::BUFFER_LEN, avg_div);
             println!("Avg. Population diversity for last {} gen -> {}", diversity_q.len(), norm_avg_div);
             match self.div_state {
                 DiversThresh::INIT => {
-                    if norm_avg_div <= CoatGA::LOWER_T {
+                    if norm_avg_div <= LocoGA::LOWER_T {
                         self.increase_mut();
                         self.div_state = DiversThresh::LOWER_HIT;
                     }
                 },
                 DiversThresh::LOWER_HIT => {
-                    if norm_avg_div >= CoatGA::UPPER_T {
+                    if norm_avg_div >= LocoGA::UPPER_T {
                         self.lower_mut();
                         self.div_state = DiversThresh::INIT;
                     }

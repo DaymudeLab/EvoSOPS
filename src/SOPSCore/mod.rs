@@ -1,5 +1,6 @@
-pub mod segregation;
+pub mod separation;
 pub mod coating;
+pub mod locomotion;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;
@@ -269,63 +270,23 @@ impl SOPSEnvironment {
      *  */
     fn move_particles(&mut self, cnt: usize) {
         
-        // Code for multiple particles moving is not needed, sequentially atleast
-        // let mut par_moves: Vec<(usize, (i32, i32))> = Vec::new();
-        // for _ in 0..cnt {
-            // Choose a random particle for movement
-            // let par_idx = SOPSEnvironment::rng().sample(&self.unfrm_par());
-            let par_idx = SOPSEnvironment::move_frng().usize(..self.participants.len());
-            // let particle: &Particle = &self.participants[par_idx];
-            // Choose a random direction and validate
-            // let move_dir = SOPSEnvironment::directions()
-            //         [SOPSEnvironment::rng().sample(&SOPSEnvironment::unfrm_dir())];
-            let move_dir = SOPSEnvironment::directions()
+        // Choose a random particle for movement
+        let par_idx = SOPSEnvironment::move_frng().usize(..self.participants.len());
+
+        // Choose a random direction and validate
+        let move_dir = SOPSEnvironment::directions()
                             [SOPSEnvironment::move_frng().usize(..SOPSEnvironment::directions().len())];
             
-            if self.particle_move_possible(par_idx, move_dir) {
-                // Get the neighborhood configuration
-                let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
-                // Move basis probability given by the genome for moving for given configuration
-                let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
-                if SOPSEnvironment::move_frng().u16(1_u16..=1000) <= SOPSEnvironment::gene_probability()[move_prb as usize]
-                {
-                    self.move_particle_to(par_idx, move_dir);
-                }
-            }
-        // }
-
-        // Parallel execution
-        /*
-        let par_moves: Vec<(usize, (i32, i32))> = (0..cnt).into_par_iter().filter_map(|_| {
-            let par_idx = SOPSEnvironment::move_frng().usize(0..self.participants.len());
-            let particle: &Particle = &self.participants[par_idx];
-            let n_cnt = self.get_neighbors_cnt(particle.x, particle.y) as usize;
-            if n_cnt == 6 {
-                return None;
-            }
-            let move_prb: f64 =
-                self.phenotype[n_cnt] as f64 / (self.phenotype.iter().sum::<u16>() as f64);
-            // if SOPSEnvironment::move_nrng().generate_range(1_u64..=1000)
-            //     <= (move_prb * 1000.0) as u64
-            // {
-            //     let move_dir = SOPSEnvironment::directions()
-            //         [SOPSEnvironment::move_nrng().generate_range(1..6)];
-            //     par_moves.push((par_idx, move_dir));
-            // }
-            if SOPSEnvironment::move_frng().u64(1_u64..=1000)
-                <= (move_prb * 1000.0) as u64
+        if self.particle_move_possible(par_idx, move_dir) {
+            // Get the neighborhood configuration
+            let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
+            // Move basis probability given by the genome for moving for given configuration
+            let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
+            if SOPSEnvironment::move_frng().u16(1_u16..=1000) <= SOPSEnvironment::gene_probability()[move_prb as usize]
             {
-                let move_dir = SOPSEnvironment::directions()
-                    [SOPSEnvironment::move_frng().usize(1..6)];
-                return Some((par_idx, move_dir));
+                self.move_particle_to(par_idx, move_dir);
             }
-            return None;
-        }).collect();
-         */
-
-        // for moves in par_moves.iter() {
-        //     self.move_particle_to(moves.0, moves.1);
-        // }
+        }
     }
 
     /*
