@@ -13,7 +13,7 @@ Then to compile and run the simulation run command:<br>
 The `main.rs` file houses the execution loop to run a full scale Genetic Algorithm or a Standalone evaluation of a genome. The RUST modules are organized based on the 2 main components of the code-base the SOPS environment and Genetic Algorithm housed respectively in the `SOPSCore` and `GACore` folder.<br>
 The modules have a main module file which contain all the code shared within the respective module files. Separate files are maintained for the Separation behavior which is implemented as an extension of the Aggregation behavior.<br>
 **Please use a similar file format for making any extensions of new behaviors\*** <br>
-The `utils` module contains all the complementary helper functions required for main experiment tasks. There is another folder `misc_scripts` folder which contains python scripts used to generate all the auxiliary data and graphs for/from the experiments.  
+The `utils` module contains all the complementary helper functions required for main experiment tasks. There is another folder `misc_scripts` folder which contains python scripts used to generate all the auxiliary data and graphs for/from the experiments.
 
 ## Running the experiments
 
