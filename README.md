@@ -1,19 +1,19 @@
 # SOPS-SwarmGA
-This is a research project in Swarm robotics using Genetic Algorithms as the backbone, to search for local controllers to produce global collective behaviors. The base model used is the SOPS model developed @SOPS Lab, ASU. <br> **This project is conducted under supervision of Prof. Joshua Daymude\***
+This is a research project in Swarm robotics using Genetic Algorithms as the backbone, to search for local controllers to produce global collective behaviors.  The base model used is the SOPS model from collective research lab at ASU.
 
-## Basic RUST setup
+## RUST setup
 **Make sure you have rust installed\***
 To install latest rust compiler run command:<br>
 `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`<br>
 Then to compile and run the simulation run command:<br>
 `cargo run`<br><br>
 
-## Basic Repository Structure 
+## Basic Repository Structure
 
 The `main.rs` file houses the execution loop to run a full scale Genetic Algorithm or a Standalone evaluation of a genome. The RUST modules are organized based on the 2 main components of the code-base the SOPS environment and Genetic Algorithm housed respectively in the `SOPSCore` and `GACore` folder.<br>
-The modules have a main module file which contain all the code shared within the respective module files. Separate files are maintained for the Separation behavior which is implemented as a extension of the Aggregation behavior.<br>
+The modules have a main module file which contain all the code shared within the respective module files. Separate files are maintained for the Separation behavior which is implemented as an extension of the Aggregation behavior.<br>
 **Please use a similar file format for making any extensions of new behaviors\*** <br>
-The `utils` module contains all the complementary helper functions required for main experiment tasks. There is another folder `misc_scripts` folder which contains python scripts used to generate all the auxilary data and graphs for/from the experiments.  
+The `utils` module contains all the complementary helper functions required for main experiment tasks. There is another folder `misc_scripts` folder which contains python scripts used to generate all the auxiliary data and graphs for/from the experiments.
 
 ## Running the experiments
 
@@ -25,11 +25,13 @@ Printing out the options: `cargo run --package swarm_aggregation_ga --bin swarm_
 ### Options:<br>
 ```
 -b, --behavior <BEHAVIOR>
-          Behaviour to run
+          Behavior to run
 
           Possible values:
           - agg: Aggregation
           - sep: Separation
+          - loco: Locomotion
+          - coat: Coating
 
   -e, --exp <EXPERIMENT_TYPE>
           Type of Experiment to run
@@ -68,7 +70,7 @@ Printing out the options: `cargo run --package swarm_aggregation_ga --bin swarm_
           Particle Sizes to run on (eg. use multiple -k<String"(<u64>,<u64>)"> arguments to specify multiple sizes)
 
   -s, --seed <SEEDS>
-          Seed values to run experiments with, for reproducable trials (eg. use multiple -s<u64> arguments to specify seeded trials)
+          Seed values to run experiments with, for reproducible trials (eg. use multiple -s<u64> arguments to specify seeded trials)
 
       --path <FILE>
           File to read genome value from
