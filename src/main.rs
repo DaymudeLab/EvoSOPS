@@ -6,10 +6,15 @@ use GACore::sep_ga::SepGA;
 use GACore::coat_ga::CoatGA;
 use GACore::loco_ga::LocoGA;
 
+mod CMACore;
+use CMACore::base_cma::CmaAlgo;
+
 use crate::SOPSCore::locomotion::SOPSLocoEnvironment;
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::separation::SOPSepEnvironment;
 use crate::SOPSCore::coating::SOPSCoatEnvironment;
+use crate::SOPSCore::aggregation_cma::SOPSEnvironmentCMA;
+
 
 use rayon::prelude::*;
 use gag::Redirect;
@@ -97,6 +102,9 @@ enum Experiment {
     GM,
     /// Stand-alone single theory given solution run
     TH,
+    CMA,
+    /// Stand-alone single genome run
+    CM,
 }
 
 fn main() {
@@ -181,6 +189,33 @@ fn main() {
                     println!("\nStarting Locomotion GA Experiment...\n");
                     let mut ga_sops = LocoGA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.75, 0.25, random_trial_seed);
                     ga_sops.run_through();
+
+                },
+            }
+        },
+        Experiment::CMA => {
+            let crossover = true;
+            println!("Population Size: {:?}", &args.population);
+            println!("Max Generations: {:?}", &args.max_generations);
+            println!("Mutation Rate: {:?}", &args.mutation_rate);
+            println!("Elitist Count: {:?}", &args.elitist_count);
+            println!("Cross-over: {:?}", &crossover);
+            /*
+             * Perform a single run of Full length Genetic algorithm for respective behaviour
+             */
+            match &args.behavior {
+                Behavior::Agg => {
+                    println!("\nStarting Aggregation CMA-ES Experiment...\n");
+                    let mut ga_sops = CmaAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, crossover, particle_sizes, args.seeds, random_trial_seed);
+                    ga_sops.run_through();
+                },
+                Behavior::Sep => {
+                    
+                },
+                Behavior::Coat => {
+                    
+                },
+                Behavior::Loco => {
 
                 },
             }
@@ -507,6 +542,86 @@ fn main() {
                             println!("Read Genome:\n{:?}", genome);
 
                             todo!()
+                        },
+                    }
+                },
+                Experiment::CM => {
+                    let all_entries: Vec<f64> = striped_content.split(',').filter_map(|x| x.parse::<f64>().ok()).collect();
+        
+                    match &args.behavior {
+                        Behavior::Agg => {
+                            println!("\nStarting Aggregation Single Genome Trial...\n");
+                            // Construct the genome in required dimension
+                            let mut genome: [[[f64; 4]; 3]; 4] = [[[0_f64; 4]; 3]; 4];
+                            let mut idx = 0;
+                            for n in 0_u8..4 {
+                                for j in 0_u8..3 {
+                                    for i in 0_u8..4 {
+                                        genome[n as usize][j as usize][i as usize] = all_entries[idx].into();
+                                        idx += 1;
+                                    }
+                                }
+                            }
+
+                            println!("Read Genome:\n{:?}", genome);
+
+                            /*
+                             * Sample snippet for computing variance and mean stats of the trials
+                            // let scores: Vec<u32> => (for each particle sizes and seed value)
+                            // let mean = scores.clone().into_iter().fold(0, |sum, score| sum + score) / 1;
+                            // let variance = scores
+                            //     .into_iter()
+                            //     .fold(0, |sum, score| sum + (score as i32 - mean as i32).pow(2))
+                            //     / 1;
+                            // println!("N^3 Mean:{}", mean);
+                            // println!("N^3 Variance:{}", variance);
+                            */
+
+                            // Run the trials in parallel
+                            let seeds = args.seeds.clone();
+
+                            let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
+
+                            particle_sizes.iter().for_each(|size| {
+                                seeds.iter().for_each(|seed| {
+                                    trials_vec.push(((size.0,size.1),*seed));
+                                });
+                            });
+
+                            let fitness_tot: f64 = trials_vec.clone()
+                            .into_par_iter()
+                            .map(|trial| {
+                                /*
+                                     * Single Evaluation run of the Genome
+                                     */
+                                    let mut sops_trial = SOPSEnvironmentCMA::init_sops_env(&genome, trial.0.0, trial.0.1, trial.1, args.granularity);
+                                    sops_trial.print_grid();
+                                    let edge_cnt: u32 = sops_trial.evaluate_fitness();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    println!("Max Fitness: {}", sops_trial.get_max_fitness());
+                                    println!("Starting Fitness: {}", edge_cnt as f32/ sops_trial.get_max_fitness() as f32);
+                                    let now = Instant::now();
+                                    let edge_cnt: u32 = sops_trial.simulate(true);
+                                    let elapsed = now.elapsed().as_secs();
+                                    sops_trial.print_grid();
+                                    println!("Edge Count: {}", edge_cnt);
+                                    let t_fitness = edge_cnt as f64/ sops_trial.get_max_fitness() as f64;
+                                    println!("Fitness: {}", &t_fitness);
+                                    println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                    t_fitness
+                            })
+                            .sum();
+
+                            println!("Total Fitness: {}", &fitness_tot);
+                        },
+                        Behavior::Sep => {
+
+                        },
+                        Behavior::Coat => {
+
+                        },
+                        Behavior::Loco => {
+
                         },
                     }
                 },

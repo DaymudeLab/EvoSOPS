@@ -1,7 +1,6 @@
-pub mod separation;
-pub mod coating;
-pub mod locomotion;
-pub mod aggregation_cma;
+//pub mod separation;
+//pub mod coating;
+//pub mod locomotion;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;
@@ -10,7 +9,7 @@ use std::collections::HashMap;
 /*
  * A particle in SOPS grid used in all the behavior's SOPS grids
  *  */
- struct Particle {
+struct Particle {
     x: u8,
     y: u8,
     state: u8
@@ -23,10 +22,10 @@ use std::collections::HashMap;
  * grid evaluations to assess the fitness score of the genome
  * NOTE: Extend/Refer this to create new Behaviour classes
  *  */
-pub struct SOPSEnvironment {
+pub struct SOPSEnvironmentCMA {
     grid: Vec<Vec<u8>>,
     participants: Vec<Particle>,
-    phenotype: [[[u8; 4]; 3]; 4],
+    phenotype: [[[f64; 4]; 3]; 4],
     sim_duration: u64,
     fitness_val: f64,
     size: usize,
@@ -37,7 +36,7 @@ pub struct SOPSEnvironment {
 }
 
 
-impl SOPSEnvironment {
+impl SOPSEnvironmentCMA {
 
     const EMPTY: u8 = 0;
     const PARTICLE: u8 = 1;
@@ -104,40 +103,40 @@ impl SOPSEnvironment {
      * Calculates Max edge count possible for all the particles irrespective of the state
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
-    pub fn init_sops_env(genome: &[[[u8; 4]; 3]; 4], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8) -> Self {
+    pub fn init_sops_env(genome: &[[[f64; 4]; 3]; 4], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
         let mut participants: Vec<Particle> = vec![];
         let num_particles = 6*particle_layers*(1+particle_layers)/2 + 1;
         let k = 3*particle_layers;
         let agg_edge_cnt: u64 = (k*(k+1)).into();
-        let mut grid_rng = SOPSEnvironment::seed_rng(seed);
+        let mut grid_rng = SOPSEnvironmentCMA::seed_rng(seed);
         //init grid bounds
         for i in 0..arena_layers {
             let mut j = 1;
             while i+arena_layers+j < (grid_size as u16) {
-                grid[i as usize][(i+arena_layers+j) as usize] = SOPSEnvironment::BOUNDARY;
-                grid[(i+arena_layers+j) as usize][i as usize] = SOPSEnvironment::BOUNDARY;
+                grid[i as usize][(i+arena_layers+j) as usize] = SOPSEnvironmentCMA::BOUNDARY;
+                grid[(i+arena_layers+j) as usize][i as usize] = SOPSEnvironmentCMA::BOUNDARY;
                 j +=1;
             }
         }
 
         //init grid and particles
         while participants.len() < num_particles.into() {
-            let i = grid_rng.sample(&SOPSEnvironment::grid_rng(grid_size));
-            let j = grid_rng.sample(&SOPSEnvironment::grid_rng(grid_size));
+            let i = grid_rng.sample(&SOPSEnvironmentCMA::grid_rng(grid_size));
+            let j = grid_rng.sample(&SOPSEnvironmentCMA::grid_rng(grid_size));
             if grid[i][j] == 0 {
                 participants.push(Particle {
                     x: i as u8,
                     y: j as u8,
                     state: 0
                 });
-                grid[i][j] = SOPSEnvironment::PARTICLE;
+                grid[i][j] = SOPSEnvironmentCMA::PARTICLE;
             }
             
         }
 
-        SOPSEnvironment {
+        SOPSEnvironmentCMA {
             grid,
             participants,
             phenotype: *genome,
@@ -167,8 +166,8 @@ impl SOPSEnvironment {
     fn get_neighbors_cnt(&self, i: u8, j: u8) -> u8 {
         let mut cnt = 0;
         for idx in 0..6 {
-            let new_i = (i as i32 + SOPSEnvironment::directions()[idx].0) as usize;
-            let new_j = (j as i32 + SOPSEnvironment::directions()[idx].1) as usize;
+            let new_i = (i as i32 + SOPSEnvironmentCMA::directions()[idx].0) as usize;
+            let new_j = (j as i32 + SOPSEnvironmentCMA::directions()[idx].1) as usize;
             if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
                 if self.grid[new_i][new_j] == 1 {
                     cnt += 1;
@@ -191,33 +190,33 @@ impl SOPSEnvironment {
         let mut seen_neighbor_cache: HashMap<[usize; 2], bool> = HashMap::new();
         // Neighborhood for original position
         for idx in 0..6 {
-            let new_i = (particle.x as i32 + SOPSEnvironment::directions()[idx].0) as usize;
-            let new_j = (particle.y as i32 + SOPSEnvironment::directions()[idx].1) as usize;
+            let new_i = (particle.x as i32 + SOPSEnvironmentCMA::directions()[idx].0) as usize;
+            let new_j = (particle.y as i32 + SOPSEnvironmentCMA::directions()[idx].1) as usize;
             if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == move_i) & (new_j == move_j)) {
                 seen_neighbor_cache.insert([new_i, new_j], true);
-                if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE {
+                if self.grid[new_i][new_j] == SOPSEnvironmentCMA::PARTICLE {
                     back_cnt += 1;
                 }
             }
         }
         // Neighborhood for new position
         for idx in 0..6 {
-            let new_i = (move_i as i32 + SOPSEnvironment::directions()[idx].0) as usize;
-            let new_j = (move_j as i32 + SOPSEnvironment::directions()[idx].1) as usize;
+            let new_i = (move_i as i32 + SOPSEnvironmentCMA::directions()[idx].0) as usize;
+            let new_j = (move_j as i32 + SOPSEnvironmentCMA::directions()[idx].1) as usize;
             if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) & !((new_i == particle.x.into()) & (new_j == particle.y.into())) {
-                let mut position_type = SOPSEnvironment::FRONT;
+                let mut position_type = SOPSEnvironmentCMA::FRONT;
                 match seen_neighbor_cache.get(&[new_i, new_j]) {
                     Some(_exists) => {
-                        position_type = SOPSEnvironment::MID;
+                        position_type = SOPSEnvironmentCMA::MID;
                     }
                     None => {},
                 }
-                if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE {
+                if self.grid[new_i][new_j] == SOPSEnvironmentCMA::PARTICLE {
                     match position_type {
-                        SOPSEnvironment::FRONT => {
+                        SOPSEnvironmentCMA::FRONT => {
                             front_cnt += 1;
                         }
-                        SOPSEnvironment::MID => {
+                        SOPSEnvironmentCMA::MID => {
                             mid_cnt += 1;
                             back_cnt -= 1;
                         }
@@ -240,7 +239,7 @@ impl SOPSEnvironment {
         // Move particle if movement is within bound
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
             // check to see if move is valid ie. within bounds and not in an already occupied location
-            if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE || self.grid[new_i][new_j] == SOPSEnvironment::BOUNDARY {
+            if self.grid[new_i][new_j] == SOPSEnvironmentCMA::PARTICLE || self.grid[new_i][new_j] == SOPSEnvironmentCMA::BOUNDARY {
                 return false;
             } else {
                 // can move the particle
@@ -259,8 +258,8 @@ impl SOPSEnvironment {
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
         // move the particle
-        self.grid[particle.x as usize][particle.y as usize] = SOPSEnvironment::EMPTY;
-        self.grid[new_i][new_j] = SOPSEnvironment::PARTICLE;
+        self.grid[particle.x as usize][particle.y as usize] = SOPSEnvironmentCMA::EMPTY;
+        self.grid[new_i][new_j] = SOPSEnvironmentCMA::PARTICLE;
         particle.x = new_i as u8;
         particle.y = new_j as u8;
         return true;
@@ -272,18 +271,18 @@ impl SOPSEnvironment {
     fn move_particles(&mut self, cnt: usize) {
         
         // Choose a random particle for movement
-        let par_idx = SOPSEnvironment::move_frng().usize(..self.participants.len());
+        let par_idx = SOPSEnvironmentCMA::move_frng().usize(..self.participants.len());
 
         // Choose a random direction and validate
-        let move_dir = SOPSEnvironment::directions()
-                            [SOPSEnvironment::move_frng().usize(..SOPSEnvironment::directions().len())];
+        let move_dir = SOPSEnvironmentCMA::directions()
+                            [SOPSEnvironmentCMA::move_frng().usize(..SOPSEnvironmentCMA::directions().len())];
             
         if self.particle_move_possible(par_idx, move_dir) {
             // Get the neighborhood configuration
             let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
             // Move basis probability given by the genome for moving for given configuration
             let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
-            if SOPSEnvironment::move_frng().u16(1_u16..=1000) <= SOPSEnvironment::gene_probability()[move_prb as usize]
+            if SOPSEnvironmentCMA::move_frng().u16(1_u16..=1000) <= SOPSEnvironmentCMA::gene_probability()[move_prb as usize]
             {
                 self.move_particle_to(par_idx, move_dir);
             }
