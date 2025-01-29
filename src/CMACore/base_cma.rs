@@ -414,8 +414,22 @@ impl CmaAlgo {
             rank_mu_update += covariance_weights[i] * &y[i] * &y[i].transpose();
         }
 
-        let new_covariance_matrix  = ((1.0 + c_one * ((1.0 - h_sigma) * c_c * (2.0 - c_c)) - c_one - c_mu * self.weights.iter().map(|x| x).sum::<f64>()) * self.covariance_matrix.clone()) + (c_one * rank_one_update)+ (c_mu * rank_mu_update) ;
+        let mut new_covariance_matrix  = ((1.0 + c_one * ((1.0 - h_sigma) * c_c * (2.0 - c_c)) - c_one - c_mu * self.weights.iter().map(|x| x).sum::<f64>()) * self.covariance_matrix.clone()) + (c_one * rank_one_update)+ (c_mu * rank_mu_update) ;
         
+        // clipping
+        for i in 0..Self::GENOME_LEN as usize{
+            for j in 0..Self::GENOME_LEN as usize{
+                new_covariance_matrix[(i,j)] = if new_covariance_matrix[(i,j)] < 0.0 
+                {
+                    0.0
+                }  else if new_covariance_matrix[(i,j)] > 1.0{
+                    1.0
+                } else {
+                    new_covariance_matrix[(i,j)]
+                }
+            }
+        }
+
         new_covariance_matrix
     }
 
@@ -725,6 +739,15 @@ impl CmaAlgo {
                     // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
                     // let g_fitness = 1; // added
                     g_fitness as f64 / (genome_env.get_max_fitness() as f64)
+
+                    /*let g_fitness = &genome_s.iter().map(|x| {
+                        x.iter().map(|y| {
+                            y.iter().map(|z| {
+                                z
+                            }).sum::<f64>()
+                        }).sum::<f64>()
+                    }).sum::<f64>();
+                    g_fitness / Self::GENOME_LEN as f64*/
                 })
                 .sum();
             
@@ -833,6 +856,7 @@ impl CmaAlgo {
         //println!("Step Size: {}", self.step_size);
 
         //covariance matrix adaptation
+        println!("eigen values: {:.5?}", self.covariance_matrix.clone().symmetric_eigen().eigenvalues);
         self.covariance_matrix = self.covariance_matrix_adaptation(&y, gen);
 
         // Matrices for eigendecomposition of C where C = B D^2 B^T
