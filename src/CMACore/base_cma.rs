@@ -187,7 +187,7 @@ impl CmaAlgo {
             sizes,
             trial_seeds,
             random_seed,
-            max_div: ((granularity-1) as u32)*(CmaAlgo::GENOME_LEN as u32),
+            max_div: (CmaAlgo::GENOME_LEN as u32),
             mean,
             step_size,
             p_sigma,
@@ -799,13 +799,13 @@ impl CmaAlgo {
             for j in (i + 1)..self.population.len() {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
-                let mut dis_sum: u16 = 0;
+                let mut dis_sum: f32 = 0.0;
                 for n in 0..4 {
                     for i in 0..3 {
                         for j in 0..4 {
                             //let dis = (genome1.string[n][i][j]).abs_diff(genome2.string[n][i][j]);
                             let dis = (genome1.string[n][i][j] - genome2.string[n][i][j]).abs();
-                            dis_sum += dis as u16;
+                            dis_sum += dis as f32;
                             // let genome1_prob = genome1.string[n][i][j] as f64 / (self.granularity as f64);
                             // let genome2_prob = genome2.string[n][i][j] as f64 / (self.granularity as f64);
                             // let dis = (genome1_prob - genome2_prob).abs();
@@ -856,7 +856,7 @@ impl CmaAlgo {
         //println!("Step Size: {}", self.step_size);
 
         //covariance matrix adaptation
-        println!("eigen values: {:.5?}", self.covariance_matrix.clone().symmetric_eigen().eigenvalues);
+        println!("eigenvalues: {:.5?}", self.covariance_matrix.clone().symmetric_eigen().eigenvalues);
         self.covariance_matrix = self.covariance_matrix_adaptation(&y, gen);
 
         // Matrices for eigendecomposition of C where C = B D^2 B^T
