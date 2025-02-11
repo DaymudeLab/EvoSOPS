@@ -12,6 +12,7 @@ use std::io::Write;
 use std::fs::File;
 use ordered_float::OrderedFloat;
 use nalgebra::*;
+use std::process;
 
 /*
  * Main GA class for Separation behavior (use as a model to structure and write other GA extensions for other GA's)
@@ -857,6 +858,13 @@ impl CmaAlgo {
 
         //covariance matrix adaptation
         println!("eigenvalues: {:.5?}", self.covariance_matrix.clone().symmetric_eigen().eigenvalues);
+        for i in 0..Self::GENOME_LEN as usize{
+            if self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i] <= 0.0 {
+                println!("Index: {}, Value: {}", i, self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i]);
+                println!("One or more eigenvalues are zero or negative.");
+                process::exit(1);
+            }
+        }
         self.covariance_matrix = self.covariance_matrix_adaptation(&y, gen);
 
         // Matrices for eigendecomposition of C where C = B D^2 B^T
