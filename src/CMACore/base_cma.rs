@@ -843,10 +843,6 @@ impl CmaAlgo {
         for i in 0..self.population.len() {
             y.push((&vec_pop[i] - self.mean.clone())/self.step_size);
         } 
-        
-//      am i sorting the fitness values?
-//      find the highest fitness values and then put them in array to be used by the weighted mean?
-
 
         //calculate new mean
         self.mean = self.update_mean(&y);
@@ -862,7 +858,7 @@ impl CmaAlgo {
             if self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i] <= 0.0 {
                 println!("Index: {}, Value: {}", i, self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i]);
                 println!("One or more eigenvalues are zero or negative.");
-                process::exit(1);
+                return -1.0
             }
         }
         self.covariance_matrix = self.covariance_matrix_adaptation(&y, gen);
@@ -889,10 +885,15 @@ impl CmaAlgo {
         for gen in 0..self.max_gen {
             println!("Starting Gen:{}", gen);
             let now = Instant::now();
-            self.step_through(gen);
+            let smt = self.step_through(gen);
+            if (smt == -1.0){
+                break;
+            }
             let elapsed = now.elapsed().as_secs();
             println!("Generation Elapsed Time: {:.2?}s", elapsed);
         }
+
+        println!("Additional commands for algorithm analysis")
         /*
          * Snippet to evaluate the final best genome evolved at the end of GA execution
          * TODO: Accept a parameter to run this snippet ?? Or save the best genomes to files if need be ?
