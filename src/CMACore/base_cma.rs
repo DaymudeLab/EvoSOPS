@@ -833,6 +833,13 @@ impl CmaAlgo {
         //println!("Step Size: {}", self.step_size);
 
         //covariance matrix adaptation
+        for i in 0..Self::GENOME_LEN as usize{
+            if self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i] <= 0.0 {
+                println!("Index: {}, Value: {}", i, self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i]);
+                println!("One or more eigenvalues are zero or negative.");
+                return -1.0
+            }
+        }
         self.covariance_matrix = self.covariance_matrix_adaptation(&y, gen);
 
         // Matrices for eigendecomposition of C where C = B D^2 B^T
