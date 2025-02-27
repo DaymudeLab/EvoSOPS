@@ -1,5 +1,5 @@
 pub mod base_cma;
-//pub mod sep_ga;
+pub mod sep_cma;
 //pub mod coat_ga;
 //pub mod loco_ga;
 
@@ -21,7 +21,7 @@ struct Genome {
   */
 #[derive(Debug, Copy, Clone)]
 struct SepGenome {
-    string: [[[u8; 10]; 6]; 10],
+    string: [[[f64; 10]; 6]; 10],
     fitness: f64,
 }
 

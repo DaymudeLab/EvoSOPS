@@ -8,12 +8,14 @@ use GACore::loco_ga::LocoGA;
 
 mod CMACore;
 use CMACore::base_cma::CmaAlgo;
+use CMACore::sep_cma::SepCMA;
 
 use crate::SOPSCore::locomotion::SOPSLocoEnvironment;
 use crate::SOPSCore::SOPSEnvironment;
 use crate::SOPSCore::separation::SOPSepEnvironment;
 use crate::SOPSCore::coating::SOPSCoatEnvironment;
 use crate::SOPSCore::aggregation_cma::SOPSEnvironmentCMA;
+use crate::SOPSCore::separation_cma::SOPSepEnvironmentCMA;
 
 
 use rayon::prelude::*;
@@ -229,7 +231,9 @@ fn main() {
                     ga_sops.run_through();
                 },
                 Behavior::Sep => {
-                    
+                    println!("\nStarting Separation CMA-ES Experiment...\n");
+                    let mut ga_sops = SepCMA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35, random_trial_seed, search_interval);
+                    ga_sops.run_through();
                 },
                 Behavior::Coat => {
                     
@@ -634,7 +638,53 @@ fn main() {
                             println!("Total Fitness: {}", &fitness_tot);
                         },
                         Behavior::Sep => {
+                            println!("\nStarting Separation Single Genome Trial...\n");
+                            // Construct the genome in required dimension
+                            let mut genome: [[[f64; 10]; 6]; 10] = [[[0_f64; 10]; 6]; 10];
+                            let mut idx = 0;
+                            for n in 0_u8..10 {
+                                for j in 0_u8..6 {
+                                    for i in 0_u8..10 {
+                                        genome[n as usize][j as usize][i as usize] = all_entries[idx];
+                                        idx += 1;
+                                    }
+                                }
+                            }
 
+                            println!("Read Genome:\n{:?}", genome);
+
+                            // Run the trials in parallel
+                            let seeds = args.seeds.clone();
+
+                            let mut trials_vec: Vec<((u16,u16),u64)> = Vec::new();
+
+                            particle_sizes.iter().for_each(|size| {
+                                seeds.iter().for_each(|seed| {
+                                    trials_vec.push(((size.0,size.1),*seed));
+                                });
+                            });
+
+                            let fitness_tot: f32 = trials_vec.clone()
+                            .into_par_iter()
+                            .map(|trial| {
+                                /*
+                                 * Single Evaluation run of the Genome
+                                 */
+                                let mut sops_trial = SOPSepEnvironmentCMA::init_sops_env(&genome,trial.0.0, trial.0.1, trial.1, args.granularity, 0.65, 0.35);
+                                sops_trial.print_grid();
+                                let fitness: f32 = sops_trial.evaluate_fitness();
+                                println!("Starting Fitness: {}", fitness);
+                                let now = Instant::now();
+                                let t_fitness: f32 = sops_trial.simulate(true);
+                                let elapsed = now.elapsed().as_secs();
+                                sops_trial.print_grid();
+                                println!("Fitness: {}", &t_fitness);
+                                println!("Trial Elapsed Time: {:.2?}s", elapsed);
+                                t_fitness
+                            })
+                            .sum();
+    
+                            println!("Total Fitness: {}", &fitness_tot);
                         },
                         Behavior::Coat => {
 
