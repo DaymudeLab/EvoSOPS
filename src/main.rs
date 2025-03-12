@@ -8,6 +8,7 @@ use GACore::loco_ga::LocoGA;
 
 mod CMACore;
 use CMACore::base_cma::CmaAlgo;
+use CMACore::coat_cma::CoatCMA;
 
 use crate::SOPSCore::locomotion::SOPSLocoEnvironment;
 use crate::SOPSCore::SOPSEnvironment;
@@ -232,7 +233,10 @@ fn main() {
                     
                 },
                 Behavior::Coat => {
-                    
+                    println!("\nStarting Coating CMA-ES Experiment...\n");
+                    let particle_sizes: Vec<(u16,u16,u16)> = size_strings.map(|c| (c[0],c[1],c[2])).collect::<Vec<(u16,u16,u16)>>();
+                    let mut coat_sops = CoatCMA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.65, 0.35, random_trial_seed, search_interval);
+                    coat_sops.run_through();
                 },
                 Behavior::Loco => {
 
