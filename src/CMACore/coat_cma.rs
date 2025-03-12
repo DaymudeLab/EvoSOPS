@@ -124,7 +124,7 @@ impl CoatCMA {
             for n in 0_u8..10 {
                 for j in 0_u8..6 {
                     for i in 0_u8..10 {
-                        genome[n as usize][j as usize][i as usize] = CoatCMA::rng().sample(CoatCMA::genome_init_rng(granularity)) as f64;
+                        genome[n as usize][j as usize][i as usize] = CoatCMA::rng().sample(CoatCMA::genome_prob_init_rng()) as f64;
                     }
                 }
             }
@@ -398,7 +398,6 @@ impl CoatCMA {
         let mut matrix_d = DMatrix::from_element(Self::GENOME_LEN.into(), Self::GENOME_LEN.into(), 0.0);
         // D^-1
         let eigenvalues  = self.covariance_matrix.clone().symmetric_eigen().eigenvalues;
-        // D^-1
         for i in 0..Self::GENOME_LEN as usize{
             //matrix_d[(i, i)] = 1.0 / self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i].sqrt(); 
             matrix_d[(i, i)] = 1.0 / eigenvalues[i].sqrt();                                                                                 
