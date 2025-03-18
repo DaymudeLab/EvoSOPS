@@ -35,8 +35,8 @@ for i, file_path in enumerate(file_paths):
 plt.xlabel("Line Index")
 plt.ylabel("Sum of Eigenvalues")
 plt.title("Multi-Line Plot of Sum of Eigenvalues per Line")
-plt.xlim(0, 700)  # Set x-axis limit
-plt.ylim(0, 50)   # Set y-axis limit
+plt.xlim(0, 1000)  # Set x-axis limit
+plt.ylim(0, 700)   # Set y-axis limit
 plt.legend(title="Files", loc="best")  # Place legend automatically
 plt.grid(True)
 
