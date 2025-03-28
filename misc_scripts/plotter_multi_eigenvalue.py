@@ -5,13 +5,13 @@ import os.path as osp
 
 # List of CSV file paths
 file_paths = [
-    'src/Agg_CMA_1_sizes_1_trials_gran_10_3744288131_EigenVal.csv',
-    'src/Agg_CMA_1_sizes_1_trials_gran_10_4177721761_EigenVal.csv',
-    'src/Agg_CMA_1_sizes_2_trials_gran_10_1791688383_EigenVal.csv',
-    'src/Agg_CMA_1_sizes_2_trials_gran_10_3617115867_EigenVal.csv',
-    'src/Agg_CMA_1_sizes_2_trials_gran_10_3731390385_EigenVal.csv',
-    'src/Sep_CMA_1_sizes_2_trials_gran_10_1585878937_EigenVal.csv',
-    'src/Sep_CMA_1_sizes_2_trials_gran_10_1769147479_EigenVal.csv'
+    'output/eigen_val/Agg_CMA_1_sizes_1_trials_gran_10_3744288131_EigenVal.csv',
+    'output/eigen_val/Agg_CMA_1_sizes_1_trials_gran_10_4177721761_EigenVal.csv',
+    'output/eigen_val/Agg_CMA_1_sizes_2_trials_gran_10_1791688383_EigenVal.csv',
+    'output/eigen_val/Agg_CMA_1_sizes_2_trials_gran_10_3617115867_EigenVal.csv',
+    'output/eigen_val/Agg_CMA_1_sizes_2_trials_gran_10_3731390385_EigenVal.csv',
+    'output/eigen_val/Sep_CMA_1_sizes_2_trials_gran_10_1585878937_EigenVal.csv',
+    'output/eigen_val/Sep_CMA_1_sizes_2_trials_gran_10_1769147479_EigenVal.csv'
 ]
 
 plt.figure(figsize=(10, 6))  # Set figure size
