@@ -80,6 +80,10 @@ struct Args {
     /// Specify if snapshots of the experiment run are written to the output (only valid for stand-alone experiments)
     #[arg(long)]
     snaps: bool,
+
+    /// Initial Search Interval for CMA-ES (Used for initial mean and step size)
+    #[arg(short='i', long="interval", action = clap::ArgAction::Append)]
+    search_interval: Vec<String>,
 }
 
 #[derive(ValueEnum, Debug, Clone)] // ArgEnum here
@@ -200,13 +204,28 @@ fn main() {
             println!("Mutation Rate: {:?}", &args.mutation_rate);
             println!("Elitist Count: {:?}", &args.elitist_count);
             println!("Cross-over: {:?}", &crossover);
+
+            /*
+             * Print out Initial Search Interval and
+             * Convert Search Interval from Vec<String> to Vec<(f32, f32)>
+             * (Used to the calculate initial mean and step size)
+             */
+            println!("Search Interval: {:?}", &args.search_interval);
+            let interval_strings = args.search_interval
+                .iter()
+                .map(|s| s.split(&['[', ']', ','][..])
+                .filter_map(|ss| 
+                    ss.parse::<f32>().ok()
+                ).collect::<Vec<f32>>());
+            let search_interval: Vec<(f32, f32)> = interval_strings.clone().map(|c| (c[0],c[1])).collect::<Vec<(f32, f32)>>();
+
             /*
              * Perform a single run of Full length Genetic algorithm for respective behaviour
              */
             match &args.behavior {
                 Behavior::Agg => {
                     println!("\nStarting Aggregation CMA-ES Experiment...\n");
-                    let mut ga_sops = CmaAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, crossover, particle_sizes, args.seeds, random_trial_seed);
+                    let mut ga_sops = CmaAlgo::init_ga(args.population, args.max_generations,args.elitist_count, args.mutation_rate, args.granularity, crossover, particle_sizes, args.seeds, random_trial_seed, search_interval);
                     ga_sops.run_through();
                 },
                 Behavior::Sep => {

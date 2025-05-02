@@ -282,7 +282,7 @@ impl SOPSEnvironmentCMA {
             let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(par_idx, move_dir);
             // Move basis probability given by the genome for moving for given configuration
             let move_prb = self.phenotype[back_cnt as usize][mid_cnt as usize][front_cnt as usize];
-            if SOPSEnvironmentCMA::move_frng().u16(1_u16..=1000) <= SOPSEnvironmentCMA::gene_probability()[move_prb as usize]
+            if SOPSEnvironmentCMA::move_frng().f64() <= move_prb
             {
                 self.move_particle_to(par_idx, move_dir);
             }
