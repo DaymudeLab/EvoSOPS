@@ -43,12 +43,15 @@ pub struct SepCMA {
     weights: Vec<f64>,
     parent_number: u16,
     mu_eff: f64,
+    fitness_buffer: VecDeque<f64>,
+    tabu_points: Vec< (Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>, f64, u32)>,
 }
 
 impl SepCMA {
 
     const GENOME_LEN: u16 = 10 * 6 * 10;
     const BUFFER_LEN: usize = 10;
+    const CONVERGENCE_BUFFER_LEN: usize = 20;
     const UPPER_T: f32 = 0.3;
     const LOWER_T: f32 = 0.08;
     
@@ -142,10 +145,10 @@ impl SepCMA {
         let genome_cache: HashMap<[[[OrderedFloat<f64>; 10]; 6]; 10], f64> = HashMap::new();
 
         // Initial CMA-ES values
-        let mut mean = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
-        for i in 0..Self::GENOME_LEN.into() {
+        let mean: Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>> = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
+        /*for i in 0..Self::GENOME_LEN.into() {
             mean[i] = SepCMA::rng().sample(SepCMA::mean_init_rng(search_interval[0].0, search_interval[0].1)) as f64
-        }
+        }*/
         let step_size: f64 = 0.3 * (search_interval[0].1 - search_interval[0].0) as f64;
         let p_sigma = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0); //step size evolution path
         let covariance_matrix = DMatrix::from_diagonal_element(SepCMA::GENOME_LEN.into(), SepCMA::GENOME_LEN.into(), 1.0);
@@ -185,6 +188,9 @@ impl SepCMA {
             }
         });
 
+        let fitness_buffer = VecDeque::with_capacity(SepCMA::CONVERGENCE_BUFFER_LEN);
+        let tabu_points: Vec< (Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>, f64, u32)> = Vec::new();
+
         SepCMA {
             max_gen,
             elitist_cnt,
@@ -208,6 +214,8 @@ impl SepCMA {
             weights,
             parent_number,
             mu_eff,
+            fitness_buffer,
+            tabu_points,
         }
     }
 
@@ -806,6 +814,11 @@ impl SepCMA {
             fit_sum / (self.population.len() as f64)
         );
 
+        // putting avg fitness into buffer
+        if self.fitness_buffer.len() == SepCMA::CONVERGENCE_BUFFER_LEN { self.fitness_buffer.pop_front(); }
+        self.fitness_buffer.push_back(fit_sum / (self.population.len() as f64));
+
+
         // calculate population diversity
         // based on simple component wise euclidean distance squared*
         // of the genome vectors
@@ -860,12 +873,12 @@ impl SepCMA {
         } 
 
         //calculate new mean
+        //println!("Mean: {:.5?}", self.mean);
         self.mean = self.update_mean(&y);
-        //println!("Mean: {}", self.mean);
 
         //update step-size
         self.step_size = self.update_step_size(&y);
-        //println!("Step Size: {}", self.step_size);
+        println!("Step Size: {}", self.step_size);
 
         //covariance matrix adaptation
         let eigenvalues = self.covariance_matrix.clone().symmetric_eigen().eigenvalues;
@@ -916,7 +929,7 @@ impl SepCMA {
                 break;
             }
             if diversity_q.len() == SepCMA::BUFFER_LEN { diversity_q.pop_front(); }
-            diversity_q.push_back(self.step_through(gen));
+            diversity_q.push_back(smt); //diversity_q.push_back(self.step_through(gen));
             let avg_div: f32 = diversity_q.iter().sum::<f32>() / (diversity_q.len() as f32);
             let norm_avg_div = avg_div / (self.max_div as f32);
             // println!("Avg. Population diversity for last {} gen -> {}", SepGA::BUFFER_LEN, avg_div);
@@ -935,6 +948,39 @@ impl SepCMA {
                     }
                 }
             }*/
+
+            if gen >= 1 {
+                /*
+                // difference between current avg fitness and avg fitness from 20 (at most) generations back
+                let diff_fitness = self.fitness_buffer[self.fitness_buffer.len() as usize - 1] - self.fitness_buffer[0];
+                
+                // moving away from a local maxima
+                if diff_fitness < -0.08 {
+                    println!("Local maxima point");
+                    println!("Mean: {:.5?}", self.mean);
+                    self.tabu_points.push((self.mean.clone(), self.fitness_buffer[self.fitness_buffer.len() as usize - 1], 1));
+                }
+                */
+
+                // avg average fitness for last 20 generations
+                let avg_fitness = (0..self.fitness_buffer.len()).into_iter().map(|i| {
+                        self.fitness_buffer[i]
+                    }).sum::<f64>() / self.fitness_buffer.len() as f64;
+
+                // sample fitness variance for last 20 generations
+                let var_fitness = (0..self.fitness_buffer.len()).into_iter().map(|i|
+                        (self.fitness_buffer[i] - avg_fitness).powf(2.0)
+                    ).sum::<f64>() / (self.fitness_buffer.len() as f64 - 1.0);
+                println!("Fitness Variance for last {} gen -> {}", self.fitness_buffer.len(), var_fitness);
+
+                // converging
+                if var_fitness < 0.000002 {
+                    println!("Convergence point");
+                    //println!("Mean: {:.5?}", self.mean);
+                    //self.tabu_points.push((self.mean.clone(), self.fitness_buffer[self.fitness_buffer.len() as usize - 1], 1));
+                }
+            }
+
             let elapsed = now.elapsed().as_secs();
             println!("Generation Elapsed Time: {:.2?}s", elapsed);
         }
