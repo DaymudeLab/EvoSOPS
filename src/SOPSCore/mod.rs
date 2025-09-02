@@ -3,6 +3,7 @@ pub mod coating;
 pub mod locomotion;
 pub mod aggregation_cma;
 pub mod separation_cma;
+pub mod locomotion_cma;
 use rand::SeedableRng;
 use rand::{distributions::Uniform, rngs, Rng};
 use std::usize;

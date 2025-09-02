@@ -9,6 +9,7 @@ use GACore::loco_ga::LocoGA;
 mod CMACore;
 use CMACore::base_cma::CmaAlgo;
 use CMACore::sep_cma::SepCMA;
+use CMACore::loco_cma::LocoCMA;
 
 use crate::SOPSCore::locomotion::SOPSLocoEnvironment;
 use crate::SOPSCore::SOPSEnvironment;
@@ -16,6 +17,7 @@ use crate::SOPSCore::separation::SOPSepEnvironment;
 use crate::SOPSCore::coating::SOPSCoatEnvironment;
 use crate::SOPSCore::aggregation_cma::SOPSEnvironmentCMA;
 use crate::SOPSCore::separation_cma::SOPSepEnvironmentCMA;
+use crate::SOPSCore::locomotion_cma::SOPSLocoEnvironmentCMA;
 
 
 use rayon::prelude::*;
@@ -239,7 +241,9 @@ fn main() {
                     
                 },
                 Behavior::Loco => {
-
+                    println!("\nStarting Locomotion CMA-ES Experiment...\n");
+                    let mut ga_sops = LocoCMA::init_ga(args.population, args.max_generations, args.elitist_count, args.mutation_rate, args.granularity, true, particle_sizes, args.seeds, 0.75, 0.25, random_trial_seed, search_interval);
+                    ga_sops.run_through();
                 },
             }
         },

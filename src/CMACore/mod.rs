@@ -1,7 +1,7 @@
 pub mod base_cma;
 pub mod sep_cma;
-//pub mod coat_ga;
-//pub mod loco_ga;
+//pub mod coat_cma;
+pub mod loco_cma;
 
 /*
  * Main file all the basic classes needed for GA to work
@@ -39,7 +39,7 @@ struct SepGenome {
   */
   #[derive(Debug, Copy, Clone)]
   struct LocoGenome {
-      string: [[[[u8; 4]; 3]; 4]; 3],
+      string: [[[[f64; 4]; 3]; 4]; 3],
       fitness: f64,
   }
 
