@@ -3,6 +3,7 @@ use crate::SOPSCore::separation_cma::SOPSepEnvironmentCMA;
 use super::SepGenome;
 use super::DiversThresh;
 use rand::{distributions::Bernoulli, distributions::Uniform, rngs, Rng};
+use rand_distr::Gamma;
 use rand_distr::{Normal};
 use rayon::prelude::*;
 use std::collections::HashMap;
@@ -45,6 +46,8 @@ pub struct SepCMA {
     mu_eff: f64,
     fitness_buffer: VecDeque<f64>,
     tabu_points: Vec< (Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>, f64, u32)>,
+    restarts: u32,
+    coverage: f64,
 }
 
 impl SepCMA {
@@ -146,9 +149,6 @@ impl SepCMA {
 
         // Initial CMA-ES values
         let mean: Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>> = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
-        /*for i in 0..Self::GENOME_LEN.into() {
-            mean[i] = SepCMA::rng().sample(SepCMA::mean_init_rng(search_interval[0].0, search_interval[0].1)) as f64
-        }*/
         let step_size: f64 = 0.3 * (search_interval[0].1 - search_interval[0].0) as f64;
         let p_sigma = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0); //step size evolution path
         let covariance_matrix = DMatrix::from_diagonal_element(SepCMA::GENOME_LEN.into(), SepCMA::GENOME_LEN.into(), 1.0);
@@ -190,6 +190,14 @@ impl SepCMA {
 
         let fitness_buffer = VecDeque::with_capacity(SepCMA::CONVERGENCE_BUFFER_LEN);
         let tabu_points: Vec< (Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>, f64, u32)> = Vec::new();
+        let restarts =  0;
+        let coverage = 25.0;
+
+        /*let mut temp_tabu: Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>> = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
+        for i in 0..Self::GENOME_LEN.into() {
+            temp_tabu[i] = SepCMA::rng().sample(SepCMA::mean_init_rng(1.5, 3.5)) as f64
+        }
+        tabu_points.push((temp_tabu, 0.5, 1));*/
 
         SepCMA {
             max_gen,
@@ -216,6 +224,8 @@ impl SepCMA {
             mu_eff,
             fitness_buffer,
             tabu_points,
+            restarts,
+            coverage,
         }
     }
 
@@ -282,45 +292,147 @@ impl SepCMA {
             //matrix_d[(i, i)] = self.covariance_matrix.clone().symmetric_eigen().eigenvalues[i].sqrt(); 
             matrix_d[(i, i)] = eigenvalues[i].sqrt();                                                                                 
         }
-        
-        // Sampling process for each new individual in the population
-        for _ in 0..self.population.len() as usize{
-            
-            // Equation 38 (creating z_k; the normally distributed vector)
-            // Samples a new column vector from the normal distribution each sample iteration
-            let mut z_k =  DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0);
-            for i in 0..Self::GENOME_LEN as usize{
-                z_k[(i, 0)] = SepCMA::rng().sample(&SepCMA::normal0_1());
+
+        if self.tabu_points.len() == 0 {
+            // Sampling process for each new individual in the population
+            for _ in 0..self.population.len() as usize{
+                
+                // Equation 38 (creating z_k; the normally distributed vector)
+                // Samples a new column vector from the normal distribution each sample iteration
+                let mut z_k =  DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0);
+                for i in 0..Self::GENOME_LEN as usize{
+                    z_k[(i, 0)] = SepCMA::rng().sample(&SepCMA::normal0_1());
+                }
+
+                // Equation 39 (creating y_k)
+                let y_k = &matrix_b * &matrix_d * &z_k;
+
+                // Equation 40 
+                // x_k is one offspring
+                let x_k = self.mean.clone() + self.step_size * &y_k;
+
+                // clipping
+                let mut x_clip = x_k;
+                
+                for i in 0..Self::GENOME_LEN as usize{
+                    x_clip[(i,0)] = if x_clip[(i,0)] < 0.0 
+                    {
+                        0.0
+                    }  else if x_clip[(i,0)] > 1.0{
+                        1.0
+                    } else {
+                        x_clip[(i,0)]
+                    };
+                }   
+
+                // Changing x_k from a column vector into a genome and pushing it into new_pop vector
+                new_pop.push( SepGenome{
+                                    string: self.column_vector_to_genome(x_clip),
+                                    fitness: 0.0,
+                                    } );
             }
-
-            // Equation 39 (creating y_k)
-            let y_k = &matrix_b * &matrix_d * &z_k;
-
-            // Equation 40 
-            // x_k is one offspring
-            let x_k = self.mean.clone() + self.step_size * &y_k;
-
-            // clipping
-            let mut x_clip = x_k;
-            
-            for i in 0..Self::GENOME_LEN as usize{
-                x_clip[(i,0)] = if x_clip[(i,0)] < 0.0 
-                {
-                    0.0
-                }  else if x_clip[(i,0)] > 1.0{
-                    1.0
-                } else {
-                    x_clip[(i,0)]
-                };
-            }   
-
-            // Changing x_k from a column vector into a genome and pushing it into new_pop vector
-            new_pop.push( SepGenome{
-                                string: self.column_vector_to_genome(x_clip),
-                                fitness: 0.0,
-                                } );
         }
+        else {
+            let covariance_inverse = match self.covariance_matrix.clone().try_inverse() {
+                Some(inv) => inv,
+                None => {
+                    println!("Covariance matrix is not invertible");
+                    self.covariance_matrix.clone()
+                }
+            };
+        
+            // Sampling process for each new individual in the population
+            for _ in 0..self.population.len() as usize{
+                let mut valid_point = false;
+                let mut n_reg = 0;
 
+                while valid_point == false {
+                    // Equation 38 (creating z_k; the normally distributed vector)
+                    // Samples a new column vector from the normal distribution each sample iteration
+                    let mut z_k =  DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0);
+                    for i in 0..Self::GENOME_LEN as usize{
+                        z_k[(i, 0)] = SepCMA::rng().sample(&SepCMA::normal0_1());
+                    }
+
+                    // Equation 39 (creating y_k)
+                    let y_k = &matrix_b * &matrix_d * &z_k;
+
+                    // Equation 40 
+                    // x_k is one offspring
+                    let x_k = self.mean.clone() + self.step_size * &y_k;
+
+                    // clipping
+                    let mut x_clip = x_k;
+                    
+                    for i in 0..Self::GENOME_LEN as usize{
+                        x_clip[(i,0)] = if x_clip[(i,0)] < 0.0 
+                        {
+                            0.0
+                        }  else if x_clip[(i,0)] > 1.0{
+                            1.0
+                        } else {
+                            x_clip[(i,0)]
+                        };
+                    }  
+
+                    valid_point = true;
+                    
+                    // check if in tabu region
+                    for index in 0..self.tabu_points.len() {
+                        let diff = &x_clip - &self.tabu_points[index].0;
+                        let mahalnobis_distance = (diff.transpose() * &covariance_inverse * &diff)[(0, 0)].sqrt();
+                        //println!("Mahalnobis distance: {}", (mahalnobis_distance));
+
+                        let n_t = self.tabu_points[index].2 as f64;
+                        let coverage = self.coverage;
+                        let volume_t = n_t * 1.0 / (coverage * 0.3 * self.restarts as f64);
+
+                        let d = Self::GENOME_LEN as f64;
+                        let n = d / 2.0 + 1.0;
+                        let pi = std::f64::consts::PI;
+                        let rejection_radius_constant = f64::exp(
+                            ((n - 0.5) * f64::ln(n) - n) / d + 
+                            (0.5 * f64::ln(2.0 * pi)) / d - 0.5 * f64::ln(pi)
+                        );
+
+                        let rejection_radius = volume_t.powf(1.0/Self::GENOME_LEN as f64) * rejection_radius_constant;
+                        let shrinkage_factor = 0.9.powi(n_reg);
+                        //println!("Rejection Radius: {}", rejection_radius * shrinkage_factor);
+                    
+                        // desired result
+                        // (mahalnobis_distance / &self.step_size) > (rejection_radius*shrinkage_factor))
+                        // else
+                        if mahalnobis_distance / &self.step_size < rejection_radius*shrinkage_factor {
+                            valid_point = false;
+                            break;
+                        }
+                    }
+
+                    if valid_point == true {
+                        // Changing x_k from a column vector into a genome and pushing it into new_pop vector
+                        new_pop.push( SepGenome{
+                                            string: self.column_vector_to_genome(x_clip),
+                                            fitness: 0.0,
+                                            } );
+                    }
+                    else {
+                        if n_reg > 10 {
+                            //println!("Too many failed reselection attempts (10).");
+                            // push anyways
+                            new_pop.push( SepGenome{
+                                            string: self.column_vector_to_genome(x_clip),
+                                            fitness: 0.0,
+                                            } );
+                            break;
+                        }
+
+                        n_reg += 1;
+                    }
+                }
+            }
+        
+        }
+        
         self.population = new_pop;
 
     }
@@ -369,7 +481,7 @@ impl SepCMA {
 
         // update step size evolution path
         let evolution_path = (1.0 - c_sigma) * self.p_sigma.clone() + (c_sigma * (2.0 - c_sigma) * self.mu_eff).sqrt() * (&matrix_b * &matrix_d * &matrix_b.transpose()) * y_w;
-        self.p_sigma = evolution_path.clone();        
+        self.p_sigma = evolution_path.clone();     
 
         // compute new step size
         let step_size = self.step_size * f64::exp((c_sigma / d_sigma) * ((&evolution_path.norm() / ((n).sqrt() * (1.0 - 1.0 / (4.0 * n) + 1.0 / (21.0 * (n).powf(2.0))))) - 1.0));
@@ -814,7 +926,7 @@ impl SepCMA {
             fit_sum / (self.population.len() as f64)
         );
 
-        // putting avg fitness into buffer
+        // putting fitness into buffer
         if self.fitness_buffer.len() == SepCMA::CONVERGENCE_BUFFER_LEN { self.fitness_buffer.pop_front(); }
         self.fitness_buffer.push_back(fit_sum / (self.population.len() as f64));
 
@@ -920,6 +1032,10 @@ impl SepCMA {
      *  */
     pub fn run_through(&mut self) {
         let mut diversity_q: VecDeque<f32> = VecDeque::with_capacity(SepCMA::BUFFER_LEN);
+        
+        //let mut prev_mean: Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>> = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
+        //let mut mean_diff: VecDeque<f64> = VecDeque::with_capacity(SepCMA::CONVERGENCE_BUFFER_LEN);
+
         // Run the GA for given #. of Generations
         for gen in 0..self.max_gen {
             println!("Starting Gen:{}", gen);
@@ -950,18 +1066,6 @@ impl SepCMA {
             }*/
 
             if gen >= 1 {
-                /*
-                // difference between current avg fitness and avg fitness from 20 (at most) generations back
-                let diff_fitness = self.fitness_buffer[self.fitness_buffer.len() as usize - 1] - self.fitness_buffer[0];
-                
-                // moving away from a local maxima
-                if diff_fitness < -0.08 {
-                    println!("Local maxima point");
-                    println!("Mean: {:.5?}", self.mean);
-                    self.tabu_points.push((self.mean.clone(), self.fitness_buffer[self.fitness_buffer.len() as usize - 1], 1));
-                }
-                */
-
                 // avg average fitness for last 20 generations
                 let avg_fitness = (0..self.fitness_buffer.len()).into_iter().map(|i| {
                         self.fitness_buffer[i]
@@ -974,10 +1078,238 @@ impl SepCMA {
                 println!("Fitness Variance for last {} gen -> {}", self.fitness_buffer.len(), var_fitness);
 
                 // converging
-                if var_fitness < 0.000002 {
-                    println!("Convergence point");
-                    //println!("Mean: {:.5?}", self.mean);
-                    //self.tabu_points.push((self.mean.clone(), self.fitness_buffer[self.fitness_buffer.len() as usize - 1], 1));
+                if var_fitness < 0.000002  && self.fitness_buffer.len() == SepCMA::CONVERGENCE_BUFFER_LEN {
+                    // reset fitness_buffer:
+                    println!("Convergence");
+
+                    let mut covariance_inverse = match self.covariance_matrix.clone().try_inverse() {
+                        Some(inv) => inv,
+                        None => {
+                            println!("Covariance matrix is not invertible");
+                            continue;
+                        }
+                    };
+
+                    self.restarts += 1;
+
+
+                    // identify if convergence in new area or not
+                    let mut new_spot = true;
+
+                    for index in 0..self.tabu_points.len() {
+                        
+                        let diff = &self.mean - &self.tabu_points[index].0;
+                        let mahalnobis_distance = (diff.transpose() * &covariance_inverse * &diff)[(0, 0)].sqrt();
+
+                        let n_t = self.tabu_points[index].2 as f64;
+                        let coverage = self.coverage;
+                        let volume_t = n_t * 1.0 / (coverage * 0.3 * self.restarts as f64);
+
+                        let d = Self::GENOME_LEN as f64;
+                        let n = d / 2.0 + 1.0;
+                        let pi = std::f64::consts::PI;
+                        let rejection_radius_constant = f64::exp(
+                            ((n - 0.5) * f64::ln(n) - n) / d + 
+                            (0.5 * f64::ln(2.0 * pi)) / d - 0.5 * f64::ln(pi)
+                        );
+
+                        let rejection_radius = volume_t.powf(1.0/Self::GENOME_LEN as f64) * rejection_radius_constant;
+                        let shrinkage_factor = 0.9;//.powi(0);
+                        
+                        // within a rejection radius
+                        if mahalnobis_distance / &self.step_size < rejection_radius*shrinkage_factor {
+                            new_spot = false;
+                            self.tabu_points[index].2 += 1;
+                            println!("Converged to old spot");
+                            break;
+                        }
+                    }
+
+                    if new_spot == true {
+                        self.tabu_points.push((self.mean.clone(), self.fitness_buffer[self.fitness_buffer.len() as usize - 1], 1));
+                        println!("Converged to new spot");
+                    }
+
+
+                    // restart
+                    println!("Restarting...");
+
+                    // reset fitness_buffer:
+                    self.fitness_buffer = VecDeque::with_capacity(SepCMA::CONVERGENCE_BUFFER_LEN);
+
+                    // resetting covariance matrix and step size
+                    self.covariance_matrix = DMatrix::from_diagonal_element(SepCMA::GENOME_LEN.into(), SepCMA::GENOME_LEN.into(), 1.0);
+                    self.step_size = 0.3;
+                    //step size evolution path
+                    self.p_sigma = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0); 
+                    //covariance matrix evolution path
+                    self.p_c = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0); 
+                    
+                    // resetting mean into new location
+                    let mut set_new_spot = false;
+                    let mut n_reg = 0;
+                    for i in 0..Self::GENOME_LEN.into() {
+                        self.mean[i] = SepCMA::rng().sample(SepCMA::mean_init_rng(0.0, 1.0)) as f64
+                    }
+
+                    while set_new_spot == false {
+                        set_new_spot = true;
+                        for index in 0..self.tabu_points.len() {
+                        
+                            let diff = &self.mean - &self.tabu_points[index].0;
+                            let mahalnobis_distance = (diff.transpose() * &covariance_inverse * &diff)[(0, 0)].sqrt();
+                            //println!("Mahalnobis distance: {}", (mahalnobis_distance));
+
+                            let n_t = self.tabu_points[index].2 as f64;
+                            let coverage = self.coverage;
+                            let volume_t = n_t * 1.0 / (coverage * 0.3 * self.restarts as f64);
+
+                            let d = Self::GENOME_LEN as f64;
+                            let n = d / 2.0 + 1.0;
+                            let pi = std::f64::consts::PI;
+                            let rejection_radius_constant = f64::exp(
+                                ((n - 0.5) * f64::ln(n) - n) / d + 
+                                (0.5 * f64::ln(2.0 * pi)) / d - 0.5 * f64::ln(pi)
+                            );
+
+                            let rejection_radius = volume_t.powf(1.0/Self::GENOME_LEN as f64) * rejection_radius_constant;
+                            let shrinkage_factor = 0.9.powi(n_reg);
+                            //println!("Rejection Radius: {}", rejection_radius * shrinkage_factor);
+
+                            // desired result
+                            // (mahalnobis_distance / &self.step_size) > (rejection_radius*shrinkage_factor))
+                            // else
+                            if mahalnobis_distance / &self.step_size < rejection_radius*shrinkage_factor {
+                                //println!("resample");
+                                set_new_spot = false;
+                                break;
+                            }
+                        }
+                        if set_new_spot == false {
+                            if n_reg > 10 {
+                                //println!("Too many failed resample attempts (10).");
+                                break;
+                            }
+
+                            n_reg += 1;
+                            // resample mean and then check again
+                            for i in 0..Self::GENOME_LEN.into() {
+                                self.mean[i] = SepCMA::rng().sample(SepCMA::mean_init_rng(0.0, 0.1)) as f64
+                            }
+                            //println!("New Mean, previous {} means rejected", n_reg);
+                        }
+                    }
+
+
+
+                    // setting new population
+                    // Covariance decomposition
+                    let matrix_b = self.covariance_matrix.clone().symmetric_eigen().eigenvectors;
+                    let mut matrix_d = DMatrix::from_element(Self::GENOME_LEN.into(), Self::GENOME_LEN.into(), 0.0);
+                    let eigenvalues  = self.covariance_matrix.clone().symmetric_eigen().eigenvalues;
+                    for i in 0..Self::GENOME_LEN as usize{
+                        matrix_d[(i, i)] = eigenvalues[i].sqrt();                                                                                 
+                    }
+
+                    covariance_inverse = match self.covariance_matrix.clone().try_inverse() {
+                        Some(inv) => inv,
+                        None => {
+                            println!("Covariance matrix is not invertible");
+                            self.covariance_matrix.clone()
+                        }
+                    };
+
+                    let mut new_pop: Vec<SepGenome> = vec![];
+                    for _ in 0..self.population.len() as usize {
+
+                        let mut valid_point = false;
+                        let mut n_reg = 0;
+
+                        while valid_point == false {
+
+
+                            let mut z_k =  DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0);
+                            for i in 0..Self::GENOME_LEN as usize{
+                                z_k[(i, 0)] = SepCMA::rng().sample(&SepCMA::normal0_1());
+                            }
+
+                            // Equation 39 (creating y_k)
+                            let y_k = &matrix_b * &matrix_d * &z_k;
+
+                            // Equation 40 
+                            // x_k is one offspring
+                            let x_k = self.mean.clone() + self.step_size * &y_k;
+
+                            // clipping
+                            let mut x_clip = x_k;
+                            
+                            for i in 0..Self::GENOME_LEN as usize{
+                                x_clip[(i,0)] = if x_clip[(i,0)] < 0.0 
+                                {
+                                    0.0
+                                }  else if x_clip[(i,0)] > 1.0{
+                                    1.0
+                                } else {
+                                    x_clip[(i,0)]
+                                };
+                            }   
+
+                            valid_point = true;
+
+                        
+                            // check if in tabu region
+                            for index in 0..self.tabu_points.len() {
+                                let diff = &x_clip - &self.tabu_points[index].0;
+                                let mahalnobis_distance = (diff.transpose() * &covariance_inverse * &diff)[(0, 0)].sqrt();
+                                //println!("Mahalnobis distance: {}", (mahalnobis_distance));
+
+                                let n_t = self.tabu_points[index].2 as f64;
+                                let coverage = self.coverage;
+                                let volume_t = n_t * 1.0 / (coverage * 0.3 * self.restarts as f64);
+
+                                let d = Self::GENOME_LEN as f64;
+                                let n = d / 2.0 + 1.0;
+                                let pi = std::f64::consts::PI;
+                                let rejection_radius_constant = f64::exp(
+                                    ((n - 0.5) * f64::ln(n) - n) / d + 
+                                    (0.5 * f64::ln(2.0 * pi)) / d - 0.5 * f64::ln(pi)
+                                );
+
+                                let rejection_radius = volume_t.powf(1.0/Self::GENOME_LEN as f64) * rejection_radius_constant;
+                                let shrinkage_factor = 0.9.powi(n_reg);
+                                //println!("Rejection Radius: {}", rejection_radius * shrinkage_factor);
+                            
+                                // desired result
+                                // (mahalnobis_distance / &self.step_size) > (rejection_radius*shrinkage_factor))
+                                // else
+                                if mahalnobis_distance / &self.step_size < rejection_radius*shrinkage_factor {
+                                    valid_point = false;
+                                    break;
+                                }
+                            }
+
+                            if valid_point == true {
+                                // Changing x_k from a column vector into a genome and pushing it into new_pop vector
+                                new_pop.push( SepGenome{
+                                                    string: self.column_vector_to_genome(x_clip),
+                                                    fitness: 0.0,
+                                                    } );
+                            }
+                            else {
+                                if n_reg > 10 {
+                                    //println!("Too many failed resample attempts (10).");
+                                    new_pop.push( SepGenome{
+                                                    string: self.column_vector_to_genome(x_clip),
+                                                    fitness: 0.0,
+                                                    } );
+                                    break;
+                                }
+
+                                n_reg += 1;
+                            }
+
+                        }
+                    }
                 }
             }
 
