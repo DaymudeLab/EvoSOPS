@@ -950,7 +950,7 @@ impl CoatCMA {
 
             //here would i check if we are converging into a local minima and then I would restart gen?
 
-            if gen >= (CoatCMA::CONVERGENCE_BUFFER_LEN as u16) && self.check_convergence() && self.restarts < CoatCMA::NUM_OF_RESTARTS {
+            if gen >= (CoatCMA::CONVERGENCE_BUFFER_LEN as u16) && self.restarts < CoatCMA::NUM_OF_RESTARTS && self.check_convergence() {
                 self.random_restart();
                 gen = 0;
                 diversity_q.clear();
