@@ -414,8 +414,21 @@ impl CmaAlgo {
             rank_mu_update += covariance_weights[i] * &y[i] * &y[i].transpose();
         }
 
-        let new_covariance_matrix  = ((1.0 + c_one * ((1.0 - h_sigma) * c_c * (2.0 - c_c)) - c_one - c_mu * self.weights.iter().map(|x| x).sum::<f64>()) * self.covariance_matrix.clone()) + (c_one * rank_one_update)+ (c_mu * rank_mu_update) ;
+        let mut new_covariance_matrix  = ((1.0 + c_one * ((1.0 - h_sigma) * c_c * (2.0 - c_c)) - c_one - c_mu * self.weights.iter().map(|x| x).sum::<f64>()) * self.covariance_matrix.clone()) + (c_one * rank_one_update)+ (c_mu * rank_mu_update) ;
         
+        for i in 0..Self::GENOME_LEN as usize{
+            for j in 0..Self::GENOME_LEN as usize{
+                new_covariance_matrix[(i,j)] = if new_covariance_matrix[(i,j)] < 0.0 
+                {
+                    0.0
+                }  else if new_covariance_matrix[(i,j)] > 1.0{
+                    1.0
+                } else {
+                    new_covariance_matrix[(i,j)]
+                }
+            }
+        }
+
         new_covariance_matrix
     }
 

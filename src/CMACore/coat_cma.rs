@@ -39,13 +39,18 @@ pub struct CoatCMA {
     p_c: Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>>,
     weights: Vec<f64>,
     parent_number: u16,
-    mu_eff: f64
+    mu_eff: f64,
+    fitness_buffer: VecDeque<f64>,
+    restarts: u8
 }
 
 impl CoatCMA {
 
     const GENOME_LEN: u16 = 10 * 6 * 10;
     const BUFFER_LEN: usize = 10;
+    const CONVERGENCE_BUFFER_LEN: usize = 200;
+    const NUM_OF_RESTARTS: u8 = 3;
+    const CONVERGENCE_THRESHOLD: f64 = 1e-8;
     const UPPER_T: f32 = 0.3;
     const LOWER_T: f32 = 0.08;
     
@@ -137,10 +142,15 @@ impl CoatCMA {
         let genome_cache: HashMap<[[[OrderedFloat<f64>; 10]; 6]; 10], f64> = HashMap::new();
 
          // Initial CMA-ES values
-         let mut mean = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
-         for i in 0..Self::GENOME_LEN.into() {
-             mean[i] = CoatCMA::rng().sample(CoatCMA::mean_init_rng(search_interval[0].0, search_interval[0].1)) as f64
-         }
+
+        // NOTE the one below is random
+        //  let mut mean = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
+        //  for i in 0..Self::GENOME_LEN.into() {
+        //      mean[i] = CoatCMA::rng().sample(CoatCMA::mean_init_rng(search_interval[0].0, search_interval[0].1)) as f64
+        //  }
+        // NOTE the one below is fixed for each genome is 0.5
+        let mean: Matrix<f64, Dyn, Dyn, VecStorage<f64, Dyn, Dyn>> = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
+
          let mut step_size: f64 = 0.3 * (search_interval[0].1 - search_interval[0].0) as f64;
          let mut p_sigma = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0); //step size evolution path
          let mut covariance_matrix = DMatrix::from_diagonal_element(CoatCMA::GENOME_LEN.into(), CoatCMA::GENOME_LEN.into(), 1.0);
@@ -180,6 +190,9 @@ impl CoatCMA {
              }
          });
 
+        let fitness_buffer = VecDeque::with_capacity(Self::CONVERGENCE_BUFFER_LEN);
+        let restarts = 0;
+
         CoatCMA {
             max_gen,
             elitist_cnt,
@@ -204,6 +217,8 @@ impl CoatCMA {
             weights,
             parent_number,
             mu_eff,
+            fitness_buffer,
+            restarts
         }
     }
 
@@ -781,6 +796,12 @@ impl CoatCMA {
             fit_sum / (self.population.len() as f64)
         );
 
+        // NOTE recalculating the fitness_buffer
+        // keeps track of the last 20 fitness genome values
+        if self.fitness_buffer.len() == CoatCMA::CONVERGENCE_BUFFER_LEN { self.fitness_buffer.pop_front(); }
+        self.fitness_buffer.push_back(fit_sum / (self.population.len() as f64));
+
+
         // calculate population diversity
         // based on simple component wise euclidean distance squared*
         // of the genome vectors
@@ -789,13 +810,13 @@ impl CoatCMA {
             for j in (i + 1)..self.population.len() {
                 let genome1 = self.population[i];
                 let genome2 = self.population[j];
-                let mut dis_sum: u16 = 0;
+                let mut dis_sum: f32 = 0.0;
                 for n in 0..10 {
                     for i in 0..6 {
                         for j in 0..10 {
                             // let dis = (genome1.string[n][i][j]).abs_diff(genome2.string[n][i][j]);
                             let dis = (genome1.string[n][i][j] - genome2.string[n][i][j]).abs();
-                            dis_sum += dis as u16;
+                            dis_sum += dis as f32;
                         }
                     }
                 }
@@ -836,7 +857,7 @@ impl CoatCMA {
 
         //update step-size
         self.step_size = self.update_step_size(&y);
-        // println!("Step Size: {}", self.step_size);
+        println!("Step Size: {}", self.step_size);
 
         //covariance matrix adaptation
         let eigenvalues = self.covariance_matrix.clone().symmetric_eigen().eigenvalues;
@@ -911,20 +932,33 @@ impl CoatCMA {
         // Run the GA for given #. of Generations
         self.calculate_dist_hash();
         println!("FLOAT BASED GENOME COATING CMA");
-
-        for gen in 0..self.max_gen {
+        let mut gen: u16 = 0;
+        while gen < self.max_gen {
             println!("Starting Gen:{}", gen);
             let now = Instant::now();
             let smt = self.step_through(gen);
             if (smt == -1.0){
                 break;
             }
+
             if diversity_q.len() == CoatCMA::BUFFER_LEN { diversity_q.pop_front(); }
             diversity_q.push_back(smt);
             let avg_div: f32 = diversity_q.iter().sum::<f32>() / (diversity_q.len() as f32);
             let norm_avg_div = avg_div / (self.max_div as f32);
             // println!("Avg. Population diversity for last {} gen -> {}", CoatCMA::BUFFER_LEN, avg_div);
             println!("Avg. Population diversity for last {} gen -> {}", diversity_q.len(), norm_avg_div);
+
+            //here would i check if we are converging into a local minima and then I would restart gen?
+
+            if gen >= (CoatCMA::CONVERGENCE_BUFFER_LEN as u16) && self.check_convergence() && self.restarts < CoatCMA::NUM_OF_RESTARTS {
+                self.random_restart();
+                gen = 0;
+                diversity_q.clear();
+                self.restarts += 1;
+                println!("Restart finished | this is restart number: {}/{}", self.restarts, CoatCMA::NUM_OF_RESTARTS);
+                continue;
+            }
+
             // match self.div_state {
             //     DiversThresh::INIT => {
             //         if norm_avg_div <= CoatCMA::LOWER_T {
@@ -939,8 +973,86 @@ impl CoatCMA {
             //         }
             //     }
             // }
+
             let elapsed = now.elapsed().as_secs();
             println!("Generation Elapsed Time: {:.2?}s", elapsed);
+            gen += 1;
         }
     }
+
+    fn check_convergence(&self) -> bool {
+        let avg_fitness = (0..self.fitness_buffer.len()).into_iter().map(|i| {
+                        self.fitness_buffer[i]
+                    }).sum::<f64>() / self.fitness_buffer.len() as f64;
+        
+        for i in 0..self.fitness_buffer.len() {
+            if self.fitness_buffer[i] > 0.75 {
+                println!("check_convergence: Fitness is sufficiently high -> {}", self.fitness_buffer[i]);
+                return false;
+            }
+        }
+
+        // sample fitness variance for last 20 generations
+        let var_fitness = (0..self.fitness_buffer.len()).into_iter().map(|i|
+                (self.fitness_buffer[i] - avg_fitness).powf(2.0)
+            ).sum::<f64>() / (self.fitness_buffer.len() as f64 - 1.0);
+        println!("check_convergence: Fitness Variance for last {} gen -> {}", self.fitness_buffer.len(), var_fitness);
+
+        // converging
+        if var_fitness < CoatCMA::CONVERGENCE_THRESHOLD {
+            println!("Convergence occurred...");
+            println!("Fitness values: {:.5?}", self.fitness_buffer);
+            //println!("Mean: {:.5?}", self.mean);
+            //self.tabu_points.push((self.mean.clone(), self.fitness_buffer[self.fitness_buffer.len() as usize - 1], 1));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    fn random_restart(&mut self) {
+        // here i would reinitialize the CMA parameters
+        println!("Restarting...##########################################################################");
+
+        //restting fitness_buffer
+        self.fitness_buffer = VecDeque::with_capacity(CoatCMA::CONVERGENCE_BUFFER_LEN);
+
+        //resetting step_size
+        self.step_size = 0.3 as f64;
+
+        //resetting mean
+        // randomly choose mean
+        for i in 0..Self::GENOME_LEN.into() {
+            self.mean[i] = CoatCMA::rng().sample(CoatCMA::mean_init_rng(0.0, 0.1)) as f64;
+        }
+
+        //resetting covariance matrix
+        self.covariance_matrix = DMatrix::from_diagonal_element(CoatCMA::GENOME_LEN.into(), CoatCMA::GENOME_LEN.into(), 1.0);
+
+        //resetting step size evolution path
+        self.p_sigma = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0); 
+        //resetting covariance matrix evolution path
+        self.p_c = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.0); 
+
+        //resetting population 
+        let mut new_starting_pop: Vec<CoatGenome> = vec![];
+         for _ in 0..self.population.len() {
+            let mut genome: [[[f64; 10]; 6]; 10] = [[[0_f64; 10]; 6]; 10];
+            for n in 0_u8..10 {
+                for j in 0_u8..6 {
+                    for i in 0_u8..10 {
+                        genome[n as usize][j as usize][i as usize] = CoatCMA::rng().sample(CoatCMA::genome_prob_init_rng()) as f64;
+                    }
+                }
+            }
+            new_starting_pop.push(CoatGenome {
+                string: (genome),
+                fitness: (0.0),
+            });
+        }
+        self.population = new_starting_pop;
+    }
+
+
+
 }
