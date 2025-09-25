@@ -1012,18 +1012,23 @@ impl CoatCMA {
 
     fn random_restart(&mut self) {
         // here i would reinitialize the CMA parameters
+        let mut restart_rng = rand::thread_rng();
         println!("Restarting...##########################################################################");
 
         //restting fitness_buffer
         self.fitness_buffer = VecDeque::with_capacity(CoatCMA::CONVERGENCE_BUFFER_LEN);
 
-        //resetting step_size
-        self.step_size = 0.3 as f64;
+        //resetting step_size 
+        // increase step size with every restart
+        // 0.3 is the base
+        // 1.0 is the max
+        let increase = 1.0 - (-0.5 * self.restarts as f64).exp();
+        self.step_size = 0.3 + (1.0 - 0.3) * increase;
 
         //resetting mean
         // randomly choose mean
         for i in 0..Self::GENOME_LEN.into() {
-            self.mean[i] = CoatCMA::rng().sample(CoatCMA::mean_init_rng(0.0, 0.1)) as f64;
+            self.mean[i] = restart_rng.sample(CoatCMA::mean_init_rng(0.0, 0.1)) as f64;
         }
 
         //resetting covariance matrix
@@ -1036,12 +1041,12 @@ impl CoatCMA {
 
         //resetting population 
         let mut new_starting_pop: Vec<CoatGenome> = vec![];
-         for _ in 0..self.population.len() {
+         for _ in 0..self.population.len() + (0.5 * self.population.len() as f64) as usize {
             let mut genome: [[[f64; 10]; 6]; 10] = [[[0_f64; 10]; 6]; 10];
             for n in 0_u8..10 {
                 for j in 0_u8..6 {
                     for i in 0_u8..10 {
-                        genome[n as usize][j as usize][i as usize] = CoatCMA::rng().sample(CoatCMA::genome_prob_init_rng()) as f64;
+                        genome[n as usize][j as usize][i as usize] = restart_rng.sample(CoatCMA::genome_prob_init_rng()) as f64;
                     }
                 }
             }
