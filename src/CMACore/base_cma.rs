@@ -25,6 +25,8 @@ pub struct CmaAlgo {
     mut_rate: f64,
     granularity: u8,
     genome_cache: HashMap<[[[OrderedFloat<f64>; 4]; 3]; 4], f64>,
+    genome_gene_usage_cache: HashMap<[ [[OrderedFloat<f64>; 4]; 3]; 4], [[[u64; 4]; 3]; 4]>,
+    genome_out_of_bounds_cache: HashMap<[[[OrderedFloat<f64>; 4]; 3]; 4], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16)>,
     trial_seeds: Vec<u64>,
@@ -127,10 +129,14 @@ impl CmaAlgo {
             starting_pop.push(Genome {
                 string: (genome),
                 fitness: (0.0),
+                gene_usage: [[[0; 4]; 3]; 4],
+                out_of_bounds: 0.0
             });
         }
 
         let genome_cache: HashMap<[[[OrderedFloat<f64>; 4]; 3]; 4], f64> = HashMap::new();
+        let genome_gene_usage_cache: HashMap<[[[OrderedFloat<f64>; 4]; 3]; 4], [[[u64; 4]; 3]; 4]> = HashMap::new();
+        let genome_out_of_bounds_cache: HashMap<[[[OrderedFloat<f64>; 4]; 3]; 4], f64> = HashMap::new();
 
         // Initial CMA-ES values
         let mut mean = DMatrix::from_element(Self::GENOME_LEN.into(), 1, 0.5);
@@ -183,6 +189,8 @@ impl CmaAlgo {
             mut_rate,
             granularity,
             genome_cache,
+            genome_gene_usage_cache,
+            genome_out_of_bounds_cache,
             perform_cross,
             sizes,
             trial_seeds,
@@ -296,6 +304,8 @@ impl CmaAlgo {
             new_pop.push( Genome{
                                 string: self.column_vector_to_genome(x_clip),
                                 fitness: 0.0,
+                                gene_usage: [[[0; 4]; 3]; 4],
+                                out_of_bounds: 0.0
                                 } );
         }
 
@@ -650,6 +660,9 @@ impl CmaAlgo {
             new_pop.push(Genome {
                 string: mutated_g,
                 fitness: 0.0,
+                gene_usage: [[[0; 4]; 3]; 4],
+                out_of_bounds: 0.0
+
             });
         }
         self.population = new_pop;
@@ -685,6 +698,8 @@ impl CmaAlgo {
         // TODO: run each genome in a separate compute node
         // TODO: use RefCell or lazy static to make the whole check and update into a single loop.
         let mut genome_fitnesses = vec![-1.0; self.population.len()];
+        let mut genome_gene_usages:Vec<[[[Option<u64>; 4]; 3]; 4]> = vec![ [[[None;4];3];4]; self.population.len()];
+        let mut genome_out_of_bounds = vec![-1.0; self.population.len()];
 
         // check if the cache has the genome's fitness calculated
         self.population
@@ -705,6 +720,26 @@ impl CmaAlgo {
                 match self.genome_cache.get(&genome_s) {
                     Some(fitness) => {
                         genome_fitnesses.insert(idx, *fitness);
+                    }
+                    None => return,
+                }
+                 match self.genome_gene_usage_cache.get(&genome_s) {
+                    Some(gene_usage) => {
+                        let mut converted =  [[[None;4];3];4]; 
+                           for n in 0..4 {
+                                for i in 0..3 {
+                                    for j in 0..4 {
+                                        converted[n][i][j] = Some(gene_usage[n][i][j]);
+                                    }
+                                }
+                            }
+                        genome_gene_usages.insert(idx, converted);
+                    }
+                    None => return,
+                } 
+                match self.genome_out_of_bounds_cache.get(&genome_s) {
+                    Some(out_of_bounds) => {
+                        genome_out_of_bounds.insert(idx, *out_of_bounds);
                         return;
                     }
                     None => return,
@@ -719,6 +754,18 @@ impl CmaAlgo {
                 if genome_fitnesses[idx] > -1.0 {
                     genome.fitness = genome_fitnesses[idx];
                 }
+                if genome_gene_usages[idx].iter().flatten().flatten().any(|v| v.is_some()) {
+                     for n in 0..4 {
+                        for i in 0..3 {
+                            for j in 0..4 {
+                                genome.gene_usage[n][i][j] = genome_gene_usages[idx][n][i][j].unwrap_or(0);
+                            }
+                        }
+                    }
+                }
+                if genome_out_of_bounds[idx] > -1.0 {
+                    genome.out_of_bounds = genome_out_of_bounds[idx];
+                }
             });
 
         self.population.par_iter_mut().for_each(|genome| {
@@ -729,17 +776,34 @@ impl CmaAlgo {
             }
 
             // Calculate the fitness for 'n' number of trials
-            let fitness_tot: f64 = trials_vec.clone()
+            let results: Vec<(f64, [[[u64; 4]; 3]; 4], u64)> = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
                     let mut genome_env = SOPSEnvironmentCMA::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity);
                     let g_fitness = genome_env.simulate(false);
-                    // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
-                    // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
-                    // let g_fitness = 1; // added
-                    g_fitness as f64 / (genome_env.get_max_fitness() as f64)
+                    (
+                        g_fitness as f64 / genome_env.get_max_fitness() as f64,
+                        *genome_env.get_gene_usage(),
+                        *genome_env.get_out_of_bounds()
+                    )
                 })
-                .sum();
+                .collect();
+
+             let mut agg_usage = [[[0u64; 4]; 3]; 4];
+            for (_, usage, _) in &results {
+                for i in 0..4 {
+                    for j in 0..3 {
+                        for k in 0..4 {
+                            agg_usage[i][j][k] += usage[i][j][k];
+                        }
+                    }
+                }
+            }
+            let out_of_bounds: u64 = results.iter().map(|r| r.2).sum();
+            let fitness_tot: f64 = results.iter().map(|r| r.0).sum();
+
+            genome.gene_usage = agg_usage;
+            genome.out_of_bounds = out_of_bounds as f64;
             
             /* Snippet to calculate Median fitness value of the 'n' trials
             // let mut sorted_fitness_eval: Vec<f64> = Vec::new();
@@ -768,7 +832,11 @@ impl CmaAlgo {
             }
 
             let genome_f = self.population[idx].fitness.clone();
+            let genome_gu = self.population[idx].gene_usage.clone();
+            let genome_o = self.population[idx].out_of_bounds.clone();
             self.genome_cache.insert(genome_s, genome_f);
+            self.genome_gene_usage_cache.insert(genome_s, genome_gu);
+            self.genome_out_of_bounds_cache.insert(genome_s, genome_o);
         }
 
         //avg.fitness of population

@@ -8,7 +8,7 @@ use std::time::Instant;
 use std::usize;
 use std::io::Write;
 use std::fs::File;
-use std::sync::Mutex;
+
 /*
  * Main GA class for Separation behavior (use as a model to structure and write other GA extensions for other GA's)
  * Provides basic 3 operators of the GAs and a step by step (1 step = 1 generation)

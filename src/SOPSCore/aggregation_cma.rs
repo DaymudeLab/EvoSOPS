@@ -32,7 +32,9 @@ pub struct SOPSEnvironmentCMA {
     max_fitness: u64,
     arena_layers: u16,
     particle_layers: u16,
-    granularity: u8
+    granularity: u8,
+    gene_usage: [[[u64; 4]; 3]; 4],
+    out_of_bounds: u64
 }
 
 
@@ -146,8 +148,18 @@ impl SOPSEnvironmentCMA {
             max_fitness: agg_edge_cnt,
             arena_layers,
             particle_layers,
-            granularity
+            granularity,
+            gene_usage: [[[0; 4]; 3]; 4],
+            out_of_bounds: 0
         }
+    }
+    
+    pub fn get_out_of_bounds(&self) -> &u64 {
+        &self.out_of_bounds
+    }
+
+    pub fn get_gene_usage(&self) -> &[[[u64; 4]; 3]; 4] {
+        &self.gene_usage
     }
 
     pub fn print_grid(&self) {
@@ -232,20 +244,26 @@ impl SOPSEnvironmentCMA {
     /*
      * Func to check if the proposed move is possible or not for a particle
      *  */
-     fn particle_move_possible(&self, particle_idx: usize, direction: (i32, i32)) -> bool {
+     fn particle_move_possible(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
         let particle = &self.participants[particle_idx];
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
+
+        let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(particle_idx, direction);
+        self.gene_usage[back_cnt as usize][mid_cnt as usize][front_cnt as usize] += 1;
+
         // Move particle if movement is within bound
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
             // check to see if move is valid ie. within bounds and not in an already occupied location
             if self.grid[new_i][new_j] == SOPSEnvironmentCMA::PARTICLE || self.grid[new_i][new_j] == SOPSEnvironmentCMA::BOUNDARY {
+                self.out_of_bounds += 1;
                 return false;
             } else {
                 // can move the particle
                 return true;
             }
         } else {
+            self.out_of_bounds += 1;
             return false;
         }
     }
