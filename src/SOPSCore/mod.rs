@@ -34,7 +34,8 @@ pub struct SOPSEnvironment {
     max_fitness: u64,
     arena_layers: u16,
     particle_layers: u16,
-    granularity: u8
+    granularity: u8,
+    gene_usage: [[[u64; 4]; 3]; 5]
 }
 
 
@@ -105,6 +106,7 @@ impl SOPSEnvironment {
      * Calculates Max edge count possible for all the particles irrespective of the state
      * NOTE: Use the Same random Seed value to get the same random init config
      *  */
+
     pub fn init_sops_env(genome: &[[[u8; 4]; 3]; 4], arena_layers: u16, particle_layers: u16, seed: u64, granularity: u8) -> Self {
         let grid_size = (arena_layers*2 + 1) as usize;
         let mut grid = vec![vec![0; grid_size]; grid_size];
@@ -148,10 +150,14 @@ impl SOPSEnvironment {
             max_fitness: agg_edge_cnt,
             arena_layers,
             particle_layers,
-            granularity
+            granularity,
+            gene_usage: [[[0; 4]; 3]; 5]
         }
     }
 
+    pub fn get_gene_usage(&self) -> &[[[u64; 4]; 3]; 5] {
+        &self.gene_usage
+    }
     pub fn print_grid(&self) {
         println!("SOPS grid");
         for i in 0..self.grid.len() {
@@ -234,13 +240,17 @@ impl SOPSEnvironment {
     /*
      * Func to check if the proposed move is possible or not for a particle
      *  */
-     fn particle_move_possible(&self, particle_idx: usize, direction: (i32, i32)) -> bool {
+    fn particle_move_possible(&mut self, particle_idx: usize, direction: (i32, i32)) -> bool {
         let particle = &self.participants[particle_idx];
         let new_i = (particle.x as i32 + direction.0) as usize;
         let new_j = (particle.y as i32 + direction.1) as usize;
+
         // Move particle if movement is within bound
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
             // check to see if move is valid ie. within bounds and not in an already occupied location
+            
+            let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(particle_idx, direction);
+            self.gene_usage[back_cnt as usize][mid_cnt as usize][front_cnt as usize] += 1;
             if self.grid[new_i][new_j] == SOPSEnvironment::PARTICLE || self.grid[new_i][new_j] == SOPSEnvironment::BOUNDARY {
                 return false;
             } else {
@@ -248,6 +258,7 @@ impl SOPSEnvironment {
                 return true;
             }
         } else {
+            self.gene_usage[4][0][0] += 1;
             return false;
         }
     }

@@ -8,7 +8,7 @@ use std::time::Instant;
 use std::usize;
 use std::io::Write;
 use std::fs::File;
-
+use std::sync::Mutex;
 /*
  * Main GA class for Separation behavior (use as a model to structure and write other GA extensions for other GA's)
  * Provides basic 3 operators of the GAs and a step by step (1 step = 1 generation)
@@ -95,6 +95,7 @@ impl GeneticAlgo {
             starting_pop.push(Genome {
                 string: (genome),
                 fitness: (0.0),
+                gene_usage: [[[0; 4]; 3]; 5]
             });
         }
 
@@ -267,7 +268,8 @@ impl GeneticAlgo {
         //print genomes for analysis
         let best_genome = self.population.iter().max_by(|&g1, &g2| g1.fitness.partial_cmp(&g2.fitness).unwrap()).unwrap();
         println!("Best Genome -> {best_genome:.5?}");
-
+        let best_genome_gene_usage = best_genome.gene_usage;
+        println!("Genome usage -> {:?}", best_genome_gene_usage);
         // for idx in 1..self.population.len() {
         //     println!("{y:.5?}", y = self.population[idx].fitness);
         // }
@@ -332,6 +334,7 @@ impl GeneticAlgo {
             new_pop.push(Genome {
                 string: mutated_g,
                 fitness: 0.0,
+                gene_usage: [[[0; 4]; 3]; 5]
             });
         }
         self.population = new_pop;
@@ -366,6 +369,7 @@ impl GeneticAlgo {
         let mut genome_fitnesses = vec![-1.0; self.population.len()];
 
         // check if the cache has the genome's fitness calculated
+        // Each entry is (fitness: f64, gene_usage: [[[u64;4];3];5])
         self.population
             .iter()
             .enumerate()
@@ -389,7 +393,6 @@ impl GeneticAlgo {
                     genome.fitness = genome_fitnesses[idx];
                 }
             });
-
         self.population.par_iter_mut().for_each(|genome| {
             // bypass if genome has already fitness value calculated
             let genome_s = genome.string.clone();
@@ -397,19 +400,31 @@ impl GeneticAlgo {
                 return;
             }
 
-            // Calculate the fitness for 'n' number of trials
-            let fitness_tot: f64 = trials_vec.clone()
+            let results: Vec<(f64, [[[u64; 4]; 3]; 5])> = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
                     let mut genome_env = SOPSEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity);
                     let g_fitness = genome_env.simulate(false);
-                    // Add normalization of the fitness value based on optimal fitness value for a particular cohort size
-                    // let max_fitness = SOPSEnvironment::aggregated_fitness(particle_cnt as u16);
-                    // let g_fitness = 1; // added
-                    g_fitness as f64 / (genome_env.get_max_fitness() as f64)
+                    (
+                        g_fitness as f64 / genome_env.get_max_fitness() as f64,
+                        *genome_env.get_gene_usage()
+                    )
                 })
-                .sum();
-            
+                .collect();
+
+            let mut agg_usage = [[[0u64; 4]; 3]; 5];
+            for (_, usage) in &results {
+                for i in 0..5 {
+                    for j in 0..3 {
+                        for k in 0..4 {
+                            agg_usage[i][j][k] += usage[i][j][k];
+                        }
+                    }
+                }
+            }
+            let fitness_tot: f64 = results.iter().map(|r| r.0).sum();
+
+            genome.gene_usage = agg_usage;
             /* Snippet to calculate Median fitness value of the 'n' trials
             // let mut sorted_fitness_eval: Vec<f64> = Vec::new();
             // fitness_trials.collect_into_vec(&mut sorted_fitness_eval);
