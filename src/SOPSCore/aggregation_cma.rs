@@ -33,8 +33,8 @@ pub struct SOPSEnvironmentCMA {
     arena_layers: u16,
     particle_layers: u16,
     granularity: u8,
-    gene_usage: [[[u64; 4]; 3]; 4],
-    out_of_bounds: u64
+    gene_usage: [[[f64; 4]; 3]; 4],
+    out_of_bounds: f64
 }
 
 
@@ -149,16 +149,16 @@ impl SOPSEnvironmentCMA {
             arena_layers,
             particle_layers,
             granularity,
-            gene_usage: [[[0; 4]; 3]; 4],
-            out_of_bounds: 0
+            gene_usage: [[[0.0; 4]; 3]; 4],
+            out_of_bounds: 0.0
         }
     }
     
-    pub fn get_out_of_bounds(&self) -> &u64 {
+    pub fn get_out_of_bounds(&self) -> &f64 {
         &self.out_of_bounds
     }
 
-    pub fn get_gene_usage(&self) -> &[[[u64; 4]; 3]; 4] {
+    pub fn get_gene_usage(&self) -> &[[[f64; 4]; 3]; 4] {
         &self.gene_usage
     }
 
@@ -250,20 +250,19 @@ impl SOPSEnvironmentCMA {
         let new_j = (particle.y as i32 + direction.1) as usize;
 
         let (back_cnt, mid_cnt, front_cnt) = self.get_ext_neighbors_cnt(particle_idx, direction);
-        self.gene_usage[back_cnt as usize][mid_cnt as usize][front_cnt as usize] += 1;
+        self.gene_usage[back_cnt as usize][mid_cnt as usize][front_cnt as usize] += 1.0;
 
         // Move particle if movement is within bound
         if (0..self.grid.len()).contains(&new_i) & (0..self.grid.len()).contains(&new_j) {
             // check to see if move is valid ie. within bounds and not in an already occupied location
             if self.grid[new_i][new_j] == SOPSEnvironmentCMA::PARTICLE || self.grid[new_i][new_j] == SOPSEnvironmentCMA::BOUNDARY {
-                self.out_of_bounds += 1;
                 return false;
             } else {
                 // can move the particle
                 return true;
             }
         } else {
-            self.out_of_bounds += 1;
+            self.out_of_bounds += 1.0;
             return false;
         }
     }
@@ -330,6 +329,16 @@ impl SOPSEnvironmentCMA {
                 println!("Fitness: {}", self.evaluate_fitness() as f32/ self.get_max_fitness() as f32);
             }
         }
+        for b in 0..4 {
+            for m in 0..3 {
+                for f in 0..4 {
+                    let val = self.gene_usage[b][m][f];
+                    self.gene_usage[b][m][f] = val / self.sim_duration as f64;
+                }
+            }
+        }
+        self.out_of_bounds = self.out_of_bounds / self.sim_duration as f64;
+        
         let fitness = self.evaluate_fitness();
         self.fitness_val = fitness as f64;
         fitness

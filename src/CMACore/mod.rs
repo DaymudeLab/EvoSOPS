@@ -15,7 +15,8 @@ pub mod coat_cma;
 struct Genome {
     string: [[[f64; 4]; 3]; 4],
     fitness: f64,
-    gene_usage: [[[u64; 4]; 3]; 4],
+    mean_gene_usage: [[[f64; 4]; 3]; 4],
+    highest_f_gene_usage: [[[f64; 4]; 3]; 4],
     out_of_bounds: f64
 }
 
