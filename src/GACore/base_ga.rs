@@ -21,7 +21,8 @@ pub struct GeneticAlgo {
     mut_rate: f64,
     granularity: u8,
     genome_cache: HashMap<[[[u8; 4]; 3]; 4], f64>,
-    genome_gene_usage_cache: HashMap<[[[u8; 4]; 3]; 4], [[[u64; 4]; 3]; 4]>,
+    genome_mean_gene_usage_cache: HashMap<[[[u8; 4]; 3]; 4], [[[f64; 4]; 3]; 4]>,
+    genome_highest_f_gene_usage_cache: HashMap<[[[u8; 4]; 3]; 4], [[[f64; 4]; 3]; 4]>,
     genome_out_of_bounds_cache: HashMap<[[[u8; 4]; 3]; 4], f64>,
     perform_cross: bool,
     sizes: Vec<(u16,u16)>,
@@ -97,13 +98,15 @@ impl GeneticAlgo {
             starting_pop.push(Genome {
                 string: (genome),
                 fitness: (0.0),
-                gene_usage: [[[0; 4]; 3]; 4],
+                mean_gene_usage: [[[0.0; 4]; 3]; 4],
+                highest_f_gene_usage: [[[0.0; 4]; 3]; 4],
                 out_of_bounds: 0.0
             });
         }
 
         let genome_cache: HashMap<[[[u8; 4]; 3]; 4], f64> = HashMap::new();
-        let genome_gene_usage_cache: HashMap<[[[u8; 4]; 3]; 4], [[[u64; 4]; 3]; 4]> = HashMap::new();
+        let genome_mean_gene_usage_cache: HashMap<[[[u8; 4]; 3]; 4], [[[f64; 4]; 3]; 4]> = HashMap::new();
+        let genome_highest_f_gene_usage_cache: HashMap<[[[u8; 4]; 3]; 4], [[[f64; 4]; 3]; 4]>= HashMap::new();
         let genome_out_of_bounds_cache: HashMap<[[[u8; 4]; 3]; 4], f64> = HashMap::new();
 
         GeneticAlgo {
@@ -113,7 +116,8 @@ impl GeneticAlgo {
             mut_rate,
             granularity,
             genome_cache,
-            genome_gene_usage_cache,
+            genome_mean_gene_usage_cache,
+            genome_highest_f_gene_usage_cache,
             genome_out_of_bounds_cache,
             perform_cross,
             sizes,
@@ -341,7 +345,8 @@ impl GeneticAlgo {
             new_pop.push(Genome {
                 string: mutated_g,
                 fitness: 0.0,
-                gene_usage: [[[0; 4]; 3]; 4],
+                mean_gene_usage: [[[0.0; 4]; 3]; 4],
+                highest_f_gene_usage: [[[0.0; 4]; 3]; 4],
                 out_of_bounds: 0.0
             });
         }
@@ -375,7 +380,8 @@ impl GeneticAlgo {
         // TODO: run each genome in a separate compute node
         // TODO: use RefCell or lazy static to make the whole check and update into a single loop.
         let mut genome_fitnesses = vec![-1.0; self.population.len()];
-        let mut genome_gene_usages:Vec<[[[Option<u64>; 4]; 3]; 4]> = vec![ [[[None;4];3];4]; self.population.len()];
+        let mut genome_mean_gene_usages:Vec<[[[Option<f64>; 4]; 3]; 4]> = vec![ [[[None;4];3];4]; self.population.len()];
+        let mut genome_highest_f_gene_usages:Vec<[[[Option<f64>; 4]; 3]; 4]> = vec![ [[[None;4];3];4]; self.population.len()];
         let mut genome_out_of_bounds = vec![-1.0; self.population.len()];
 
 
@@ -392,7 +398,7 @@ impl GeneticAlgo {
                     }
                     None => return,
                 }
-                match self.genome_gene_usage_cache.get(&genome_s) {
+                match self.genome_mean_gene_usage_cache.get(&genome_s) {
                     Some(gene_usage) => {
                         let mut converted =  [[[None;4];3];4]; 
                            for n in 0..4 {
@@ -402,10 +408,24 @@ impl GeneticAlgo {
                                     }
                                 }
                             }
-                        genome_gene_usages.insert(idx, converted);
+                        genome_mean_gene_usages.insert(idx, converted);
                     }
                     None => return,
                 } 
+                match self.genome_highest_f_gene_usage_cache.get(&genome_s) {
+                    Some(gene_usage) => {
+                        let mut converted =  [[[None;4];3];4]; 
+                           for n in 0..4 {
+                                for i in 0..3 {
+                                    for j in 0..4 {
+                                        converted[n][i][j] = Some(gene_usage[n][i][j]);
+                                    }
+                                }
+                            }
+                        genome_highest_f_gene_usages.insert(idx, converted);
+                    }
+                    None => return,
+                }
                 match self.genome_out_of_bounds_cache.get(&genome_s) {
                     Some(out_of_bounds) => {
                         genome_out_of_bounds.insert(idx, *out_of_bounds);
@@ -423,11 +443,20 @@ impl GeneticAlgo {
                 if genome_fitnesses[idx] > -1.0 {
                     genome.fitness = genome_fitnesses[idx];
                 }
-                if genome_gene_usages[idx].iter().flatten().flatten().any(|v| v.is_some()) {
+                if genome_mean_gene_usages[idx].iter().flatten().flatten().any(|v| v.is_some()) {
                      for n in 0..4 {
                         for i in 0..3 {
                             for j in 0..4 {
-                                genome.gene_usage[n][i][j] = genome_gene_usages[idx][n][i][j].unwrap_or(0);
+                                genome.mean_gene_usage[n][i][j] = genome_mean_gene_usages[idx][n][i][j].unwrap_or(0.0);
+                            }
+                        }
+                    }
+                }
+                if genome_highest_f_gene_usages[idx].iter().flatten().flatten().any(|v| v.is_some()) {
+                     for n in 0..4 {
+                        for i in 0..3 {
+                            for j in 0..4 {
+                                genome.highest_f_gene_usage[n][i][j] = genome_highest_f_gene_usages[idx][n][i][j].unwrap_or(0.0);
                             }
                         }
                     }
@@ -443,7 +472,7 @@ impl GeneticAlgo {
                 return;
             }
 
-            let results: Vec<(f64, [[[u64; 4]; 3]; 4], u64)> = trials_vec.clone()
+            let results: Vec<(f64, [[[f64; 4]; 3]; 4], f64)> = trials_vec.clone()
                 .into_par_iter()
                 .map(|trial| {
                     let mut genome_env = SOPSEnvironment::init_sops_env(&genome_s, trial.0.0, trial.0.1, trial.1.into(), granularity);
@@ -456,7 +485,7 @@ impl GeneticAlgo {
                 })
                 .collect();
 
-            let mut agg_usage = [[[0u64; 4]; 3]; 4];
+            let mut agg_usage = [[[0f64; 4]; 3]; 4];
             for (_, usage, _) in &results {
                 for i in 0..4 {
                     for j in 0..3 {
@@ -466,11 +495,24 @@ impl GeneticAlgo {
                     }
                 }
             }
-            let out_of_bounds: u64 = results.iter().map(|r| r.2).sum();
+            for i in 0..4 {
+                for j in 0..3 {
+                    for k in 0..4 {
+                        agg_usage[i][j][k] = agg_usage[i][j][k] / trials_vec.len() as f64;
+                    }
+                }
+            }
+            let max_trial = results
+                                        .iter()
+                                        .max_by(|a, b| a.0.partial_cmp(&b.0).unwrap())
+                                        .unwrap();
+
+            let out_of_bounds: f64 = results.iter().map(|r| r.2).sum();
             let fitness_tot: f64 = results.iter().map(|r| r.0).sum();
 
-            genome.gene_usage = agg_usage;
-            genome.out_of_bounds = out_of_bounds as f64;
+            genome.mean_gene_usage = agg_usage;
+            genome.highest_f_gene_usage = max_trial.1;
+            genome.out_of_bounds = out_of_bounds / trials_vec.len() as f64;
             /* Snippet to calculate Median fitness value of the 'n' trials
             // let mut sorted_fitness_eval: Vec<f64> = Vec::new();
             // fitness_trials.collect_into_vec(&mut sorted_fitness_eval);
@@ -488,10 +530,12 @@ impl GeneticAlgo {
         for idx in 0..self.population.len() {
             let genome_s = self.population[idx].string.clone();
             let genome_f = self.population[idx].fitness.clone();
-            let genome_gu = self.population[idx].gene_usage.clone();
+            let genome_mgu = self.population[idx].mean_gene_usage.clone();
+            let genome_hfgu = self.population[idx].highest_f_gene_usage.clone();
             let genome_o = self.population[idx].out_of_bounds.clone();
             self.genome_cache.insert(genome_s, genome_f);
-            self.genome_gene_usage_cache.insert(genome_s, genome_gu);
+            self.genome_mean_gene_usage_cache.insert(genome_s, genome_mgu);
+            self.genome_highest_f_gene_usage_cache.insert(genome_s, genome_hfgu);
             self.genome_out_of_bounds_cache.insert(genome_s, genome_o);
         }
 
